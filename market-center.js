@@ -20,11 +20,12 @@ export const RANK_MODES=Object.freeze({
  gainers:{label:'涨幅榜',fid:'f3',po:1},
  losers:{label:'跌幅榜',fid:'f3',po:0},
  turnover:{label:'成交额榜',fid:'f6',po:1},
- volume:{label:'成交量榜',fid:'f5',po:1}
+ volume:{label:'成交量榜',fid:'f5',po:1},
+ speed:{label:'涨速排行',fid:'f22',po:1}
 });
 export const SORT_COLUMNS=Object.freeze({
  code:{label:'股票代码',fid:'f12'},name:{label:'股票名称',fid:'f14'},price:{label:'当前价',fid:'f2'},
- change:{label:'涨跌额',fid:'f4'},pct:{label:'涨跌幅',fid:'f3'},
+ change:{label:'涨跌额',fid:'f4'},pct:{label:'涨跌幅',fid:'f3'},speed:{label:'涨速',fid:'f22'},
  ytdPct:{label:'年初至今',fid:'f25'},volume:{label:'成交量',fid:'f5'},
  turnover:{label:'成交额',fid:'f6'},turnoverRate:{label:'换手率',fid:'f8'},
  peTtm:{label:'市盈率(TTM)',fid:'f9'},pb:{label:'市净率',fid:'f23'},
@@ -65,7 +66,7 @@ export function parseRanking(data,{board=false}={}){
   return {code,name,price,pct,exchange:board?'BOARD':Number(x.f13)===1?'SH':'SZ',
    volume:n('f5'),turnover:n('f6'),high:priceOrNull('f15'),low:priceOrNull('f16'),
    open:priceOrNull('f17'),prevClose:priceOrNull('f18'),marketCap:n('f20'),
-   change:signedNumber('f4'),ytdPct:ratio('f25'),turnoverRate:ratio('f8'),
+   change:signedNumber('f4'),speed:ratio('f22'),ytdPct:ratio('f25'),turnoverRate:ratio('f8'),
    peTtm:signedNumber('f9'),pb:ratio('f23'),
    quoteTime:chinaTimestamp(x.f124),source:'东方财富'};
  }).filter(Boolean);
