@@ -138,3 +138,17 @@
 .mt-note{font-size:11px;line-height:1.8;color:#8493a1;background:#f7f9fb;border:1px solid #eef1f5;padding:11px 13px}
 @media(max-width:1100px){.market-terminal{grid-template-columns:150px minmax(0,1fr)}.mt-side{padding:10px 7px}.mt-content{padding:9px}.mt-table-wrap{max-height:calc(100vh - 230px)}}
 @media(max-width:740px){.market-terminal{grid-template-columns:116px minmax(0,1fr);font-size:11px}.mt-side{padding:8px 5px;max-height:calc(100vh - 56px)}.mt-side-heading{padding:7px 6px;font-size:11px}.mt-side-item{padding:5px 6px;font-size:11px}.mt-recent-actions{flex-wrap:wrap}.mt-content{padding:6px}.mt-topline{padding:7px;min-height:40px;flex-wrap:wrap}.mt-utilities{width:100%}.mt-search-label{flex:1}.mt-search-label input{width:100%}.mt-table-wrap{max-height:calc(100vh - 225px)}.mt-bottomline{align-items:flex-start}}
+
+/* Daily GitHub Actions bot, visually separated from the user's browser-local paper account. */
+.bot-panel{margin:18px 0 24px}
+.bot-panel .panel-head{gap:12px;flex-wrap:wrap}
+.bot-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:15px 0}
+.bot-summary>div{display:flex;flex-direction:column;min-width:0;gap:8px;background:#112438;border:1px solid #2a3f54;border-radius:9px;padding:15px}
+.bot-summary small{color:#8ca2b9;font-size:11px}
+.bot-summary strong{font-size:19px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.bot-method{font-size:12px;line-height:1.75;color:#96adc1;margin:12px 0}
+.bot-table{min-width:690px}
+.bot-table .tag.success{color:#52c59c}
+.bot-events{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.bot-events .tag{max-width:100%;white-space:normal}
+@media(max-width:800px){.bot-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.bot-summary>div{padding:10px}.bot-summary strong{font-size:16px}}
