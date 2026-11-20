@@ -210,7 +210,7 @@ export async function getMarketData({fetchImpl=fetch,sectorLoader=getSectors,ran
   if(!/^[036]\d{5}$/.test(st.code)||/\*?ST/i.test(st.name))continue;
   const prior=universe.get(st.code);
   if(!prior||sectors[i].pct>prior.sectorPct)universe.set(st.code,{
-   code:st.code,name:st.name,sector:sectors[i].name,sectorPct:sectors[i].pct});
+   code:st.code,name:st.name,sector:sectors[i].name,sectorCode:sectors[i].code,sectorPct:sectors[i].pct});
  }
  return {date:marketDate,previousMarketDate:benchmark.at(-2).date,universe:[...universe.values()],barLoader,fetchImpl};
 }
