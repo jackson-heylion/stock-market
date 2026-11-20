@@ -1,9 +1,9 @@
 
 import {getLiveSectors,getLiveNews,getLiveChanges,getNewsTerms,treemapLayout} from './market-radar.js';
 export const radarState={
- sectors:{rows:[],updatedAt:0,source:'',error:'',loading:false},
- news:{rows:[],updatedAt:0,source:'',error:'',loading:false},
- changes:{rows:[],updatedAt:0,source:'',error:'',loading:false},
+ sectors:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
+ news:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
+ changes:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  filter:'all',selectedWord:''
 };
 export function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -23,7 +23,7 @@ export function radarClock(ts){
 export function radarSourceStatus(key){
  const s=radarState[key];
  if(s.loading)return '获取中…';
- if(s.error)return '源异常 · '+h(s.error.slice(0,54));
+ if(s.error)return (s.updatedAt?'源异常 · 沿用'+radarClock(s.updatedAt)+'成功快照':'源异常 · 无有效快照')+' · '+h(s.error.slice(0,38));
  if(s.updatedAt)return '请求于 '+radarClock(s.updatedAt);
  return '尚未加载';
 }
@@ -133,14 +133,14 @@ export async function refreshRadar({force=false,source='all',onUpdate=()=>{}}={}
  ];
  const now=Date.now();
  const tasks=config.filter(c=>source==='all'||source===c.key).filter(c=>{
-  const target=radarState[c.key];return !target.loading&&(force||!target.updatedAt||now-target.updatedAt>=c.ttl);
+  const target=radarState[c.key];return !target.loading&&(force||!(target.checkedAt||target.updatedAt)||now-(target.checkedAt||target.updatedAt)>=c.ttl);
  }).map(async c=>{
   const s=radarState[c.key];s.loading=true;
   try{
    const result=await c.fn();
    s.rows=result.rows;s.source=result.source;s.updatedAt=Date.now();s.error='';
-  }catch(err){s.error=String(err.message||err);s.updatedAt=Date.now();}
-  finally{s.loading=false;}
+  }catch(err){s.error=String(err.message||err);}
+  finally{s.checkedAt=Date.now();s.loading=false;}
  });
  if(!tasks.length)return;
  try{await Promise.allSettled(tasks);}finally{onUpdate();}
