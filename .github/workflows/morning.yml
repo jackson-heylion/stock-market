@@ -1,0 +1,40 @@
+name: Morning M5 scan
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - morning.js
+      - .github/workflows/morning.yml
+  schedule:
+    # Beijing 11:45 weekdays; GitHub scheduling may lag.
+    - cron: '45 3 * * 1-5'
+permissions:
+  contents: write
+concurrency:
+  group: morning-m5
+  cancel-in-progress: false
+jobs:
+  morning:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source and bot accounting
+        run: npm test && npm run check
+      - name: Scan 11:30 quotes and write non-filled afternoon proposals
+        run: node morning.js
+      - name: Save afternoon candidates when data is verified
+        run: |
+          if git diff --quiet -- data/morning.json; then exit 0; fi
+          git config user.name "stock-market-paper-bot[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/morning.json
+          git commit -m "data: update M5 morning-close candidates and afternoon proposals"
+          git pull --rebase origin main
+          git push origin HEAD:main
