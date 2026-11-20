@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {getRankings,parseRanking} from '../market-center.js';
 import {CHANGE_LABELS,CHANGE_TYPES,parseChangeEvents,parseFastNews,getNewsTerms,treemapLayout,
- getLiveSectors,getLiveNews,getLiveChanges} from '../market-radar.js';
-import {radarState,renderRadar,handleRadarClick,radarSourceStatus} from '../radar-view.js';
+ getLiveSectors,getLiveNews,getLiveChanges,parseNewsSnapshot} from '../market-radar.js';
+import {radarState,renderRadar,heatmapHtml,handleRadarClick,radarSourceStatus} from '../radar-view.js';
 
 const fake=data=>({ok:true,json:async()=>data,arrayBuffer:async()=>new TextEncoder().encode(JSON.stringify(data)).buffer});
 test('speed ranking directly sorts the provider f22 field, not invented 3s snapshots',async()=>{
@@ -109,4 +110,57 @@ test('failed feed is clearly marked stale and never changes last success timesta
  assert.match(label,/沿用10:00成功快照/);
  assert.match(label,/API unavailable/);
  Object.assign(radarState.news,old);
+});
+
+test('heatmap never renders 36 unreadable tile labels; all names remain accessible in ranking',()=>{
+ const sectors=Array.from({length:36},(_,i)=>({
+  code:'BK'+String(i+1000), name:'行业板块测试'+i,
+  pct:(i%3===0?1:-1)*(i+1)*.11,turnover:30e9/(i+1)
+ }));
+ const html=heatmapHtml(sectors);
+ assert.equal((html.match(/class="radar-heat-cell"/g)||[]).length,16);
+ assert.equal((html.match(/class="radar-sector-item"/g)||[]).length,36);
+ assert.match(html,/行业板块测试35/);
+ assert.match(html,/radar-heat-index/);
+ const css=readFileSync(new URL('../radar.css',import.meta.url),'utf8');
+ assert.match(css,/container-type:size/);
+ assert.match(css,/@container \(min-width:110px\) and \(min-height:78px\)/);
+ assert.match(css,/\.radar-sector-grid/);
+ assert.match(css,/\.radar-heat-name,.radar-heat-pct,.radar-heat-turnover\{display:none\}/);
+});
+
+test('direct news failure uses authentic same-origin GitHub Pages snapshot with its original clock',async()=>{
+ const now=Date.parse('2026-11-20T10:50:00+08:00');
+ const snapshot={
+  schema:1,source:'东方财富7×24快讯',state:'fresh',fetchedAt:'2026-11-20T10:45:00+08:00',
+  articles:[
+   {id:'202611201',title:'机器人概念盘中拉升',showTime:'2026-11-20 10:40:00'},
+   {id:'202611202',title:'半导体行业出现新订单',showTime:'2026-11-20 10:41:00'}
+  ]
+ };
+ const urls=[];
+ const fetchImpl=async url=>{
+  urls.push(String(url));
+  if(String(url).includes('np-weblist.eastmoney.com'))throw new TypeError('Failed to fetch');
+  if(String(url).includes('data/fast-news.json'))return fake(snapshot);
+  throw Error('unexpected fetch target: '+url);
+ };
+ const result=await getLiveNews(fetchImpl,{trace:()=> 'testTrace',now:()=>now});
+ assert.equal(result.via,'snapshot');
+ assert.equal(result.rows.length,2);
+ assert.equal(result.receivedAt,now-5*60000);
+ assert.match(result.source,/GitHub Pages/);
+ assert.match(urls[1],/data\/fast-news.json\?v=/);
+ assert.throws(()=>parseNewsSnapshot({schema:1,articles:[],fetchedAt:'2026-11-20T10:45:00+08:00'},{now}),/没有真实标题/);
+});
+test('same-origin backup does not treat old or fabricated headlines as realtime',async()=>{
+ const now=Date.parse('2026-11-20T10:50:00+08:00');
+ assert.throws(()=>parseNewsSnapshot({
+  schema:1,fetchedAt:'2026-11-19T07:00:00+08:00',articles:[{id:'1',title:'真实旧新闻标题',showTime:'2026-11-19 07:00:00'}]
+ },{now}),/过期/);
+ const fetchImpl=async url=>{
+  if(String(url).includes('np-weblist'))throw Error('DNS failure');
+  return fake({schema:1,fetchedAt:'2026-11-19T10:00:00+08:00',articles:[]});
+ };
+ await assert.rejects(getLiveNews(fetchImpl,{now:()=>now}),/同域备份失败/);
 });
