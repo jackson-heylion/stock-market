@@ -5,7 +5,7 @@ import {chartSvg} from './charts.js';
 import {initTheme,applyTheme,THEME_KEY} from './theme.js';
 import {readPrefs,savePrefs,resetPrefs,DEFAULT_PREFS} from './preferences.js';
 import {renderRadar,refreshRadar,handleRadarClick} from './radar-view.js';
-import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal} from './market-terminal.js';
+import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal,setTerminalPageSize} from './market-terminal.js';
 import {INDEXES,SCOPES,RANK_MODES,getMarketIndices,getRankings,getSectors,getMarketBreadth,getIndexHistory} from './market-center.js';
 let uiPrefs=readPrefs();
 let state;let page='overview';let botAccount=null;let botError='';let botLoadedAt=0;let botLoading=false;let liveQuotes={};let quoteError='';let quotePath='历史快照';
@@ -35,7 +35,9 @@ const stock=code=>SECURITIES.find(x=>x.code===code);
 function toast(message){const el=$('#toast');el.textContent=message;el.classList.add('visible');clearTimeout(window.__notice);window.__notice=setTimeout(()=>el.classList.remove('visible'),3600);}
 function load(){
  try{
-  const v=JSON.parse(localStorage.getItem(STORAGE_KEY));
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw)return initialState();
+  const v=JSON.parse(raw);
   const upgraded=migrateCapital(v);
   if(upgraded){
    if(upgraded!==v){
@@ -43,6 +45,7 @@ function load(){
    }
    return upgraded;
   }
+  throw Error('已有浏览器账本未通过合法性检查，拒绝自动覆盖；请先备份本地存储');
  }catch(err){
   // Never silently erase an inaccessible or un-migratable existing paper ledger.
   try{if(localStorage.getItem(STORAGE_KEY))throw err;}catch(e){throw e;}
@@ -144,6 +147,7 @@ function renderBotTrades(){
 
 function applyUiPrefs(){
  document.documentElement.classList.toggle('compact-hints',!uiPrefs.showRiskHints);
+ setTerminalPageSize(uiPrefs.tablePageSize);
 }
 function renderSettings(){
  const opts=(values,current)=>values.map(([v,label])=>`<option value="${e(v)}" ${String(v)===String(current)?'selected':''}>${e(label)}</option>`).join('');
@@ -243,7 +247,8 @@ case'index-period':indexPeriod=btn.dataset.period;render();requestIndexChart();b
 case'index-refresh':refreshMarket(true);requestIndexChart(true);break;
 case'rank-mode':ranked.mode=btn.dataset.mode;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
 case'rank-scope':ranked.scope=btn.dataset.scope;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
-case'rank-refresh':refreshRankings(true);break;case'chart-period':chartPeriod=btn.dataset.period;render();requestChart();break;case'chart-symbol':chartCode=btn.dataset.code;render();requestChart();break;case'chart-refresh':requestChart(true);break;case'quotes-refresh':refreshQuotes();break;case'refresh-bot':refreshBot(true);break;case'open-trade':openTrade(btn.dataset.code);break;case'open-quote':openQuote(btn.dataset.code);break;case'import':$('#import-file').click();break;case'settings-reset-prefs':{const v=resetPrefs();if(!v){toast('存储不可用');break;}uiPrefs=v;applyUiPrefs();render();toast('已恢复默认界面设置');break;}
+case'rank-refresh':refreshRankings(true);break;case'chart-period':chartPeriod=btn.dataset.period;render();requestChart();break;case'chart-symbol':chartCode=btn.dataset.code;render();requestChart();break;case'chart-refresh':requestChart(true);break;case'quotes-refresh':refreshQuotes();break;case'refresh-bot':refreshBot(true);break;case'open-trade':openTrade(btn.dataset.code);break;case'open-quote':openQuote(btn.dataset.code);break;case'import':$('#import-file').click();break;case'export':exportFile();break;
+case'settings-reset-prefs':{const v=resetPrefs();if(!v){toast('存储不可用');break;}uiPrefs=v;applyUiPrefs();render();toast('已恢复默认界面设置');break;}
 case'settings-clear-recent':if(confirm('清除本浏览器行情中心最近访问记录？')){localStorage.removeItem('stock-market-terminal-recent-v1');toast('最近访问已清除，刷新页面生效');}break;
 case'settings-clear-follows':if(confirm('清空本浏览器行情中心的关注列表？')){localStorage.setItem('stock-market-terminal-follows-v1','[]');toast('关注列表已清空，刷新页面生效');}break;
 case'reset':if(confirm('恢复到11月19日的7笔初始模拟成交？当前所有手动交易和信号修改将被清除。'))transaction(next=>{Object.assign(next,initialState());return {message:'已恢复初始模拟账户'};});break;}});
@@ -262,13 +267,15 @@ case'reset':if(confirm('恢复到11月19日的7笔初始模拟成交？当前所
   const saved=savePrefs(next);
   if(!saved){toast('浏览器存储不可用，设置未保存');render();return;}
   uiPrefs=saved;applyUiPrefs();render();
+  if(uiPrefs.autoQuotes)refreshQuotes();
+  if(uiPrefs.autoBotRefresh&&['models','trades','settings'].includes(page))refreshBot();
   toast('设置已保存');
   return;
  }
 const sel=evt.target;if(sel.dataset.action==='chart-select'){chartCode=sel.value;render();requestChart();return;}if(sel.dataset.action==='signal'){transaction(next=>{const code=sel.dataset.code,id=sel.dataset.model,index=Number(sel.dataset.index);if(!next.signals[code])next.signals[code]={};if(!next.signals[code][id])next.signals[code][id]=MODEL_DEFINITIONS.find(m=>m.id===id).checks.map(()=>0);next.signals[code][id][index]=Number(sel.value);return {message:'模型证据状态已更新'};});}});
- refreshQuotes();
+ if(uiPrefs.autoQuotes)refreshQuotes();
  planPoll();
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshQuotes();});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&uiPrefs.autoQuotes)refreshQuotes();});
 }
 async function refreshQuotes(){
  if(polling||document.hidden)return;
