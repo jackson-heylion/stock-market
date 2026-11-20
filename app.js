@@ -3,6 +3,7 @@ import {STORAGE_KEY, initialState, cloneState, portfolio, positions, executeTrad
 import {getQuotes,getHistory,quoteState,session,POLL_MS} from './market.js';
 import {chartSvg} from './charts.js';
 import {initTheme} from './theme.js';
+import {renderRadar,refreshRadar,handleRadarClick} from './radar-view.js';
 import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal} from './market-terminal.js';
 import {INDEXES,SCOPES,RANK_MODES,getMarketIndices,getRankings,getSectors,getMarketBreadth,getIndexHistory} from './market-center.js';
 let state;let page='overview';let liveQuotes={};let quoteError='';let quotePath='历史快照';
@@ -33,12 +34,12 @@ function toast(message){const el=$('#toast');el.textContent=message;el.classList
 function load(){try{const v=JSON.parse(localStorage.getItem(STORAGE_KEY));if(v&&validateState(v))return v;}catch{}return initialState();}
 function persist(next){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(next));return true;}catch{return false;}}
 function transaction(updater){const next=cloneState(state);const result=updater(next);if(result?.ok===false){toast(result.error);return false;}if(!validateState(next)){toast('账本校验失败，未保存');return false;}if(!persist(next)){toast('浏览器存储不可用，修改已撤回');return false;}state=next;render();toast(result?.message||'已保存到本地浏览器');return true;}
-const titleMap={overview:'资产总览',watchlist:'观察列表',models:'策略模型',trades:'成交流水',charts:'行情图表',market:'大盘市场',quotes:'行情中心'};
+const titleMap={overview:'资产总览',watchlist:'观察列表',models:'策略模型',trades:'成交流水',charts:'行情图表',market:'大盘市场',quotes:'行情中心',radar:'市场雷达'};
 function render(){
  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
  $('#page-heading').textContent=titleMap[page];
  $('#main').classList.toggle('market-terminal-main',page==='quotes');
- $('#main').innerHTML=({overview:renderOverview,watchlist:renderWatchlist,models:renderModels,trades:renderTrades,charts:renderCharts,market:renderMarketDashboard,quotes:renderMarketTerminal}[page])();
+ $('#main').innerHTML=({overview:renderOverview,watchlist:renderWatchlist,models:renderModels,trades:renderTrades,charts:renderCharts,market:renderMarketDashboard,quotes:renderMarketTerminal,radar:renderRadar}[page])();
  const status=$('#market-status');if(status){
  const count=Object.values(liveQuotes).filter(q=>quoteState(q).fresh).length;
  status.textContent=(count?'行情接入 '+count+'只 · ':'')+quotePath+(quoteError?' · 部分源异常':'');
@@ -67,7 +68,21 @@ function openQuote(code){const sel=$('#quote-code');sel.innerHTML=SECURITIES.fil
 function exportFile(){const raw=JSON.stringify({exportedAt:new Date().toISOString(),kind:'stock-market-paper-v1',state},null,2);const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='stock-market-paper-'+shDate()+'.json';a.click();URL.revokeObjectURL(url);toast('账本已导出（仅本地文件）');}
 async function importFile(file){if(!file)return;try{if(file.size>3_000_000)throw Error('文件过大');const data=JSON.parse(await file.text());if(data.kind!=='stock-market-paper-v1'||!validateState(data.state))throw Error('账本不合法或版本不兼容');if(!confirm('导入将覆盖当前浏览器账本，是否继续？'))return;if(!persist(data.state))throw Error('本地存储不可用');state=data.state;render();toast('已导入模拟账本');}catch(err){toast('导入失败：'+err.message);}$('#import-file').value='';}
 function bootstrap(){initTheme();state=load();render();try{if(!localStorage.getItem(STORAGE_KEY))persist(state);}catch{toast('当前浏览器禁止持久化存储，修改可能丢失');}
- document.addEventListener('click',evt=>{const btn=evt.target.closest('button');if(!btn)return;if(btn.dataset.page){page=btn.dataset.page;render();if(page==='charts')requestChart();if(page==='market'){refreshMarket();requestIndexChart();}if(page==='quotes')refreshTerminal(false,()=>{if(page==='quotes')render();});window.scrollTo(0,0);return;}if(btn.dataset.close){$('#'+btn.dataset.close).close();return;}
+ document.addEventListener('click',evt=>{const btn=evt.target.closest('button');if(!btn)return;if(btn.dataset.page){page=btn.dataset.page;render();if(page==='charts')requestChart();if(page==='market'){refreshMarket();requestIndexChart();}if(page==='quotes')refreshTerminal(false,()=>{if(page==='quotes')render();});if(page==='radar')refreshRadar({onUpdate:()=>{if(page==='radar')render();}});window.scrollTo(0,0);return;}if(btn.dataset.close){$('#'+btn.dataset.close).close();return;}
+ if(btn.dataset.action?.startsWith('radar-')){
+  handleRadarClick(btn,{
+    onUpdate:()=>{if(page==='radar')render();},
+    openStock:(code,name)=>{
+      externalStockLookup.set(code,{code,name,price:null});
+      chartCode=code;chartPeriod='minute';page='charts';render();requestChart();window.scrollTo(0,0);
+    },
+    openSector:(code,name)=>{
+      page='quotes';render();
+      handleTerminalClick({dataset:{action:'mt-sector',code,name}},{rerender:()=>{if(page==='quotes')render();}});
+      window.scrollTo(0,0);
+    }
+  });return;
+ }
  if(btn.dataset.action?.startsWith('mt-')){
   handleTerminalClick(btn,{
    rerender:()=>{if(page==='quotes')render();},
@@ -119,6 +134,7 @@ function planPoll(){
  if(!document.hidden){refreshQuotes();
   if(page==='market'&&Date.now()-marketBoard.updatedAt>35000)refreshMarket();
   if(page==='quotes')refreshTerminal(false,()=>{if(page==='quotes')render();});
+  if(page==='radar')refreshRadar({onUpdate:()=>{if(page==='radar')render();}});
  }planPoll();},delay);
 }
 function renderCharts(){
@@ -182,7 +198,7 @@ function renderMarketDashboard(){
   '<p class="smallnote">上涨、下跌家数暂缺可核验的全市场数据，已隐藏，不使用榜单样本推算。</p>';
  const industries=b.sectors.slice(0,12).map((x,i)=>`<div class="sector-row"><span class="sector-num">${i+1}</span><span class="sector-name">${e(x.name)}</span><strong class="${cls(x.pct)}">${signed(x.pct)}</strong><small>${amountShort(x.turnover)}</small></div>`).join('')||'<div class="chart-empty">板块数据暂不可用</div>';
  const leaders=b.leaders.slice(0,10).map((x,i)=>`<tr><td>${i+1}</td><td><button class="rank-stock" data-action="open-external-chart" data-code="${x.code}">${e(x.name)}<small>${e(x.code)}</small></button></td><td class="${cls(x.pct)}">${signed(x.pct)}</td><td>${amountShort(x.turnover)}</td></tr>`).join('')||'<tr><td colspan="4">涨幅榜暂不可用</td></tr>';
- return heading('MARKET / OVERVIEW','大盘市场','主要指数、行业热度与市场资金方向。数据来自匿名公开接口，行情可能延时。','<button class="btn primary" data-action="index-refresh">刷新市场</button><button class="btn subtle" data-page="quotes">进入行情中心 ↗</button>')+
+ return heading('MARKET / OVERVIEW','大盘市场','主要指数、行业热度与市场资金方向。数据来自匿名公开接口，行情可能延时。','<button class="btn primary" data-action="index-refresh">刷新市场</button><button class="btn subtle" data-page="quotes">进入行情中心 ↗</button><button class="btn subtle" data-page="radar">市场雷达 ↗</button>')+
  `<div class="market-context">${e(sub)}${b.loading?' · 正在更新':''}${b.errors.length?' · 部分数据源失败':''}</div>
  <div class="index-grid">${indexCards}</div>
  <div class="market-grid">
