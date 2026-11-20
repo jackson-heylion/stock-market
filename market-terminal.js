@@ -154,7 +154,7 @@ export function renderMarketTerminal(){
       <button data-action="mt-page" data-value="next" ${(maxPage!==null&&mt.page>=maxPage)?'disabled':''}>下一页</button>
     </div>
    </div>
-   <div class="mt-note">单位：成交量按股显示（行情源为手，每手100股），成交额/市值按元换算；涨速使用东财f22原生指标；年初至今、PE(TTM)、市净率缺失时显示“--”。排序由数据源服务端完成，搜索仅筛选当前已加载页。股票数据仅供研究，关注列表不会产生模拟买入订单。</div>
+   <div class="mt-note">成交量按股显示（每手100股），成交额与市值按元换算；排序由服务端完成，搜索筛选当前页。</div>
   </div>
  </div>`;
 }

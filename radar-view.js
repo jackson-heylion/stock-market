@@ -103,34 +103,34 @@ export function renderRadar(){
   <div><span>异动记录</span><strong>${changes.length||'--'}</strong><small>接口最近一页 · 非全日合计</small></div>
  </div>`;
  return `<div class="radar-root">
-  <div class="hero"><div><div class="eyebrow">MARKET / SIGNAL RADAR</div><h1>市场雷达</h1>
-    <p class="subheading">板块热度、财经快讯词频、盘口异动，均来自可核验的公开接口。自动定时刷新，停盘后显示最后一次有效数据。</p></div>
+  <div class="hero"><div><div class="eyebrow">RADAR</div><h1>市场雷达</h1>
+    <p class="subheading">实时行业板块热度、财经快讯高频词与盘口异动监控</p></div>
     <div class="action-row"><button class="btn primary" data-action="radar-refresh" data-source="all">刷新所有数据</button><button class="btn subtle" data-page="quotes">行情中心 ↗</button></div>
   </div>
   ${stats}
   <section class="panel radar-panel">
-   <div class="panel-head"><div><h2>行业板块热度图</h2><p>热图重点展示成交额前16个板块，颜色代表涨跌，面积代表成交额。其余板块在下方完整榜单中查看，不再挤进狭小格子。</p></div>
+   <div class="panel-head"><div><h2>行业板块热度图</h2><p>按成交额与涨跌幅呈现行业热度</p></div>
    <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('sectors')}</span>${press('sectors','刷新板块')}</div></div>
-   <div class="radar-legend"><span class="radar-legend-up">上涨板块 ${positive}</span><span class="radar-legend-down">下跌板块 ${negative}</span><span>东方财富行业板块 · 热图前16 · 完整榜单前36，图中重点展示前16</span></div>
+   <div class="radar-legend"><span class="radar-legend-up">上涨板块 ${positive}</span><span class="radar-legend-down">下跌板块 ${negative}</span><span>东方财富行业板块 · 成交额排序</span></div>
    ${heatmapHtml(sectors)}
   </section>
   <div class="radar-columns">
     <section class="panel radar-panel">
-     <div class="panel-head"><div><h2>财经舆情词云</h2><p>最近2小时内的真实7×24快讯标题提及次数，不代表社交平台热度或看多看空评分。</p></div>
+     <div class="panel-head"><div><h2>财经舆情词云</h2><p>近2小时快讯高频词</p></div>
      <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('news')}</span>${press('news','刷新快讯')}</div></div>
      ${wordCloudHtml(news)}
      <div class="radar-news-head"><strong>最新财经快讯</strong><div>${selWord?`<button class="btn mini subtle" data-action="radar-clear-word">清除“${h(selWord)}”筛选</button>`:''}<a href="https://kuaixun.eastmoney.com/" target="_blank" rel="noopener noreferrer">查看来源 ↗</a></div></div>
      ${newsListHtml(news)}
     </section>
     <section class="panel radar-panel">
-     <div class="panel-head"><div><h2>实时盘口异动</h2><p>火箭发射、快速反弹、封板、大单、跳水等源端事件。展示原始触发时间，并非交易所逐笔推送。</p></div>
+     <div class="panel-head"><div><h2>实时盘口异动</h2><p>盘口大单、拉升与跳水事件监控</p></div>
       <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('changes')}</span>${press('changes','刷新异动')}</div></div>
       <div class="radar-filters">${[['all','全部'],['up','上涨类'],['down','下跌类'],['flow','大单类']].map(([id,label])=>`<button class="${radarState.filter===id?'active':''}" data-action="radar-filter" data-value="${id}">${label}</button>`).join('')}</div>
       ${anomaliesHtml()}
-      <p class="radar-caveat">接口只返回最近一页异动，且时间仅为 HH:mm:ss；休市时可能继续显示当日最后事件，未提供的日期不作推断。<a href="https://quote.eastmoney.com/changes/" target="_blank" rel="noopener noreferrer">异动数据来源 ↗</a></p>
+      <p class="radar-caveat">接口返回最新分笔异动，休市展示当日最后事件。<a href="https://quote.eastmoney.com/changes/" target="_blank" rel="noopener noreferrer">异动来源 ↗</a></p>
     </section>
   </div>
-  <div class="radar-footer">行情热度 ≠ 投资建议。词云只统计标题而非社交媒体情绪；公开接口无时效性保证，失败时保留上次成功数据并明确标注异常。</div>
+  <div class="radar-footer">数据来自公开快照，服务异常时保留上一有效记录并标注来源状态。</div>
  </div>`;
 }
 
