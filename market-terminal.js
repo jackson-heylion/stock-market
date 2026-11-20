@@ -70,7 +70,7 @@ export function renderTerminalRows(){
  const rows=terminalRowList();
  if(!rows.length){
   const msg=mt.loading?'正在加载行情':'没有匹配的行情记录';
-  return '<tr><td class="mt-empty" colspan="13">'+terminalEsc(msg)+'</td></tr>';
+  return '<tr><td class="mt-empty" colspan="14">'+terminalEsc(msg)+'</td></tr>';
  }
  const followed=terminalFollowed();
  return rows.map((x,i)=>{
@@ -82,6 +82,7 @@ export function renderTerminalRows(){
    <td class="${terminalColor(x.pct)} mt-number">${terminalFmt(x.price)}</td>
    <td class="${terminalColor(x.change)} mt-number">${terminalSigned(x.change)}</td>
    <td class="${terminalColor(x.pct)} mt-number">${terminalPercent(x.pct)}</td>
+   <td class="${terminalColor(x.speed)} mt-number">${terminalPercent(x.speed)}</td>
    <td class="${terminalColor(x.ytdPct)} mt-number">${terminalPercent(x.ytdPct)}</td>
    <td class="mt-number">${terminalUnit(x.volume===null?null:x.volume*100)}</td>
    <td class="mt-number">${terminalMoney(x.turnover)}</td>
@@ -97,7 +98,7 @@ export function renderTerminalRows(){
 export function renderMarketTerminal(){
  const followed=terminalFollowed(),recent=terminalRecent();
  const header=[
-  ['code','股票代码'],['name','股票名称'],['price','当前价'],['change','涨跌额'],['pct','涨跌幅'],
+  ['code','股票代码'],['name','股票名称'],['price','当前价'],['change','涨跌额'],['pct','涨跌幅'],['speed','涨速'],
   ['ytdPct','年初至今'],['volume','成交量'],['turnover','成交额'],['turnoverRate','换手率'],
   ['peTtm','市盈率(TTM)'],['pb','市净率'],['marketCap','市值']
  ];
@@ -107,7 +108,7 @@ export function renderMarketTerminal(){
   ['main','沪深主板'],['gem','创业板'],['star','科创板']
  ];
  const rankItems=[
-  ['pct','涨幅排行'],['change','涨跌额排行'],['turnover','成交额排行'],
+  ['pct','涨幅排行'],['speed','涨速排行'],['change','涨跌额排行'],['turnover','成交额排行'],
   ['volume','成交量排行'],['turnoverRate','换手率排行'],['ytdPct','年初至今排行'],['marketCap','市值排行']
  ];
  const menus=(items,type)=>items.map(([id,label])=>`<button class="mt-side-item ${type==='scope'&&mt.view==='rank'&&mt.scope===id?'selected':''}${type==='sort'&&mt.view==='rank'&&mt.sortKey===id?' selected':''}" data-action="${type==='scope'?'mt-scope':'mt-sort-menu'}" data-value="${terminalEsc(id)}">${terminalEsc(label)}</button>`).join('');
@@ -152,7 +153,7 @@ export function renderMarketTerminal(){
       <button data-action="mt-page" data-value="next" ${(maxPage!==null&&mt.page>=maxPage)?'disabled':''}>下一页</button>
     </div>
    </div>
-   <div class="mt-note">单位：成交量按股显示（行情源为手，每手100股），成交额/市值按元换算；年初至今、PE(TTM)、市净率缺失时显示“--”。排序由数据源服务端完成，搜索仅筛选当前已加载页。股票数据仅供研究，关注列表不会产生模拟买入订单。</div>
+   <div class="mt-note">单位：成交量按股显示（行情源为手，每手100股），成交额/市值按元换算；涨速使用东财f22原生指标；年初至今、PE(TTM)、市净率缺失时显示“--”。排序由数据源服务端完成，搜索仅筛选当前已加载页。股票数据仅供研究，关注列表不会产生模拟买入订单。</div>
   </div>
  </div>`;
 }
