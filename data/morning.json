@@ -1,13 +1,194 @@
 {
   "schema": 1,
   "modelId": "M5",
-  "date": null,
-  "cutoff": null,
-  "runAt": null,
-  "source": "东方财富分时（待执行）",
-  "scanned": 0,
-  "status": "尚未运行上午11:30专项扫描",
-  "candidates": [],
-  "orders": [],
-  "execution": "仅研究候选与下午拟委托，不会凭信号自动改写模拟成交账本。"
+  "date": "2026-11-20",
+  "cutoff": "2026-11-20 11:30",
+  "runAt": "2026-11-20T05:43:15.209Z",
+  "source": "东方财富行业及分时接口（上午11:30截止）",
+  "universeNote": "候选股票所属板块在实际执行时间发现，可能包含午后筛选偏差；评分用的每只股票行情截断至11:30。板块指数缺失时采用同板块至少2只候选股的11:30平均涨幅代理，不能等同整个行业强度。",
+  "volumeNote": "上午成交量与近5个完整交易日均量的50%比较，是粗略近似，不是严格的同一时段同比。",
+  "maNote": "MA20用19个已收盘交易日+上午11:30价格暂算，不使用下午收盘价。",
+  "accountInitialCash": 1000000,
+  "scanned": 7,
+  "candidates": [
+    {
+      "code": "603466",
+      "name": "风语筑",
+      "sector": "其他数字媒体",
+      "sectorCode": "BK1295",
+      "sectorMorningPct": 15,
+      "sectorEvidence": "同板块2只候选股的11:30平均涨幅（非板块指数）",
+      "sectorSampleSize": 2,
+      "prevClose": 13,
+      "morningTime": "2026-11-20 11:30",
+      "score": 3,
+      "passed": true,
+      "price": 14.3,
+      "pct": 10,
+      "provisionalMA20": 14.22,
+      "halfDayVolume": 813791,
+      "halfDayVolumeRatio": 1.87,
+      "reasons": [
+        "同板块2只候选股的11:30平均涨幅（非板块指数）上涨 15.00%",
+        "上午成交量/近5日全天均量一半 = 1.87倍",
+        "11:30价格高于暂算MA20"
+      ]
+    },
+    {
+      "code": "600467",
+      "name": "好当家",
+      "sector": "水产养殖",
+      "sectorCode": "BK1514",
+      "sectorMorningPct": 3.08,
+      "sectorEvidence": "同板块4只候选股的11:30平均涨幅（非板块指数）",
+      "sectorSampleSize": 4,
+      "prevClose": 2.6,
+      "morningTime": "2026-11-20 11:30",
+      "score": 3,
+      "passed": true,
+      "price": 2.86,
+      "pct": 10,
+      "provisionalMA20": 2.37,
+      "halfDayVolume": 2415196,
+      "halfDayVolumeRatio": 1.66,
+      "reasons": [
+        "同板块4只候选股的11:30平均涨幅（非板块指数）上涨 3.08%",
+        "上午成交量/近5日全天均量一半 = 1.66倍",
+        "11:30价格高于暂算MA20"
+      ]
+    },
+    {
+      "code": "301313",
+      "name": "凡拓数创",
+      "sector": "其他数字媒体",
+      "sectorCode": "BK1295",
+      "sectorMorningPct": 15,
+      "sectorEvidence": "同板块2只候选股的11:30平均涨幅（非板块指数）",
+      "sectorSampleSize": 2,
+      "prevClose": 49.3,
+      "morningTime": "2026-11-20 11:30",
+      "score": 2,
+      "passed": false,
+      "price": 59.16,
+      "pct": 20,
+      "provisionalMA20": 64.2,
+      "halfDayVolume": 259201,
+      "halfDayVolumeRatio": 2.26,
+      "reasons": [
+        "同板块2只候选股的11:30平均涨幅（非板块指数）上涨 15.00%",
+        "上午成交量/近5日全天均量一半 = 2.26倍",
+        "11:30价格未站上暂算MA20"
+      ]
+    },
+    {
+      "code": "600257",
+      "name": "大湖股份",
+      "sector": "水产养殖",
+      "sectorCode": "BK1514",
+      "sectorMorningPct": 3.08,
+      "sectorEvidence": "同板块4只候选股的11:30平均涨幅（非板块指数）",
+      "sectorSampleSize": 4,
+      "prevClose": 4.47,
+      "morningTime": "2026-11-20 11:30",
+      "score": 2,
+      "passed": false,
+      "price": 4.45,
+      "pct": -0.45,
+      "provisionalMA20": 4.76,
+      "halfDayVolume": 96555,
+      "halfDayVolumeRatio": 1.65,
+      "reasons": [
+        "同板块4只候选股的11:30平均涨幅（非板块指数）上涨 3.08%",
+        "上午成交量/近5日全天均量一半 = 1.65倍",
+        "11:30价格未站上暂算MA20"
+      ]
+    },
+    {
+      "code": "300413",
+      "name": "芒果超媒",
+      "sector": "视频媒体",
+      "sectorCode": "BK1296",
+      "sectorMorningPct": null,
+      "sectorEvidence": "板块数据不完整",
+      "sectorSampleSize": 0,
+      "prevClose": 26.31,
+      "morningTime": "2026-11-20 11:30",
+      "score": 1,
+      "passed": false,
+      "price": 28.2,
+      "pct": 7.18,
+      "provisionalMA20": 29.27,
+      "halfDayVolume": 981391,
+      "halfDayVolumeRatio": 1.64,
+      "reasons": [
+        "板块上午涨幅未达标或无可靠数据",
+        "上午成交量/近5日全天均量一半 = 1.64倍",
+        "11:30价格未站上暂算MA20"
+      ]
+    },
+    {
+      "code": "300094",
+      "name": "国联水产",
+      "sector": "水产养殖",
+      "sectorCode": "BK1514",
+      "sectorMorningPct": 3.08,
+      "sectorEvidence": "同板块4只候选股的11:30平均涨幅（非板块指数）",
+      "sectorSampleSize": 4,
+      "prevClose": 2.68,
+      "morningTime": "2026-11-20 11:30",
+      "score": 1,
+      "passed": false,
+      "price": 2.72,
+      "pct": 1.49,
+      "provisionalMA20": 2.81,
+      "halfDayVolume": 323210,
+      "halfDayVolumeRatio": 1.4,
+      "reasons": [
+        "同板块4只候选股的11:30平均涨幅（非板块指数）上涨 3.08%",
+        "上午相对成交量不足或不可核验",
+        "11:30价格未站上暂算MA20"
+      ]
+    },
+    {
+      "code": "002069",
+      "name": "獐子岛",
+      "sector": "水产养殖",
+      "sectorCode": "BK1514",
+      "sectorMorningPct": 3.08,
+      "sectorEvidence": "同板块4只候选股的11:30平均涨幅（非板块指数）",
+      "sectorSampleSize": 4,
+      "prevClose": 3.13,
+      "morningTime": "2026-11-20 11:30",
+      "score": 1,
+      "passed": false,
+      "price": 3.17,
+      "pct": 1.28,
+      "provisionalMA20": 3.32,
+      "halfDayVolume": 107767,
+      "halfDayVolumeRatio": 1.3,
+      "reasons": [
+        "同板块4只候选股的11:30平均涨幅（非板块指数）上涨 3.08%",
+        "上午相对成交量不足或不可核验",
+        "11:30价格未站上暂算MA20"
+      ]
+    }
+  ],
+  "orders": [
+    {
+      "code": "603466",
+      "name": "风语筑",
+      "side": "BUY",
+      "status": "阻断",
+      "reason": "11:30价格接近涨停/缺少昨收，不能假设可买"
+    },
+    {
+      "code": "600467",
+      "name": "好当家",
+      "side": "BUY",
+      "status": "阻断",
+      "reason": "11:30价格接近涨停/缺少昨收，不能假设可买"
+    }
+  ],
+  "status": "暂无合格可执行拟单",
+  "execution": "不自动模拟成交：这次任务只生成下午选股与拟单；下午执行需重新核验价格，不能提前记账。"
 }
