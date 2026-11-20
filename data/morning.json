@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "modelId": "M5",
+  "date": null,
+  "cutoff": null,
+  "runAt": null,
+  "source": "东方财富分时（待执行）",
+  "scanned": 0,
+  "status": "尚未运行上午11:30专项扫描",
+  "candidates": [],
+  "orders": [],
+  "execution": "仅研究候选与下午拟委托，不会凭信号自动改写模拟成交账本。"
+}
