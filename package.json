@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.js",
-    "check": "node --check app.js && node --check engine.js && node --check seed.js && node --check market.js && node --check charts.js && node --check server/quote-proxy.mjs && node --check market-center.js && node --check market-terminal.js && node --check theme.js"
+    "check": "node --check app.js && node --check engine.js && node --check seed.js && node --check market.js && node --check charts.js && node --check server/quote-proxy.mjs && node --check market-center.js && node --check market-terminal.js && node --check theme.js && node --check market-radar.js && node --check radar-view.js"
   }
 }
