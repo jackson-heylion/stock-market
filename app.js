@@ -6,7 +6,7 @@ import {initTheme} from './theme.js';
 import {renderRadar,refreshRadar,handleRadarClick} from './radar-view.js';
 import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal} from './market-terminal.js';
 import {INDEXES,SCOPES,RANK_MODES,getMarketIndices,getRankings,getSectors,getMarketBreadth,getIndexHistory} from './market-center.js';
-let state;let page='overview';let liveQuotes={};let quoteError='';let quotePath='历史快照';
+let state;let page='overview';let botAccount=null;let botError='';let botLoadedAt=0;let botLoading=false;let liveQuotes={};let quoteError='';let quotePath='历史快照';
 let chartCode='601133',chartPeriod='minute';const chartCache=new Map();const chartPending=new Set();let polling=false;
 let indexKey='sh000001',indexPeriod='minute';let rankFetchSeq=0;const pendingIndexCharts=new Set();
 const indexChartCache=new Map(),externalStockLookup=new Map();
@@ -57,18 +57,85 @@ return `${heading('PAPER TRADING / OVERVIEW','市场观察，先从模拟开始�
 <section class="panel"><div class="panel-head"><div><h2>当前资产配置</h2><p>按当前可用报价估值；不是历史收益曲线</p></div></div>${allocation()}<hr class="divider"><div class="panel-head"><div><h2>模型工作流</h2><p>五套可复核的信号清单</p></div></div>${MODEL_DEFINITIONS.map(m=>`<div class="model-applied"><span class="tag">${m.id}</span><label>${m.type}</label><button class="section-action" data-page="models">查看 ↗</button></div>`).join('')}</section></div>`;}
 function renderWatchlist(){const p=portfolio(displayState());return `${heading('RESEARCH / WATCHLIST','观察列表','8只候选股 · 盘中行情自动请求 · 报价显示数据源和时间 · 停牌股票不自动成交。','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-action="open-quote">手动更新价格</button>')}
 <section class="panel"><div class="panel-head"><div><h2>行情观察板</h2><p>所有来源可点击核验 · 不是自动选股结果</p></div><span class="count">${SECURITIES.length} / ${SECURITIES.length}</span></div><div class="watchcards">${SECURITIES.map(s=>{const q=displayState().prices[s.code],h=p.holds.find(x=>x.code===s.code),v=q?.price;return `<article class="watchcard"><div style="display:flex;justify-content:space-between;gap:12px"><div><h3>${e(s.name)}</h3><span class="code">${e(s.code)} · ${e(s.market)}</span></div><span class="tag ${s.halted?'warn':'success'}">${s.halted?'种子停牌':'行情观察'}</span></div><div class="watchcard-price">${s.halted?'—':money(v)}</div><div class="${cls(s.pct)}" style="font-size:12px;font-weight:700">${s.halted?'11月19日无成交':priceInfo(s.code)?.pct!=null?signed(priceInfo(s.code).pct)+' · 对前收':signed(s.pct)+' · 11/19 涨跌'}</div><p>${e(s.note)}</p><div>${s.models.map(m=>`<span class="tag">${m}</span>`).join('')}${s.tags.map(t=>`<span class="tag">${e(t)}</span>`).join('')}</div><div class="signal-summary">${s.halted?`停牌前参考价 ${money(s.referencePrice)}（${s.referenceDate}，仅参考）`:h?`持仓 ${num(h.quantity)} 股 · 浮盈亏 ${money(h.unrealized)} · ${e(latestLabel(s.code))}`:'未持仓'}</div><div style="display:flex;gap:8px;margin-top:16px;align-items:center"><button class="btn mini" data-action="open-charts" data-code="${s.code}">分时 / K线</button><button class="btn mini" data-action="open-trade" data-code="${s.code}" ${s.halted?'disabled':''}>模拟交易</button><button class="btn mini subtle" data-action="open-quote" data-code="${s.code}" ${s.halted?'disabled':''}>更新参考价</button><a class="source-link" href="${e(s.source)}" target="_blank" rel="noopener noreferrer">数据来源 ↗</a></div></article>`;}).join('')}</div></section>`;}
+
+async function refreshBot(force=false){
+ if(botLoading||!force&&Date.now()-botLoadedAt<60000)return;
+ botLoading=true;
+ try{
+  const r=await fetch('./data/bot.json?v='+Math.floor(Date.now()/60000),{cache:'no-store'});
+  if(!r.ok)throw Error('GitHub Pages HTTP '+r.status);
+  const data=await r.json();
+  if(data?.schema!==1||!Array.isArray(data.trades)||!Array.isArray(data.signals)||
+     !Array.isArray(data.pending)||!Array.isArray(data.history)||!data.models?.M5)throw Error('机器人账本格式不匹配');
+  botAccount=data;botError='';botLoadedAt=Date.now();
+ }catch(err){botError=String(err.message||err);botLoadedAt=Date.now();}
+ finally{botLoading=false;if(page==='models'||page==='trades')render();}
+}
+function botHeader(){
+ return '<div class="panel-head"><div><h2>自动模拟盘 · M5</h2><p>GitHub Actions盘后运行，模型信号下一交易日才允许尝试模拟成交；与本地手动账户隔离</p></div><button class="btn mini subtle" data-action="refresh-bot">刷新机器人结果</button></div>';
+}
+function renderBotModel(){
+ if(!botAccount)return '<section class="panel bot-panel">'+botHeader()+
+  '<div class="hint">'+e(botError||'正在获取仓库的自动模拟账本…')+'</div></section>';
+ const b=botAccount,cfg=b.models.M5,signals=b.signals||[],
+  equity=b.history?.at(-1)?.total??b.initialCash,profit=equity-b.initialCash;
+ const passed=signals.filter(x=>x.passed);
+ return `<section class="panel bot-panel">${botHeader()}
+  ${botError?'<div class="hint">最近获取失败，展示之前成功的数据：'+e(botError)+'</div>':''}
+  <div class="bot-summary">
+   <div><small>最近交易日</small><strong>${e(b.lastDate||'尚未执行')}</strong></div>
+   <div><small>自动账户估值</small><strong>${money(equity)}</strong></div>
+   <div><small>累计模拟盈亏</small><strong class="${cls(profit)}">${money(profit)}</strong></div>
+   <div><small>本期重点候选</small><strong>${passed.length}只</strong></div>
+  </div>
+  <p class="bot-method"><strong>M5规则：</strong>板块上涨 + 放量至少${num(cfg.volumeMultiplier)}倍 + 收盘站上MA20。最多持有${cfg.maxPositions}只；单只预算不超过本金${Math.round(cfg.positionFraction*100)}%。M1～M4等待可靠证据，未自动交易。</p>
+  <div class="table-wrap"><table class="data-table bot-table"><thead><tr><th>代码 / 名称</th><th>板块</th><th>分数</th><th>成交量 / 近5日均量</th><th>当日收盘</th><th>判断</th></tr></thead>
+  <tbody>${signals.slice(0,15).map(x=>`<tr><td class="name">${e(x.name)}<small>${e(x.code)}</small></td><td>${e(x.sector||'--')}</td>
+    <td><span class="tag ${x.passed?'success':''}">${x.score}/3</span></td>
+    <td>${x.volumeRatio===null?'--':num(x.volumeRatio)+'倍'}</td><td>${x.close===null?'--':money(x.close)}</td>
+    <td>${e((x.reasons||[]).join('；'))}</td></tr>`).join('')||'<tr><td colspan="6">尚无有效的自动选股结果，等待交易日收盘后更新。</td></tr>'}
+  </tbody></table></div>
+  <div class="hint">待下一交易日尝试的模拟订单：${b.pending.length}笔。信号不是成交，不保证涨停可买、跌停可卖；行情来自第三方公开日K。</div>
+ </section>`;
+}
+function renderBotTrades(){
+ if(!botAccount)return '<section class="panel bot-panel">'+botHeader()+
+  '<div class="hint">'+e(botError||'加载自动模拟账户中…')+'</div></section>';
+ const b=botAccount,history=b.history||[],last=history.at(-1),trades=b.trades||[];
+ const realized=trades.filter(t=>t.side==='SELL'),wins=realized.filter(t=>t.pnl>0);
+ const rate=realized.length?Math.round(wins.length/realized.length*100)+'%':'暂无';
+ return `<section class="panel bot-panel">${botHeader()}
+  <div class="bot-summary">
+   <div><small>可用现金</small><strong>${money(b.cash)}</strong></div>
+   <div><small>盘后资产</small><strong>${money(last?.total??b.initialCash)}</strong></div>
+   <div><small>已成交</small><strong>${trades.length}笔</strong></div>
+   <div><small>已平仓交易胜率</small><strong>${rate}</strong></div>
+  </div>
+  <div class="table-wrap"><table class="data-table bot-table">
+   <thead><tr><th>信号日 / 成交日</th><th>股票</th><th>方向</th><th>数量</th><th>假设成交价</th><th>费用</th><th>盈亏（卖出）</th></tr></thead>
+   <tbody>${[...trades].reverse().slice(0,35).map(t=>`<tr><td>${e(t.signalDate)}<small>${e(t.date)}</small></td>
+      <td class="name">${e(t.name)}<small>${e(t.code)}</small></td>
+      <td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td>
+      <td>${num(t.quantity)}</td><td>${money(t.price)}</td><td>${money(t.fee)}</td>
+      <td class="${cls(t.pnl??0)}">${t.pnl==null?'--':money(t.pnl)}</td></tr>`).join('')||'<tr><td colspan="7">尚无自动模拟成交。第一次扫描只产生下一交易日的候选订单。</td></tr>'}
+   </tbody></table></div>
+  <p class="bot-method">历史模拟订单根据下一交易日的有效收盘价估算，额外计入0.1%滑点；不是真实券商成交。未成交记录：</p>
+  <div class="bot-events">${[...(b.events||[])].reverse().slice(0,8).map(x=>`<span class="tag">${e(x.date)} · ${e(x.code)} · ${e(x.reason)}</span>`).join('')||'<span class="smallnote">暂无未成交记录</span>'}</div>
+ </section>`;
+}
+
 function renderModels(){return `${heading('STRATEGY / LAB','五套牛股启动模型','模型是可维护的规则和证据，不代表已回测的胜率。每项证据可切换「确认 / 待核 / 不符合」。')}
-<div class="account-notes">规则采用可解释的核验清单，而不是用过去上涨的股票事后拟合“成功概率”。当前信号为11月19日公开事件初筛；价格突破、均量等须另行获取日线数据验证。</div>
+${renderBotModel()}<div class="account-notes">规则采用可解释的核验清单，而不是用过去上涨的股票事后拟合“成功概率”。当前信号为11月19日公开事件初筛；价格突破、均量等须另行获取日线数据验证。</div>
 <div class="model-grid">${MODEL_DEFINITIONS.map(m=>{const applied=SECURITIES.filter(s=>s.models.includes(m.id));return `<article class="model-card"><span class="model-no">MODEL / ${m.id}</span><h3>${m.name}</h3><div class="model-type">${m.type}</div><p>${m.description}</p><ul class="checklist">${m.checks.map((check,i)=>`<li><span>${String(i+1).padStart(2,'0')}</span>${check}</li>`).join('')}</ul><div class="risk">风险：${m.risk}</div><div class="model-applications"><div class="panel-head"><div><h2>观察股证据核验</h2><p>修改结果仅保存在当前浏览器</p></div></div>${applied.map(s=>{const info=modelEvidence(state,s.code,m.id);return `<div class="model-applied"><span class="tag">${e(s.name)}</span><small>${info.confirmed}/${info.total} 确认${info.contradicted?' · 存在反证':''}</small>${m.checks.map((c,i)=>`<div class="signal-row"><label title="${e(c)}">${i+1}. ${e(c)}</label><select aria-label="${e(s.name)} ${e(c)}" data-action="signal" data-code="${s.code}" data-model="${m.id}" data-index="${i}"><option value="0" ${info.flags[i]===0?'selected':''}>待核</option><option value="1" ${info.flags[i]===1?'selected':''}>确认</option><option value="-1" ${info.flags[i]===-1?'selected':''}>不符合</option></select></div>`).join('')}</div>`;}).join('')}</div></article>`;}).join('')}</div>`;}
 function renderTrades(){return `${heading('LEDGER / EXECUTIONS','成交记录','虚拟成交明细，可导出审计；不与真实券商、交易所或行情供应商连接。','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-action="import">导入备份</button><button class="btn subtle" data-action="reset">恢复初始盘</button>')}
-<section class="panel"><div class="panel-head"><div><h2>交易流水</h2><p>所有模拟交易按发生顺序保留 · T+1保守校验</p></div><span class="count">${state.trades.length} 笔</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>单号 / 日期</th><th>证券</th><th>方向</th><th>数量</th><th>成交价</th><th>成交金额</th><th>费用</th><th>说明</th></tr></thead><tbody>${[...state.trades].reverse().map(t=>`<tr><td>${e(t.id)}<small>${e(t.date)}</small></td><td class="name">${e(stock(t.code).name)}<small>${e(t.code)}</small></td><td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td><td>${num(t.quantity)}</td><td>¥${t.price.toFixed(2)}</td><td>${money(t.gross)}</td><td>${money(t.fee)}</td><td>${t.seed?'<span class="tag">历史快照初始化</span>':'<span class="tag">手动模拟成交</span>'}</td></tr>`).join('')}</tbody></table></div><div class="hint">模拟费率：佣金万分之2.5（每笔最低5元），过户费十万分之一（买卖双向），卖出印花税万分之五。仅是教学参数，实际各券商和交易规则可能不同。</div></section>`;}
+${renderBotTrades()}<section class="panel"><div class="panel-head"><div><h2>交易流水</h2><p>所有模拟交易按发生顺序保留 · T+1保守校验</p></div><span class="count">${state.trades.length} 笔</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>单号 / 日期</th><th>证券</th><th>方向</th><th>数量</th><th>成交价</th><th>成交金额</th><th>费用</th><th>说明</th></tr></thead><tbody>${[...state.trades].reverse().map(t=>`<tr><td>${e(t.id)}<small>${e(t.date)}</small></td><td class="name">${e(stock(t.code).name)}<small>${e(t.code)}</small></td><td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td><td>${num(t.quantity)}</td><td>¥${t.price.toFixed(2)}</td><td>${money(t.gross)}</td><td>${money(t.fee)}</td><td>${t.seed?'<span class="tag">历史快照初始化</span>':'<span class="tag">手动模拟成交</span>'}</td></tr>`).join('')}</tbody></table></div><div class="hint">模拟费率：佣金万分之2.5（每笔最低5元），过户费十万分之一（买卖双向），卖出印花税万分之五。仅是教学参数，实际各券商和交易规则可能不同。</div></section>`;}
 function openTrade(code){const dialog=$('#trade-dialog'),sel=$('#trade-code');sel.innerHTML=SECURITIES.filter(s=>!s.halted).map(s=>`<option value="${s.code}">${s.name} ${s.code}</option>`).join('');sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;$('#trade-form').reset();sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;const s=stock(sel.value);$('#trade-price').value=priceInfo(s.code)?.price??state.prices[s.code]?.price??s.close;$('#trade-qty').value=budgetQuantity(BUDGET_PER_STOCK,Number($('#trade-price').value));updateOrderPreview();dialog.showModal();}
 function updateOrderPreview(){const p=Number($('#trade-price').value),q=Number($('#trade-qty').value),side=$('input[name="side"]:checked')?.value??'BUY';if(!Number.isFinite(p)||p<=0||!Number.isInteger(q)||q<=0){$('#order-preview').textContent='输入有效价格与股数以预览';return;}const gross=p*q,fee=feeTotal(fees(side,gross));$('#order-preview').textContent=`成交金额 ${money(gross)} · 费用约 ${money(fee)} · ${side==='BUY'?'所需资金':'预计到账'} ${money(side==='BUY'?gross+fee:gross-fee)}`;}
 function openQuote(code){const sel=$('#quote-code');sel.innerHTML=SECURITIES.filter(s=>!s.halted).map(s=>`<option value="${s.code}">${s.name} ${s.code}</option>`).join('');sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;$('#quote-price').value=state.prices[sel.value]?.price;$('#quote-date').value=shDate();$('#quote-dialog').showModal();}
 function exportFile(){const raw=JSON.stringify({exportedAt:new Date().toISOString(),kind:'stock-market-paper-v1',state},null,2);const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='stock-market-paper-'+shDate()+'.json';a.click();URL.revokeObjectURL(url);toast('账本已导出（仅本地文件）');}
 async function importFile(file){if(!file)return;try{if(file.size>3_000_000)throw Error('文件过大');const data=JSON.parse(await file.text());if(data.kind!=='stock-market-paper-v1'||!validateState(data.state))throw Error('账本不合法或版本不兼容');if(!confirm('导入将覆盖当前浏览器账本，是否继续？'))return;if(!persist(data.state))throw Error('本地存储不可用');state=data.state;render();toast('已导入模拟账本');}catch(err){toast('导入失败：'+err.message);}$('#import-file').value='';}
-function bootstrap(){initTheme();state=load();render();try{if(!localStorage.getItem(STORAGE_KEY))persist(state);}catch{toast('当前浏览器禁止持久化存储，修改可能丢失');}
- document.addEventListener('click',evt=>{const btn=evt.target.closest('button');if(!btn)return;if(btn.dataset.page){page=btn.dataset.page;render();if(page==='charts')requestChart();if(page==='market'){refreshMarket();requestIndexChart();}if(page==='quotes')refreshTerminal(false,()=>{if(page==='quotes')render();});if(page==='radar')refreshRadar({onUpdate:()=>{if(page==='radar')render();}});window.scrollTo(0,0);return;}if(btn.dataset.close){$('#'+btn.dataset.close).close();return;}
+function bootstrap(){initTheme();state=load();render();refreshBot(true);try{if(!localStorage.getItem(STORAGE_KEY))persist(state);}catch{toast('当前浏览器禁止持久化存储，修改可能丢失');}
+ document.addEventListener('click',evt=>{const btn=evt.target.closest('button');if(!btn)return;if(btn.dataset.page){page=btn.dataset.page;render();if(page==='charts')requestChart();if(page==='market'){refreshMarket();requestIndexChart();}if(page==='quotes')refreshTerminal(false,()=>{if(page==='quotes')render();});if(page==='models'||page==='trades')refreshBot();if(page==='radar')refreshRadar({onUpdate:()=>{if(page==='radar')render();}});window.scrollTo(0,0);return;}if(btn.dataset.close){$('#'+btn.dataset.close).close();return;}
  if(btn.dataset.action?.startsWith('radar-')){
   handleRadarClick(btn,{
     onUpdate:()=>{if(page==='radar')render();},
@@ -100,7 +167,7 @@ case'index-period':indexPeriod=btn.dataset.period;render();requestIndexChart();b
 case'index-refresh':refreshMarket(true);requestIndexChart(true);break;
 case'rank-mode':ranked.mode=btn.dataset.mode;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
 case'rank-scope':ranked.scope=btn.dataset.scope;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
-case'rank-refresh':refreshRankings(true);break;case'chart-period':chartPeriod=btn.dataset.period;render();requestChart();break;case'chart-symbol':chartCode=btn.dataset.code;render();requestChart();break;case'chart-refresh':requestChart(true);break;case'quotes-refresh':refreshQuotes();break;case'open-trade':openTrade(btn.dataset.code);break;case'open-quote':openQuote(btn.dataset.code);break;case'import':$('#import-file').click();break;case'reset':if(confirm('恢复到11月19日的7笔初始模拟成交？当前所有手动交易和信号修改将被清除。'))transaction(next=>{Object.assign(next,initialState());return {message:'已恢复初始模拟账户'};});break;}});
+case'rank-refresh':refreshRankings(true);break;case'chart-period':chartPeriod=btn.dataset.period;render();requestChart();break;case'chart-symbol':chartCode=btn.dataset.code;render();requestChart();break;case'chart-refresh':requestChart(true);break;case'quotes-refresh':refreshQuotes();break;case'refresh-bot':refreshBot(true);break;case'open-trade':openTrade(btn.dataset.code);break;case'open-quote':openQuote(btn.dataset.code);break;case'import':$('#import-file').click();break;case'reset':if(confirm('恢复到11月19日的7笔初始模拟成交？当前所有手动交易和信号修改将被清除。'))transaction(next=>{Object.assign(next,initialState());return {message:'已恢复初始模拟账户'};});break;}});
  $('#export-btn').addEventListener('click',exportFile);$('#import-file').addEventListener('change',evt=>importFile(evt.target.files?.[0]));
  $('#trade-code').addEventListener('change',evt=>{$('#trade-price').value=priceInfo(evt.target.value)?.price??state.prices[evt.target.value]?.price??stock(evt.target.value).close;$('#trade-qty').value=budgetQuantity(BUDGET_PER_STOCK,Number($('#trade-price').value));updateOrderPreview();});
  ['input','change'].forEach(type=>$('#trade-form').addEventListener(type,updateOrderPreview));
