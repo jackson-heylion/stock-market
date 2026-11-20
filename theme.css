@@ -267,3 +267,10 @@ html[data-theme="light"] .market-terminal{
   .snapshot-pill{max-width:36vw;min-width:0}
   #market-status{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
+
+html[data-theme="light"] .bot-summary>div{background:#f6f9fc;border-color:#dce6f0}
+html[data-theme="light"] .bot-summary small,
+html[data-theme="light"] .bot-method{color:#627b92}
+html[data-theme="light"] .bot-summary strong{color:#294257}
+html[data-theme="light"] .bot-summary strong.up{color:#d94d46}
+html[data-theme="light"] .bot-summary strong.down{color:#15965c}
