@@ -63,3 +63,11 @@ Design -> create/adjust deterministic unit tests -> implement -> run both comman
 - Market center must not hard-code a white-only layout. Its full table uses `--mt-*` semantic tokens, including up/down A-share colors and zebra backgrounds.
 - Ensure `aria-pressed`, icon/label and `meta[name="theme-color"]` update together; test both states and persistence. No theme logic may mutate `state.trades`, watchlist, holdings or market quotes.
 - Chart SVG grid, tick labels and moving-average lines reference CSS custom properties to remain readable in either mode.
+
+## Real-time market radar data integrity
+- `market-center.js`: allowlists `speed` (`f22`) as a provider-native sortable metric. Never substitute locally sampled quote differences without naming the method separately.
+- `market-radar.js`: sector `f3/f6`, 7x24 fast news headlines (nonempty `req_trace` is required to avoid 200/null), and 22 mapped anomaly codes from Eastmoney `getAllStockChanges`. All source data is untrusted; parse and validate, never execute remote JavaScript.
+- `radar-view.js`: treemap area from valid sector turnover (min-size for readability), red/green by provider `f3`; headline word cloud counts literal tokens/lexicon concepts only if they occurred in actual published headlines within 2 hours. No synthetic words, alleged crowd sentiment, or fake news.
+- Source event records only specify HHMMSS, not a trade date. Preserve this uncertainty. Absent or failed feeds show an explicit status, retaining prior valid data without pretending to be live.
+- Refresh visible market radar on a 15-second anomaly / 45-second sector / 60-second news TTL; view-only, never write market feed records to the simulated ledger.
+- `tests/radar.test.js` and the GitHub Actions source probe are required regression gates before publishing to Pages.
