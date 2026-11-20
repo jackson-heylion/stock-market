@@ -56,3 +56,10 @@ Design -> create/adjust deterministic unit tests -> implement -> run both comman
 - Guard any sort key and board code through explicit allowlists. Never sort only the visible page when the user requests a market-wide sort. Pagination is vendor-side, 30/60/90 requests.
 - `f5` is lots, convert to 100-share lots for the displayed share count. Quotes remain unlicensed and may be delayed.
 - `market-terminal.js` cannot create trades for unseeded stocks; Follow is independent of holdings.
+
+## Unified color theme
+- Global mode defaults to `dark`; `theme.js` reads/writes `stock-market-theme-v1` separately from paper ledger keys.
+- `theme.css` comes after `style.css`; it overrides all routes, dialogs, table, market center, and chart legends with consistent dark/light tokens.
+- Market center must not hard-code a white-only layout. Its full table uses `--mt-*` semantic tokens, including up/down A-share colors and zebra backgrounds.
+- Ensure `aria-pressed`, icon/label and `meta[name="theme-color"]` update together; test both states and persistence. No theme logic may mutate `state.trades`, watchlist, holdings or market quotes.
+- Chart SVG grid, tick labels and moving-average lines reference CSS custom properties to remain readable in either mode.

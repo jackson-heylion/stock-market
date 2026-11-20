@@ -2,6 +2,7 @@ import {SECURITIES, MODEL_DEFINITIONS, SNAPSHOT_DATE, BUDGET_PER_STOCK} from './
 import {STORAGE_KEY, initialState, cloneState, portfolio, positions, executeTrade, markPrice, budgetQuantity, fees, feeTotal, modelEvidence, validateState, shDate} from './engine.js';
 import {getQuotes,getHistory,quoteState,session,POLL_MS} from './market.js';
 import {chartSvg} from './charts.js';
+import {initTheme} from './theme.js';
 import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal} from './market-terminal.js';
 import {INDEXES,SCOPES,RANK_MODES,getMarketIndices,getRankings,getSectors,getMarketBreadth,getIndexHistory} from './market-center.js';
 let state;let page='overview';let liveQuotes={};let quoteError='';let quotePath='历史快照';
@@ -65,7 +66,7 @@ function updateOrderPreview(){const p=Number($('#trade-price').value),q=Number($
 function openQuote(code){const sel=$('#quote-code');sel.innerHTML=SECURITIES.filter(s=>!s.halted).map(s=>`<option value="${s.code}">${s.name} ${s.code}</option>`).join('');sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;$('#quote-price').value=state.prices[sel.value]?.price;$('#quote-date').value=shDate();$('#quote-dialog').showModal();}
 function exportFile(){const raw=JSON.stringify({exportedAt:new Date().toISOString(),kind:'stock-market-paper-v1',state},null,2);const url=URL.createObjectURL(new Blob([raw],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='stock-market-paper-'+shDate()+'.json';a.click();URL.revokeObjectURL(url);toast('账本已导出（仅本地文件）');}
 async function importFile(file){if(!file)return;try{if(file.size>3_000_000)throw Error('文件过大');const data=JSON.parse(await file.text());if(data.kind!=='stock-market-paper-v1'||!validateState(data.state))throw Error('账本不合法或版本不兼容');if(!confirm('导入将覆盖当前浏览器账本，是否继续？'))return;if(!persist(data.state))throw Error('本地存储不可用');state=data.state;render();toast('已导入模拟账本');}catch(err){toast('导入失败：'+err.message);}$('#import-file').value='';}
-function bootstrap(){state=load();render();try{if(!localStorage.getItem(STORAGE_KEY))persist(state);}catch{toast('当前浏览器禁止持久化存储，修改可能丢失');}
+function bootstrap(){initTheme();state=load();render();try{if(!localStorage.getItem(STORAGE_KEY))persist(state);}catch{toast('当前浏览器禁止持久化存储，修改可能丢失');}
  document.addEventListener('click',evt=>{const btn=evt.target.closest('button');if(!btn)return;if(btn.dataset.page){page=btn.dataset.page;render();if(page==='charts')requestChart();if(page==='market'){refreshMarket();requestIndexChart();}if(page==='quotes')refreshTerminal(false,()=>{if(page==='quotes')render();});window.scrollTo(0,0);return;}if(btn.dataset.close){$('#'+btn.dataset.close).close();return;}
  if(btn.dataset.action?.startsWith('mt-')){
   handleTerminalClick(btn,{
@@ -134,7 +135,7 @@ function renderCharts(){
  '<section class="panel chart-panel"><div class="chart-head"><div><div class="eyebrow">最新可用报价</div><strong class="chart-price">'+(Number.isFinite(price)?money(price):'--')+'</strong><div class="smallnote">'+e(stock(chartCode)?latestLabel(chartCode):'东方财富行情中心榜单报价 · 行情时间不一定已核验')+'</div></div><select class="chart-symbol" data-action="chart-select" aria-label="切换股票">'+(stock(chartCode)?'':'<option value="'+e(chartCode)+'" selected>'+e(s.name)+' '+e(chartCode)+'</option>')+SECURITIES.map(x=>'<option value="'+x.code+'" '+(x.code===chartCode?'selected':'')+'>'+e(x.name)+' '+x.code+'</option>').join('')+'</select></div>'+
  '<div class="chart-tabs">'+periods.map(([id,label])=>'<button class="btn mini '+(chartPeriod===id?'primary':'subtle')+'" data-action="chart-period" data-period="'+id+'">'+label+'</button>').join('')+'</div>'+
  '<div class="chart-legend"><span>'+e(data?.source||'待连接东方财富图表接口')+'</span><span>'+e(detail)+'</span><span>'+e(data?.adjustment||'分时原始价')+'</span></div>'+
- '<div class="chart-canvas">'+chart+'</div><div class="chart-keys">'+(chartPeriod==='minute'?'<span style="color:#e5b86f">● 成交价</span><span style="color:#6ba6d3">● 分时均价</span><span>虚线：昨收参考</span>':'<span style="color:#f2c875">● MA5</span><span style="color:#75aee3">● MA10</span><span style="color:#ba91d6">● MA20</span>')+'</div>'+
+ '<div class="chart-canvas">'+chart+'</div><div class="chart-keys">'+(chartPeriod==='minute'?'<span class="chart-accent-primary">● 成交价</span><span class="chart-accent-secondary">● 分时均价</span><span>虚线：昨收参考</span>':'<span class="chart-accent-ma5">● MA5</span><span class="chart-accent-ma10">● MA10</span><span class="chart-accent-ma20">● MA20</span>')+'</div>'+
  (expired?'<div class="hint">当前展示的是此前成功获取的数据；图表暂未刷新。</div>':'')+
  '<div class="hint">价格源非交易所授权API，可能存在网络延迟、交易时段差异和限流。分时图是行情接口的真实分钟数据，非本地模拟；盘中交易按手动输入价记账，不声称能够以显示价格成交。</div></section>';
 }

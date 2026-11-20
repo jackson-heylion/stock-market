@@ -1,12 +1,20 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <meta name="theme-color" content="#0a1120" />
   <meta name="description" content="A股模拟盘：历史快照、自选股、虚拟交易、资产盈亏与五套启动模型。" />
   <title>见微 · A股模拟交易台</title>
+  <script>
+    // Apply saved mode before styles load, avoiding a white/black flash on reload.
+    try {
+      if (localStorage.getItem('stock-market-theme-v1') === 'light')
+        document.documentElement.dataset.theme = 'light';
+    } catch {}
+  </script>
   <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./theme.css" />
   <script type="module" src="./app.js"></script>
 </head>
 <body>
@@ -28,7 +36,7 @@
     <div class="workspace">
       <header class="topbar">
         <div class="breadcrumbs"><span>交易工作台</span><b>/</b><span id="page-heading">资产总览</span></div>
-        <div class="top-actions"><span class="snapshot-pill"><span class="pulse-dot"></span><span id="market-status">行情连接中 · 初始快照 11.19</span></span><button class="icon-btn" id="export-btn" title="导出账本">↧ <span>导出</span></button></div>
+        <div class="top-actions"><button class="theme-toggle" id="theme-toggle" type="button" aria-label="切换到亮色主题" aria-pressed="false" title="切换到亮色主题"><span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">亮色</span></button><span class="snapshot-pill"><span class="pulse-dot"></span><span id="market-status">行情连接中 · 初始快照 11.19</span></span><button class="icon-btn" id="export-btn" title="导出账本">↧ <span>导出</span></button></div>
       </header>
       <main class="main" id="main" tabindex="-1"></main>
       <footer class="footer">见微 Stock Market Lab <span>模拟交易仅用于研究 · 公开行情可能延迟 · 本地浏览器保存</span></footer>
