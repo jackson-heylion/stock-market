@@ -49,3 +49,10 @@ Design -> create/adjust deterministic unit tests -> implement -> run both comman
 - `tests/market-center.test.js`: validate index identity (Shanghai 000001 != Shenzhen stock 000001), sector code isolation, invalid price drops, ranking scope/sort and index history paths. Run `npm test && npm run check` before deployments.
 - Freshness: identify provider and last request time separately, refuse to invent quote timestamps. A ranking list contains only the requested top N, not the entire equity universe; `data.total` is coverage, not advance/decline counts.
 - On API failure show an explicit empty/stale state. Avoid synthetic market breadth, historical candles and fabricated live trading conditions.
+
+## Dense exchange quote terminal
+- `market-terminal.js`: light professional grid table, 30/60/90 server-side pages, price/ytd/valuation columns, categories, Eastmoney sectors, recent visits and independent `localStorage` follows. The **simulated ledger remains untouched**.
+- `market-center.js` extracts `f4` price change, `f25` YTD, `f8` turnover rate, `f9` TTM P/E, `f23` P/B, `f20` market capitalization. Preserve nulls, do not convert missing fields to zero.
+- Guard any sort key and board code through explicit allowlists. Never sort only the visible page when the user requests a market-wide sort. Pagination is vendor-side, 30/60/90 requests.
+- `f5` is lots, convert to 100-share lots for the displayed share count. Quotes remain unlicensed and may be delayed.
+- `market-terminal.js` cannot create trades for unseeded stocks; Follow is independent of holdings.

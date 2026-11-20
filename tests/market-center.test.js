@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {INDEXES,SCOPES,RANK_MODES,parseIndices,parseRanking,parseMarketBreadth,getMarketIndices,getRankings,getSectors,getIndexHistory,getMarketBreadth} from '../market-center.js';
+import {INDEXES,SCOPES,RANK_MODES,SORT_COLUMNS,getWatchQuotes,parseIndices,parseRanking,parseMarketBreadth,getMarketIndices,getRankings,getSectors,getIndexHistory,getMarketBreadth} from '../market-center.js';
 const qq=Array(50).fill('0');qq[1]='上证指数';qq[3]='3514.92';qq[4]='3577.62';qq[30]='20261120095712';
 const indexData='v_sh000001="'+qq.join('~')+'";';
 const rank={data:{total:5565,diff:[
@@ -71,4 +71,34 @@ test('index / sector / breadth handlers tolerate independently unavailable data'
  assert.equal(sectors.rows.length,1);
  const nullBreadth=await getMarketBreadth(async()=>fakeReply({data:{f104:'-',f105:'-',f106:100}}));
  assert.equal(nullBreadth,null);
+});
+
+test('extended market table fields, placeholders and server sort column allowlist',async()=>{
+ const payload={data:{total:5565,diff:[{f12:'002579',f13:0,f14:'中京电子',f2:13.39,f3:10.02,f4:1.22,f5:701076,f6:916000000,f8:12.02,f9:'-',f23:1.17,f20:8832000000,f25:9.93}]}};
+ const data=parseRanking(payload).rows[0];
+ assert.equal(data.change,1.22);
+ assert.equal(data.ytdPct,9.93);
+ assert.equal(data.turnoverRate,12.02);
+ assert.equal(data.peTtm,null);
+ assert.equal(data.pb,1.17);
+ assert.equal(data.marketCap,8832000000);
+ let called='';
+ const fetchImpl=async url=>{called=String(url);return fakeReply(payload);};
+ const r=await getRankings('gainers','main',{fetchImpl,sortKey:'ytdPct',descending:true,page:2,size:90});
+ assert.equal(r.page,2);
+ assert.match(called,/fid=f25/);
+ assert.match(called,/pn=2/);
+ assert.match(called,/pz=90/);
+ assert.ok(SCOPES.main.fs.includes('m:1+t:2'));
+ assert.ok(SORT_COLUMNS.name);
+ await assert.rejects(getRankings('gainers','all',{fetchImpl,sortKey:'nonsense'}));
+ await assert.rejects(getRankings('gainers','all',{fetchImpl,page:-1}));
+});
+test('followed stock prices are requested by exact symbol, never fabricated',async()=>{
+ const data={data:{diff:[{f12:'601133',f13:1,f14:'柏诚股份',f2:16.81,f3:-3.0,f4:-0.52,f5:1100,f6:1900000}]}};
+ let url='';
+ const quotes=await getWatchQuotes(['601133'],async u=>{url=u;return fakeReply(data);});
+ assert.equal(quotes.length,1);assert.equal(quotes[0].code,'601133');
+ assert.match(String(url),/1.601133/);
+ assert.deepEqual(await getWatchQuotes([]),[]);
 });
