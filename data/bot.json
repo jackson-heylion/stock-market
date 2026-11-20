@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "description": "与浏览器手动模拟盘完全独立的 GitHub Actions 自动模拟账户；尚未运行，不包含任何预置买卖。",
-  "initialCash": 800000,
-  "cash": 800000,
+  "description": "与浏览器手动模拟盘完全独立的 GitHub Actions 自动模拟账户；初始100万元，不预置虚假成交。",
+  "initialCash": 1000000,
+  "cash": 1000000,
   "lastDate": null,
   "updatedAt": null,
   "models": {

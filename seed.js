@@ -1,6 +1,6 @@
 // Fixed historical snapshots. Never imply these are live quotes.
 export const SNAPSHOT_DATE = '2026-11-19';
-export const INITIAL_CASH = 800_000;
+export const INITIAL_CASH = 1_000_000;
 export const BUDGET_PER_STOCK = 100_000;
 export const FEE_RULES = Object.freeze({commissionRate: 0.00025, minCommission: 5, transferRate: 0.00001, sellStampRate: 0.0005});
 export const SECURITIES = Object.freeze([

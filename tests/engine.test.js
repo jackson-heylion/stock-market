@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SECURITIES,INITIAL_CASH,BUDGET_PER_STOCK,SNAPSHOT_DATE} from '../seed.js';
-import {initialState,fees,feeTotal,positions,portfolio,budgetQuantity,executeTrade,markPrice,validateState,cloneState,modelEvidence} from '../engine.js';
+import {initialState,fees,feeTotal,positions,portfolio,budgetQuantity,executeTrade,markPrice,validateState,cloneState,modelEvidence,migrateCapital} from '../engine.js';
 test('seed has 8 watchlist symbols and 7 real-quote mock trades, suspended symbol unfilled',()=>{
  const s=initialState();assert.equal(s.watchlist.length,8);assert.equal(s.trades.length,7);assert.equal(s.trades.some(t=>t.code==='000635'),false);assert.ok(s.cash>=BUDGET_PER_STOCK);assert.equal(s.trades.every(t=>t.date===SNAPSHOT_DATE),true);assert.equal(validateState(s),true);
 });
@@ -36,4 +36,19 @@ test('import validation rejects tampering and accepts legitimate manual actions'
  const second=cloneState(s);second.trades[0].quantity=11;assert.equal(validateState(second),false);
  const duplicate=cloneState(s);duplicate.trades.push({...duplicate.trades[0]});assert.equal(validateState(duplicate),false);
  const third=cloneState(s);third.signals['601133'].M2=[1,1,0,0];assert.equal(validateState(third),true);assert.equal(modelEvidence(third,'601133','M2').confirmed,2);
+});
+
+test('manual browser capital migration adds 200k cash and preserves all old trades without double-seeding',()=>{
+ const fresh=initialState();assert.equal(fresh.initialCash,1_000_000);assert.ok(fresh.cash>300000);
+ const legacy=cloneState(fresh);legacy.initialCash=800000;legacy.cash-=200000;
+ assert.equal(validateState(legacy),false);
+ assert.equal(validateState(legacy,800000),true);
+ const upgraded=migrateCapital(legacy);
+ assert.equal(upgraded.initialCash,1000000);assert.equal(upgraded.cash,fresh.cash);
+ assert.deepEqual(upgraded.trades,legacy.trades);
+ assert.equal(upgraded.capitalMigration.from,800000);
+ assert.equal(validateState(upgraded),true);
+ assert.equal(migrateCapital(upgraded),upgraded);
+ const invalid=cloneState(legacy);invalid.cash-=4000;
+ assert.equal(migrateCapital(invalid),null);
 });

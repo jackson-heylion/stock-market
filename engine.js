@@ -79,8 +79,8 @@ export function modelEvidence(state,code,modelId){
   const flags=state.signals?.[code]?.[modelId]??model.checks.map(()=>0);
   return {flags,confirmed:flags.filter(x=>x===1).length,total:model.checks.length,contradicted:flags.some(x=>x===-1)};
 }
-export function validateState(state){
-  if(!state||state.version!==1||!Number.isFinite(state.cash)||state.cash<0||state.initialCash!==INITIAL_CASH||!Array.isArray(state.trades)||state.trades.length>20000||!Array.isArray(state.watchlist)||!state.prices||!state.signals)return false;
+export function validateState(state,startingCash=INITIAL_CASH){
+  if(!state||state.version!==1||!Number.isFinite(state.cash)||state.cash<0||state.initialCash!==startingCash||!Array.isArray(state.trades)||state.trades.length>20000||!Array.isArray(state.watchlist)||!state.prices||!state.signals)return false;
   const seen=new Set(),validCodes=new Set(SECURITIES.map(s=>s.code));
   for(const t of state.trades){
     if(!t||!validCodes.has(t.code)||!['BUY','SELL'].includes(t.side)||!priceOK(t.price)||!Number.isInteger(t.quantity)||t.quantity<=0||t.quantity%100!==0||!Number.isFinite(t.gross)||!Number.isFinite(t.fee)||typeof t.date!=='string')return false;
@@ -91,8 +91,21 @@ export function validateState(state){
   for(const [c,p] of Object.entries(state.prices))if(!validCodes.has(c)||!priceOK(p?.price)||typeof p.date!=='string')return false;
   for(const [c,ms] of Object.entries(state.signals)){if(!validCodes.has(c))return false;for(const [m,flags] of Object.entries(ms)){const model=MODEL_DEFINITIONS.find(x=>x.id===m);if(!model||!Array.isArray(flags)||flags.length!==model.checks.length||flags.some(x=>![1,0,-1].includes(x)))return false;}}
   // Replay transactions to prevent impossible cash/holdings in imported files.
-  const clean={cash:INITIAL_CASH,trades:[]};
+  const clean={cash:startingCash,trades:[]};
   for(const t of state.trades){const r=executeTrade(clean,{...t,seed:t.seed});if(!r.ok)return false;const out=r.trade;if(Math.abs(out.gross-t.gross)>0.01||Math.abs(out.fee-t.fee)>0.01)return false;}
   return Math.abs(clean.cash-state.cash)<0.02;
 }
 export function cloneState(state){return JSON.parse(JSON.stringify(state));}
+
+// Preserve existing ¥800k browser/import ledgers: add ¥200k funding without changing orders or cost.
+export function migrateCapital(state){
+ if(!state||typeof state!=='object')return null;
+ if(state.initialCash===INITIAL_CASH)return validateState(state)?state:null;
+ if(state.initialCash!==800_000||!validateState(state,800_000))return null;
+ const converted=cloneState(state);
+ const funding=INITIAL_CASH-800_000;
+ converted.initialCash=INITIAL_CASH;
+ converted.cash=Math.round((converted.cash+funding)*100)/100;
+ converted.capitalMigration={from:800_000,to:INITIAL_CASH,method:'initial-funding-only'};
+ return validateState(converted)?converted:null;
+}
