@@ -152,3 +152,28 @@
 .bot-events{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
 .bot-events .tag{max-width:100%;white-space:normal}
 @media(max-width:800px){.bot-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.bot-summary>div{padding:10px}.bot-summary strong{font-size:16px}}
+
+/* Workspace settings: same visual system as stock market and models. */
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}
+.settings-card{min-width:0}
+.settings-card .panel-head{margin-bottom:9px}
+.settings-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(125px,auto);align-items:center;gap:12px;border-bottom:1px solid #293b51;padding:14px 0}
+.settings-row:last-of-type{border-bottom:0}
+.settings-row>div:first-child{min-width:0}
+.settings-row strong{font-size:13px;color:#e3eaf2}
+.settings-row p{font-size:11px;line-height:1.65;color:#8598aa;margin:6px 0 0;max-width:450px}
+.settings-control{min-width:0;display:flex;justify-content:flex-end;align-items:center}
+.settings-control strong{font-size:13px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;text-align:right}
+.settings-control select{max-width:175px;width:100%;background:#102033;border:1px solid #33475c;border-radius:7px;color:#e8eef7;padding:9px;font-size:12px}
+.settings-control input[type=checkbox]{accent-color:#e3ad65;width:19px;height:19px;cursor:pointer}
+.settings-theme{display:flex;gap:7px}
+.settings-link{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin:16px 0 0}
+.settings-link a{color:#d4a66b;font-size:12px}
+html[data-theme=light] .settings-row{border-color:#dde7ef}
+html[data-theme=light] .settings-row strong{color:#283f55}
+html[data-theme=light] .settings-row p{color:#70869b}
+html[data-theme=light] .settings-control select{background:#fff;border-color:#cbdbea;color:#304961}
+html[data-theme=light] .settings-link a{color:#956832}
+.compact-hints .settings-row p{display:none}
+@media(max-width:1120px){.settings-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.settings-row{grid-template-columns:minmax(0,1fr) auto}.settings-control select{max-width:130px}}

@@ -1,10 +1,11 @@
 
 import {SCOPES,SORT_COLUMNS,getRankings,getSectors,getWatchQuotes} from './market-center.js';
 import {SECURITIES} from './seed.js';
+import {readPrefs} from './preferences.js';
 export const MT_FOLLOW_KEY='stock-market-terminal-follows-v1';
 export const MT_RECENT_KEY='stock-market-terminal-recent-v1';
 const mt={view:'rank',scope:'all',sectorCode:null,sectorLabel:'',sortKey:'pct',descending:true,
- page:1,size:30,rows:[],total:null,search:'',loading:false,error:'',updatedAt:0,
+ page:1,size:readPrefs().tablePageSize,rows:[],total:null,search:'',loading:false,error:'',updatedAt:0,
  seq:0,followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
 export function terminalFmt(value,digits=2){
  if(typeof value!=='number'||!Number.isFinite(value))return '--';
@@ -280,4 +281,8 @@ export function handleTerminalClick(btn,{rerender=()=>{},openChart=()=>{},notify
   rerender();refreshTerminal(true,rerender);break;
  }
  }
+}
+
+export function setTerminalPageSize(size){
+ if([30,60,90].includes(size)){mt.size=size;mt.page=1;mt.updatedAt=0;mt.rows=[];}
 }
