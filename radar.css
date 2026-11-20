@@ -82,3 +82,51 @@ html[data-theme="light"] .radar-root{
  .radar-heat-cell strong{font-size:10px}.radar-cloud{min-height:170px;max-height:250px;padding:12px}
  .radar-events-head,.radar-event{min-width:410px;grid-template-columns:58px minmax(100px,1fr) 83px minmax(75px,1fr)}
 }
+
+
+/*
+ * Adaptive heat cells: enough physical space is mandatory before revealing
+ * labels. Tiny cells show a ranking number, which is resolved in the full
+ * readable board list below instead of clipping text mid-character.
+ */
+.radar-treemap{height:460px}
+.radar-heat-cell{
+ container-type:size;
+ padding:5px;
+ gap:3px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex-direction:column;
+ box-sizing:border-box;
+}
+.radar-heat-name,.radar-heat-pct,.radar-heat-turnover{display:none}
+.radar-heat-index{display:block;color:var(--radar-text);opacity:.92;font-size:11px;font-weight:700;line-height:1}
+.radar-heat-name{width:100%;max-width:100%;text-align:center;white-space:normal;overflow-wrap:anywhere;line-height:1.35;max-height:2.7em;overflow:hidden;font-size:12px}
+.radar-heat-pct{font-size:12px;line-height:1.25}
+.radar-heat-turnover{font-size:10px;line-height:1.15}
+@container (min-width:78px) and (min-height:46px){
+ .radar-heat-pct{display:block}
+ .radar-heat-index{display:none}
+}
+@container (min-width:110px) and (min-height:78px){
+ .radar-heat-name{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+}
+@container (min-width:155px) and (min-height:120px){
+ .radar-heat-turnover{display:block}
+}
+.radar-sector-detail{margin-top:18px;border:1px solid var(--radar-edge);border-radius:9px;overflow:hidden}
+.radar-sector-detail-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 15px;background:var(--radar-surface);color:var(--radar-text);font-size:12px;flex-wrap:wrap}
+.radar-sector-detail-heading span{color:var(--radar-muted);font-size:11px}
+.radar-sector-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));max-height:360px;overflow-y:auto;scrollbar-color:var(--radar-edge) transparent}
+.radar-sector-item{display:grid;grid-template-columns:22px minmax(0,1fr) 78px 77px;align-items:center;gap:6px;padding:11px 12px;border:0;border-top:1px solid var(--radar-edge);border-right:1px solid var(--radar-edge);background:transparent;color:var(--radar-text);text-align:left;font-size:12px;min-height:40px;cursor:pointer}
+.radar-sector-item:hover{background:var(--radar-surface)}
+.radar-sector-item small{color:var(--radar-muted);font-size:10px;font-variant-numeric:tabular-nums}
+.radar-sector-item-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:650}
+.radar-sector-item strong{text-align:right;font-variant-numeric:tabular-nums;font-size:11px}
+.radar-sector-item .radar-gain{color:var(--radar-up)}
+.radar-sector-item .radar-loss{color:var(--radar-down)}
+.radar-sector-item .radar-sector-amount{text-align:right;white-space:nowrap}
+@media (max-width:1260px){.radar-sector-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:850px){.radar-sector-grid{grid-template-columns:1fr}.radar-treemap{height:400px}}
+@media (max-width:700px){.radar-treemap{height:360px}.radar-sector-item{grid-template-columns:22px minmax(0,1fr) 74px 70px;padding:10px 9px}}
