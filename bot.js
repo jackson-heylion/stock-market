@@ -48,7 +48,7 @@ export async function dailyBars(code,{fetchImpl=fetch,timeoutMs=9000}={}){
   const response=await fetchImpl(BASE+'?'+query,{signal:ctrl.signal,headers:{Accept:'application/json'}});
   if(!response.ok)throw Error('OHLCV HTTP '+response.status+' '+code);
   const result=parseDaily(await response.json());
-  if(result.length<22)throw Error('Insufficient daily bars '+code);
+  if(!result.length)throw Error('No valid daily bars '+code); // New listings may have <22, and M5 must simply score 0.
   return result;
  }finally{clearTimeout(timer);}
 }
@@ -201,6 +201,7 @@ export function stepBot(state,{date,previousMarketDate=null,universe=[],barsByCo
 export async function getMarketData({fetchImpl=fetch,sectorLoader=getSectors,rankingLoader=getRankings,barLoader=dailyBars}={}){
  // Fail closed if the exchange's actual daily benchmark is not dated today.
  const benchmark=await barLoader('sh000001',{fetchImpl});
+ if(benchmark.length<2)throw Error('Missing exchange calendar bars');
  const marketDate=benchmark.at(-1).date;
  const sectors=(await sectorLoader(fetchImpl)).rows.filter(s=>s.pct>0&&s.turnover>0).slice(0,3);
  const parts=await Promise.all(sectors.map(s=>rankingLoader('turnover','all',{fetchImpl,sectorCode:s.code,size:30})));
