@@ -136,4 +136,136 @@ async function requestChart(force=false){
  }catch(err){toast('图表接口不可用：'+String(err.message).slice(0,75));}
  finally{chartPending.delete(key);if(page==='charts'&&key===chartCode+':'+chartPeriod)render();}
 }
+
+
+// Market dashboards. Data is source-backed and remains outside the paper-trading ledger.
+function cnTime(ts){
+ return ts?new Date(ts).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}):'未提供行情时间';
+}
+
+function amountShort(v){
+ return typeof v==='number'&&Number.isFinite(v)&&v>=0?v>=1e8?(v/1e8).toFixed(2)+'亿':v>=1e4?(v/1e4).toFixed(1)+'万':v.toFixed(0):'--';
+}
+
+function renderMarketDashboard(){
+ const b=marketBoard,reference=Object.fromEntries(b.indices.map(q=>[q.key,q]));
+ const cached=indexChartCache.get(indexKey+':'+indexPeriod),data=cached?.data;
+ const selected=INDEXES.find(x=>x.key===indexKey);
+ const bars=data?.bars??[];
+ const sub=b.updatedAt?'数据接口请求于 '+cnTime(b.updatedAt)+' · 排名、指数与板块由不同接口提供':'数据接口待连接';
+ const indexCards=INDEXES.map(idx=>{
+  const q=reference[idx.key],active=idx.key===indexKey;
+  return `<button class="index-card ${active?'selected':''}" data-action="index-select" data-key="${idx.key}">
+   <span class="index-name">${e(idx.name)}</span>
+   <strong class="index-value">${q?q.price.toFixed(2):'--'}</strong>
+   <span class="${q?cls(q.pct||0):'muted'}">${q&&q.pct!=null?`${q.change>=0?'+':''}${q.change.toFixed(2)}（${signed(q.pct)}）`:'暂缺有效报价'}</span>
+   <small>${q?e(cnTime(q.time))+' · '+e(q.source):'等待接口返回'}</small>
+  </button>`;
+ }).join('');
+ const breadth=b.breadth;
+ const breadthHtml=breadth?`<div class="breadth-numbers"><span class="up">上涨 ${num(breadth.up)}</span><span class="down">下跌 ${num(breadth.down)}</span><span>平盘 ${num(breadth.flat)}</span></div>
+  <div class="breadth-bar"><span style="width:${(breadth.up/(breadth.up+breadth.down+breadth.flat||1))*100}%;background:#d96c77"></span><span style="width:${(breadth.down/(breadth.up+breadth.down+breadth.flat||1))*100}%;background:#55c09f"></span></div><div class="smallnote">${e(breadth.source)} · 交易所口径</div>`:
+  '<p class="smallnote">上涨、下跌家数暂缺可核验的全市场数据，已隐藏，不使用榜单样本推算。</p>';
+ const industries=b.sectors.slice(0,12).map((x,i)=>`<div class="sector-row"><span class="sector-num">${i+1}</span><span class="sector-name">${e(x.name)}</span><strong class="${cls(x.pct)}">${signed(x.pct)}</strong><small>${amountShort(x.turnover)}</small></div>`).join('')||'<div class="chart-empty">板块数据暂不可用</div>';
+ const leaders=b.leaders.slice(0,10).map((x,i)=>`<tr><td>${i+1}</td><td><button class="rank-stock" data-action="open-external-chart" data-code="${x.code}">${e(x.name)}<small>${e(x.code)}</small></button></td><td class="${cls(x.pct)}">${signed(x.pct)}</td><td>${amountShort(x.turnover)}</td></tr>`).join('')||'<tr><td colspan="4">涨幅榜暂不可用</td></tr>';
+ return heading('MARKET / OVERVIEW','大盘市场','主要指数、行业热度与市场资金方向。数据来自匿名公开接口，行情可能延时。','<button class="btn primary" data-action="index-refresh">刷新市场</button><button class="btn subtle" data-page="quotes">进入行情中心 ↗</button>')+
+ `<div class="market-context">${e(sub)}${b.loading?' · 正在更新':''}${b.errors.length?' · 部分数据源失败':''}</div>
+ <div class="index-grid">${indexCards}</div>
+ <div class="market-grid">
+  <section class="panel market-chart-box">
+    <div class="panel-head"><div><h2>${e(selected.name)} · 指数走势</h2><p>真实分时 / 日周月K线 · 不做数据插值</p></div><span class="tag">${e(selected.key)}</span></div>
+    <div class="chart-tabs">${[['minute','分时'],['day','日K'],['week','周K'],['month','月K']].map(([id,label])=>`<button class="btn mini ${id===indexPeriod?'primary':'subtle'}" data-action="index-period" data-period="${id}">${label}</button>`).join('')}</div>
+    <div class="chart-legend">${data?`${e(data.source)} · ${bars.length}个真实数据点 · ${e(data.adjustment||'原始指数数据')}`:'正在获取指数图表，失败时会显示空图'}</div>
+    <div class="chart-canvas">${data?chartSvg(bars,indexPeriod,data.prevClose):'<div class="chart-empty">指数图表暂无有效数据。可以点击“刷新市场”重试。</div>'}</div>
+  </section>
+  <section class="panel market-breadth-box">
+    <div class="panel-head"><div><h2>市场温度</h2><p>数据可用性与覆盖范围</p></div></div>
+    <div class="market-kpi"><div><span>排名接口覆盖</span><strong>${b.total!=null?num(b.total):'--'}</strong><small>非实时参与交易数量</small></div><div><span>板块样本</span><strong>${b.sectors.length||'--'}</strong><small>展示排名前列板块</small></div></div>
+    <hr class="divider"><h3 class="minor-title">市场涨跌家数</h3>${breadthHtml}
+    <p class="smallnote">指数涨跌与个股涨跌分布可能不一致。仅在接口提供经校验的上涨/下跌统计时展示。</p>
+  </section>
+ </div>
+ <div class="market-grid bottom">
+  <section class="panel"><div class="panel-head"><div><h2>行业涨幅榜</h2><p>东方财富行业板块 · 按涨跌幅排序</p></div></div><div class="sector-list">${industries}</div></section>
+  <section class="panel"><div class="panel-head"><div><h2>A股涨幅前列</h2><p>当次排行榜样本，不代表未来趋势</p></div><button class="section-action" data-page="quotes">完整榜单 ↗</button></div>
+   <div class="table-wrap"><table class="data-table market-leaders"><thead><tr><th>#</th><th>股票</th><th>涨跌幅</th><th>成交额</th></tr></thead><tbody>${leaders}</tbody></table></div>
+  </section>
+ </div>`+
+ (b.errors.length?`<div class="hint">数据异常：${e(b.errors.join('；'))}。页面保留上次成功的数据，可能过期。</div>`:'');
+}
+
+function renderRankingRows(){
+ const word=ranked.search.trim().toLowerCase();
+ const matches=ranked.rows.filter(row=>!word||row.code.includes(word)||row.name.toLowerCase().includes(word));
+ if(!matches.length){
+  const exact=/^[036]\d{5}$/.test(word);
+  return `<tr><td colspan="7" class="empty">${ranked.loading?'正在加载行情':'当前已加载榜单没有匹配项'}${exact?`<button class="btn mini subtle" data-action="open-external-chart" data-code="${e(word)}">按代码 ${e(word)} 查看图表</button>`:''}</td></tr>`;
+ }
+ return matches.map((x,i)=>{
+  const prev=x.prevClose?x.prevClose.toFixed(2):'--';
+  return `<tr><td>${i+1}</td>
+   <td><button class="rank-stock" data-action="open-external-chart" data-code="${e(x.code)}">${e(x.name)}<small>${e(x.code)} · ${e(x.exchange)}</small></button></td>
+   <td class="quote-price">${x.price.toFixed(2)}</td>
+   <td class="${cls(x.pct)}"><strong>${signed(x.pct)}</strong></td>
+   <td>${amountShort(x.turnover)}</td><td>${x.volume!=null?amountShort(x.volume)+'手':'--'}</td>
+   <td><button class="btn mini subtle" data-action="open-external-chart" data-code="${e(x.code)}">走势图</button></td></tr>`;
+ }).join('');
+}
+
+function renderQuotesCenter(){
+ const sort=RANK_MODES[ranked.mode],scope=SCOPES[ranked.scope];
+ const source=ranked.updatedAt?'最近接口查询：'+cnTime(ranked.updatedAt)+' · 来源东方财富（行情时点可能不同步）':'行情榜单尚未加载';
+ return heading('MARKET / QUOTES','行情中心','沪深A股涨跌幅、成交额与成交量排行；支持市场筛选与榜单内搜索。','<button class="btn primary" data-action="rank-refresh">刷新排行</button><button class="btn subtle" data-page="market">大盘市场 ↗</button>')+
+ `<div class="rank-controls"><div class="rank-segment">${Object.entries(RANK_MODES).map(([id,v])=>`<button data-action="rank-mode" data-mode="${id}" class="btn mini ${id===ranked.mode?'primary':'subtle'}">${e(v.label)}</button>`).join('')}</div>
+ <div class="rank-scope">${Object.entries(SCOPES).map(([id,v])=>`<button data-action="rank-scope" data-scope="${id}" class="btn mini ${id===ranked.scope?'primary':'subtle'}">${e(v.label)}</button>`).join('')}</div></div>
+ <section class="panel"><div class="panel-head rank-summary"><div><h2>${e(scope.label)} · ${e(sort.label)}</h2><p>${e(source)}</p></div>
+ <div><span class="count">${ranked.total!=null?'覆盖 '+num(ranked.total)+' 只':'覆盖量待核'}</span> <span class="count" id="rank-filter-count">${ranked.search?'当前榜单内筛选':'已加载 '+ranked.rows.length+' 条'}</span></div></div>
+ <div class="rank-search"><input id="rank-search" type="search" value="${e(ranked.search)}" placeholder="在本页榜单筛选股票名称或代码" aria-label="搜索已加载榜单股票" autocomplete="off"/><p class="smallnote">搜索仅在当前已加载的前${ranked.rows.length}条榜单中查找；输入6位A股代码可以单独打开该股票图表。</p></div>
+ <div class="table-wrap"><table class="data-table rank-table"><thead><tr><th>#</th><th>证券</th><th>最新价（元）</th><th>涨跌幅</th><th>成交额</th><th>成交量</th><th>操作</th></tr></thead><tbody id="rank-rows">${renderRankingRows()}</tbody></table></div>
+ <div class="hint">榜单为第三方接口公开数据，不承诺行情实时性。请求完成时间不等于交易所更新时间。行内股票点击后可查看分时、日K、周K、月K；模拟交易仍仅限原有8只观察股。</div></section>`+
+ (ranked.error?`<div class="hint">榜单接口失败：${e(ranked.error)}。页面可能保留上次成功的榜单数据。</div>`:'');
+}
+
+function refreshMarket(force=false){
+ if(marketBoard.loading)return;
+ if(!force&&marketBoard.updatedAt&&Date.now()-marketBoard.updatedAt<35000)return;
+ marketBoard.loading=true;
+ const requests=[getMarketIndices(),getSectors(),getRankings('gainers','all',{size:12}),getMarketBreadth()];
+ return Promise.allSettled(requests).then(results=>{
+  const errors=[];
+  if(results[0].status==='fulfilled')marketBoard.indices=results[0].value;else errors.push('指数：'+results[0].reason.message);
+  if(results[1].status==='fulfilled')marketBoard.sectors=results[1].value.rows;else errors.push('行业：'+results[1].reason.message);
+  if(results[2].status==='fulfilled'){
+   marketBoard.leaders=results[2].value.rows;
+   marketBoard.total=results[2].value.total;
+   for(const q of marketBoard.leaders)externalStockLookup.set(q.code,q);
+  }else errors.push('涨幅榜：'+results[2].reason.message);
+  if(results[3].status==='fulfilled')marketBoard.breadth=results[3].value;else marketBoard.breadth=null;
+  marketBoard.errors=errors;marketBoard.updatedAt=Date.now();
+ }).finally(()=>{marketBoard.loading=false;if(page==='market')render();});
+}
+
+function refreshRankings(force=false){
+ if(ranked.loading)return;
+ if(!force&&ranked.updatedAt&&Date.now()-ranked.updatedAt<45000)return;
+ ranked.loading=true;const mode=ranked.mode,scope=ranked.scope;
+ return getRankings(mode,scope,{size:50}).then(result=>{
+  if(ranked.mode!==mode||ranked.scope!==scope)return;
+  ranked.rows=result.rows;ranked.total=result.total;ranked.updatedAt=Date.now();ranked.error='';
+  for(const q of result.rows)externalStockLookup.set(q.code,q);
+ }).catch(err=>{if(ranked.mode===mode&&ranked.scope===scope){ranked.error=String(err.message);ranked.updatedAt=Date.now();}})
+ .finally(()=>{ranked.loading=false;if(page==='quotes')render();});
+}
+
+function requestIndexChart(force=false){
+ const key=indexKey+':'+indexPeriod,previous=indexChartCache.get(key),ttl=indexPeriod==='minute'?45000:1800000;
+ if(!force&&previous&&Date.now()-previous.time<ttl)return;
+ if(indexPending)return;
+ indexPending=true;
+ return getIndexHistory(indexKey,indexPeriod).then(data=>{
+  indexChartCache.set(key,{time:Date.now(),data});
+ }).catch(err=>{toast('指数图表：'+String(err.message).slice(0,80));})
+ .finally(()=>{indexPending=false;if(page==='market')render();});
+}
+
 bootstrap();
