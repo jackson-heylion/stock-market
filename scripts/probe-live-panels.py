@@ -68,3 +68,33 @@ def check_news(item):
  except Exception as err:return {"name":name,"error":repr(err)[:200]}
 with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
  for item in pool.map(check_news,news_urls.items()):print(json.dumps(item,ensure_ascii=False),flush=True)
+
+
+# Verify the actual public Pages route, not just a local Actions build artifact.
+site_checks={
+ "published_news_snapshot":"https://jackson-heylion.github.io/stock-market/data/fast-news.json",
+ "published_radar_css":"https://jackson-heylion.github.io/stock-market/radar.css"
+}
+def deployed_site(item):
+ name,url=item
+ try:
+  with urllib.request.urlopen(urllib.request.Request(url+"?verify="+str(time.time_ns()),headers={
+   "User-Agent":"Mozilla/5.0","Accept":"application/json,text/css,*/*"}),timeout=12) as resp:
+   raw=resp.read(400000)
+   status=resp.status
+  if name=="published_news_snapshot":
+   o=json.loads(raw.decode("utf-8"))
+   articles=o.get("articles") or []
+   result={"status":status,"count":len(articles),"state":o.get("state"),
+     "fetchedAt":o.get("fetchedAt"),"source":o.get("source"),
+     "oneRealHeadline":articles[:1]}
+  else:
+   txt=raw.decode("utf-8",errors="replace")
+   result={"status":status,"bytes":len(raw),
+     "adaptiveTileQueries":"@container (min-width:110px)" in txt,
+     "fullSectorRanking":".radar-sector-grid" in txt}
+  return {"name":name,"result":result}
+ except Exception as err:return {"name":name,"error":repr(err)[:260]}
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+ for result in pool.map(deployed_site,site_checks.items()):
+  print(json.dumps(result,ensure_ascii=False),flush=True)
