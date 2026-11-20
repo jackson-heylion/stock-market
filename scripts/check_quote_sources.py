@@ -117,3 +117,30 @@ try:
  "body_bytes":len(body),"elapsed_ms":round((time.perf_counter()-ts)*1000),
  "cors_for_pages":cors in ("*","https://jackson-heylion.github.io")},ensure_ascii=False),flush=True)
 except Exception as err:print(json.dumps({"name":"market_breadth_full_probe","error":repr(err)[:300]}),flush=True)
+
+# Near-close read-only paper-portfolio snapshot; keeps raw source timestamps.
+try:
+ from datetime import datetime
+ code_ref={"601133":17.33,"300829":27.00,"603931":29.15,"600156":8.90,
+  "600520":22.17,"301348":21.66,"002579":12.17}
+ now=datetime.now(timezone.utc)
+ with urllib.request.urlopen(urllib.request.Request(
+  "https://qt.gtimg.cn/q=sh601133,sz300829,sh603931,sh600156,sh600520,sz301348,sz002579,sz000635,sh000001,sz399006",
+  headers={"User-Agent":"Mozilla/5.0","Origin":"https://jackson-heylion.github.io"}),timeout=12) as response:
+  raw=response.read(100000).decode("gb18030",errors="replace")
+ rows=[]
+ for code,body in re.findall(r'v_((?:sh|sz)\\d{6})="([^"\\n]+)"',raw):
+  f=body.split("~")
+  if len(f)<32:continue
+  try:
+   price,prev=float(f[3]),float(f[4]);qty_ref=code_ref.get(code[2:])
+   row={"name":f[1],"code":code[2:],"current":price,"prev":prev,
+    "pct":round((price/prev-1)*100,2) if prev else None,
+    "high":f[33] if len(f)>33 else None,"low":f[34] if len(f)>34 else None,
+    "quote_ts":f[30],"initial_entry":qty_ref,
+    "entry_return_pct":round((price/qty_ref-1)*100,2) if qty_ref and price>0 else None}
+   rows.append(row)
+  except (ValueError,ZeroDivisionError):continue
+ print(json.dumps({"name":"tail_manual_portfolio","checked_utc":now.isoformat(),"quotes":rows},ensure_ascii=False),flush=True)
+except Exception as err:
+ print(json.dumps({"name":"tail_manual_portfolio","error":repr(err)[:350]},ensure_ascii=False),flush=True)
