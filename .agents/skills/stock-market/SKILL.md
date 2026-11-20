@@ -42,3 +42,10 @@ Design -> create/adjust deterministic unit tests -> implement -> run both comman
 - Realtime quotes are **ephemeral view state**, not historical ledger transactions. Keep `state.trades` and seed order prices unchanged. Show source/quote time/staleness; do not claim guaranteed exchange live prices.
 - Every chart query must return real points; errors show an empty state instead of synthetic prices. `npm test` must pass for parse, fallback and candle rendering.
 - To smoke-test current anonymous public hosts with real external network, run `.github/workflows/verify-quotes.yml`. This validates a GitHub runner, not domestic latency.
+
+## Market dashboard and A-share ranking center
+- `market-center.js`: exchange-qualified SSE/SZSE/ChiNext/STAR50/CSI300 index quotes, A-share ranking and industry board parsers, data-backed index trend/Kline fetching. Explicit scope and sort allowlists; never interpolate user-provided `fs` or index `secid` into provider URLs.
+- `app.js`: `market` and `quotes` routes are read-only research. They must never mutate `state.trades` or allow trading arbitrary market-center symbols; only the curated eight `SECURITIES` pass through the trade engine.
+- `tests/market-center.test.js`: validate index identity (Shanghai 000001 != Shenzhen stock 000001), sector code isolation, invalid price drops, ranking scope/sort and index history paths. Run `npm test && npm run check` before deployments.
+- Freshness: identify provider and last request time separately, refuse to invent quote timestamps. A ranking list contains only the requested top N, not the entire equity universe; `data.total` is coverage, not advance/decline counts.
+- On API failure show an explicit empty/stale state. Avoid synthetic market breadth, historical candles and fabricated live trading conditions.
