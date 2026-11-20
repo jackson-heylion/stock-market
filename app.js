@@ -5,7 +5,7 @@ import {chartSvg} from './charts.js';
 import {INDEXES,SCOPES,RANK_MODES,getMarketIndices,getRankings,getSectors,getMarketBreadth,getIndexHistory} from './market-center.js';
 let state;let page='overview';let liveQuotes={};let quoteError='';let quotePath='历史快照';
 let chartCode='601133',chartPeriod='minute';const chartCache=new Map();const chartPending=new Set();let polling=false;
-let indexKey='sh000001',indexPeriod='minute',indexPending=false;
+let indexKey='sh000001',indexPeriod='minute';let rankFetchSeq=0;const pendingIndexCharts=new Set();
 const indexChartCache=new Map(),externalStockLookup=new Map();
 let marketBoard={indices:[],breadth:null,sectors:[],leaders:[],updatedAt:0,errors:[],loading:false};
 let ranked={rows:[],total:null,updatedAt:0,loading:false,error:'',mode:'gainers',scope:'all',search:''};
@@ -69,8 +69,8 @@ case'open-external-chart':{const code=btn.dataset.code;chartCode=code;chartPerio
 case'index-select':indexKey=btn.dataset.key;render();requestIndexChart();break;
 case'index-period':indexPeriod=btn.dataset.period;render();requestIndexChart();break;
 case'index-refresh':refreshMarket(true);requestIndexChart(true);break;
-case'rank-mode':ranked.mode=btn.dataset.mode;ranked.search='';render();refreshRankings(true);break;
-case'rank-scope':ranked.scope=btn.dataset.scope;ranked.search='';render();refreshRankings(true);break;
+case'rank-mode':ranked.mode=btn.dataset.mode;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
+case'rank-scope':ranked.scope=btn.dataset.scope;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
 case'rank-refresh':refreshRankings(true);break;case'chart-period':chartPeriod=btn.dataset.period;render();requestChart();break;case'chart-symbol':chartCode=btn.dataset.code;render();requestChart();break;case'chart-refresh':requestChart(true);break;case'quotes-refresh':refreshQuotes();break;case'open-trade':openTrade(btn.dataset.code);break;case'open-quote':openQuote(btn.dataset.code);break;case'import':$('#import-file').click();break;case'reset':if(confirm('恢复到11月19日的7笔初始模拟成交？当前所有手动交易和信号修改将被清除。'))transaction(next=>{Object.assign(next,initialState());return {message:'已恢复初始模拟账户'};});break;}});
  $('#export-btn').addEventListener('click',exportFile);$('#import-file').addEventListener('change',evt=>importFile(evt.target.files?.[0]));
  $('#trade-code').addEventListener('change',evt=>{$('#trade-price').value=priceInfo(evt.target.value)?.price??state.prices[evt.target.value]?.price??stock(evt.target.value).close;$('#trade-qty').value=budgetQuantity(BUDGET_PER_STOCK,Number($('#trade-price').value));updateOrderPreview();});
@@ -246,26 +246,29 @@ function refreshMarket(force=false){
 }
 
 function refreshRankings(force=false){
- if(ranked.loading)return;
+ if(ranked.loading&&!force)return;
  if(!force&&ranked.updatedAt&&Date.now()-ranked.updatedAt<45000)return;
+ const seq=++rankFetchSeq;
  ranked.loading=true;const mode=ranked.mode,scope=ranked.scope;
  return getRankings(mode,scope,{size:50}).then(result=>{
-  if(ranked.mode!==mode||ranked.scope!==scope)return;
+  if(seq!==rankFetchSeq||ranked.mode!==mode||ranked.scope!==scope)return;
   ranked.rows=result.rows;ranked.total=result.total;ranked.updatedAt=Date.now();ranked.error='';
   for(const q of result.rows)externalStockLookup.set(q.code,q);
- }).catch(err=>{if(ranked.mode===mode&&ranked.scope===scope){ranked.error=String(err.message);ranked.updatedAt=Date.now();}})
- .finally(()=>{ranked.loading=false;if(page==='quotes')render();});
+ }).catch(err=>{
+  if(seq===rankFetchSeq&&ranked.mode===mode&&ranked.scope===scope){ranked.error=String(err.message);ranked.updatedAt=Date.now();}
+ }).finally(()=>{
+  if(seq!==rankFetchSeq)return;
+  ranked.loading=false;if(page==='quotes')render();
+ });
 }
-
 function requestIndexChart(force=false){
  const key=indexKey+':'+indexPeriod,previous=indexChartCache.get(key),ttl=indexPeriod==='minute'?45000:1800000;
  if(!force&&previous&&Date.now()-previous.time<ttl)return;
- if(indexPending)return;
- indexPending=true;
+ if(pendingIndexCharts.has(key))return;
+ pendingIndexCharts.add(key);
  return getIndexHistory(indexKey,indexPeriod).then(data=>{
   indexChartCache.set(key,{time:Date.now(),data});
- }).catch(err=>{toast('指数图表：'+String(err.message).slice(0,80));})
- .finally(()=>{indexPending=false;if(page==='market')render();});
+ }).catch(err=>{if(key===indexKey+':'+indexPeriod)toast('指数图表：'+String(err.message).slice(0,80));})
+ .finally(()=>{pendingIndexCharts.delete(key);if(page==='market'&&key===indexKey+':'+indexPeriod)render();});
 }
-
 bootstrap();
