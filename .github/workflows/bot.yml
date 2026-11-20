@@ -38,6 +38,9 @@ jobs:
           console.log(JSON.stringify({barDate:data.date,scannedStocks:data.universe.length,
             sample:data.universe.slice(0,3)},null,2));
           if(!data.universe.length)throw new Error("Public sector constituent universe is empty");
+          const bars=await data.barLoader(data.universe[0].code,{fetchImpl:data.fetchImpl});
+          console.log(JSON.stringify({stock:data.universe[0].code,barCount:bars.length,
+            latestBarDate:bars.at(-1).date,lastClose:bars.at(-1).close},null,2));
           '
       - name: Run after-close scanner and next-session paper fills
         run: node bot.js
