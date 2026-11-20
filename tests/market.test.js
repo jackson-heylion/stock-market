@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseTencent,parseEastmoney,parseKline,parseTrends,chinaTimestamp,quoteState,session,getQuotes,getHistory} from '../market.js';
+import {parseTencent,parseSina,parseEastmoney,parseKline,parseTrends,chinaTimestamp,quoteState,session,getQuotes,getHistory} from '../market.js';
 import {chartSvg,movingAverage} from '../charts.js';
 const BASE=Date.parse('2026-11-20T09:35:02+08:00');
 const textFetch=body=>async ()=>({ok:true,arrayBuffer:async()=>new TextEncoder().encode(body).buffer});
@@ -50,4 +50,13 @@ test('minute and day endpoints request correct periods',async()=>{
  const day=await getHistory('601133','day',fetchImpl);
  assert.equal(minute.bars.length,1);assert.equal(day.bars.length,1);
  assert.match(seen[1],/klt=101/);assert.match(seen[0],/trends2/);
+});
+
+test('Sina anonymous provider is parseable without invoking remote JavaScript',()=>{
+ const row=Array(33).fill('0');row[0]='Example';row[2]='17.33';row[3]='17.4';row[30]='2026-11-20';row[31]='09:35:00';
+ const result=parseSina('var hq_str_sh601133="'+row.join(',')+'";',BASE);
+ assert.equal(result.length,1);
+ assert.equal(result[0].price,17.4);
+ assert.equal(result[0].time,BASE-2000);
+ assert.equal(parseSina('var hq_str_sh601133="";').length,0);
 });

@@ -151,5 +151,5 @@ export async function getHistory(code,period="day",fetchImpl=fetch){
  const raw=await fetchTimeout(url,"json",fetchImpl,9000);
  const bars=parseKline(raw);
  if(!bars.length)throw Error("K线接口未返回有效数据");
- return {bars,source:"东方财富",period,adjustment:"前复权"};
+ return {bars:bars.slice(-120),source:"东方财富",period,adjustment:"前复权"};
 }
