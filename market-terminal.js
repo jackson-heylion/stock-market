@@ -58,7 +58,7 @@ export function terminalViewTitle(){
  if(mt.view==='recent')return '最近访问';
  if(mt.view==='lookup')return '代码查询';
  if(mt.view==='sector')return mt.sectorLabel||'行业板块';
- return SCOPES[mt.scope]?.label??'沪深一览';
+ return mt.scope==='all'?'沪深一览':mt.scope==='sh'?'沪市一览':mt.scope==='sz'?'深市一览':SCOPES[mt.scope]?.label??'沪深一览';
 }
 
 export function terminalRowList(){

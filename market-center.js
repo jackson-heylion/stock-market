@@ -30,7 +30,7 @@ export const SORT_COLUMNS=Object.freeze({
  peTtm:{label:'市盈率(TTM)',fid:'f9'},pb:{label:'市净率',fid:'f23'},
  marketCap:{label:'总市值',fid:'f20'}
 });
-const num=x=>typeof x==='number'?x:Number(x);
+const num=x=>(x===null||x===undefined||x===''||x==='-'||x==='--')?NaN:typeof x==='number'?x:Number(x);
 const validPct=x=>Number.isFinite(x)&&x>=-100&&x<=100;
 const rankUrl=(fs,fid,po,page,size)=>{
  const q=new URLSearchParams({pn:String(page),pz:String(size),po:String(po),np:'1',fltt:'2',invt:'2',fid,fs,
@@ -87,7 +87,7 @@ export async function getMarketIndices(fetchImpl=fetch){
 export async function getRankings(mode='gainers',scope='all',{fetchImpl=fetch,page=1,size=50,sortKey=null,descending=null,sectorCode=null}={}){
  if(!RANK_MODES[mode])throw Error('不支持的榜单类型');
  const sector=sectorCode!==null;
- if(sector?!/^BK\\d{3,6}$/.test(sectorCode):!SCOPES[scope])throw Error('不支持的行情分类');
+ if(sector?!/^BK\d{3,6}$/.test(sectorCode):!SCOPES[scope])throw Error('不支持的行情分类');
  if(sortKey!==null&&!SORT_COLUMNS[sortKey])throw Error('不支持的排序字段');
  if(!Number.isInteger(page)||page<1||page>2000)throw Error('无效页码');
  if(!Number.isInteger(size)||![30,50,60,90,100].includes(size))throw Error('无效每页数量');
@@ -108,7 +108,7 @@ export async function getSectors(fetchImpl=fetch){
  return {...parsed,source:'东方财富',receivedAt:Date.now()};
 }
 export async function getWatchQuotes(codes,fetchImpl=fetch){
- const cleaned=[...new Set(codes)].filter(x=>/^\\d{6}$/.test(x)).slice(0,100);
+ const cleaned=[...new Set(codes)].filter(x=>/^\d{6}$/.test(x)).slice(0,100);
  if(!cleaned.length)return [];
  const secids=cleaned.map(code=>(code.startsWith('6')?'1.':'0.')+code);
  const q=new URLSearchParams({fltt:'2',secids:secids.join(','),
