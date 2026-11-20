@@ -29,6 +29,16 @@ jobs:
           node-version: '22'
       - name: Verify trading rules
         run: npm test && npm run check
+      - name: Probe actual public universe on bot code changes
+        if: github.event_name == 'push'
+        run: |
+          node --input-type=module -e '
+          import {getMarketData} from "./bot.js";
+          const data=await getMarketData();
+          console.log(JSON.stringify({barDate:data.date,scannedStocks:data.universe.length,
+            sample:data.universe.slice(0,3)},null,2));
+          if(!data.universe.length)throw new Error("Public sector constituent universe is empty");
+          '
       - name: Run after-close scanner and next-session paper fills
         run: node bot.js
       - name: Commit account only when valid source data changed it
