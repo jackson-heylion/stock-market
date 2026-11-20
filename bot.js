@@ -98,11 +98,15 @@ export function botEquity(state,barsByCode,date){
   total:round(state.cash+marketValue),missingQuotes:missing};
 }
 const canSell=(hold,date)=>hold&&hold.quantity>0&&hold.buyDate<date;
-function settle(next,date,barsByCode){
+function settle(next,date,barsByCode,previousMarketDate=null){
  const oldOrders=next.pending.filter(o=>o.signalDate<date);
  const later=next.pending.filter(o=>o.signalDate>=date);
  oldOrders.sort((a,b)=>a.side===b.side?0:a.side==='SELL'?-1:1);
  for(const order of oldOrders){
+  if(previousMarketDate&&order.signalDate!==previousMarketDate){
+   next.events.push({date,code:order.code,action:order.side,status:'过期',
+    reason:'错过信号后的首个交易日，拒绝补记成交'});continue;
+  }
   const verdict=fillable(order,barsByCode[order.code],date),hold=next.holdings[order.code];
   if(!verdict.ok){next.events.push({date,code:order.code,action:order.side,status:'未成交',reason:verdict.reason});continue;}
   if(order.side==='SELL'){
@@ -141,13 +145,13 @@ function settle(next,date,barsByCode){
  }
  next.pending=later;
 }
-export function stepBot(state,{date,universe=[],barsByCode={}}){
+export function stepBot(state,{date,previousMarketDate=null,universe=[],barsByCode={}}){
  validateBot(state);
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))throw Error('Invalid trade date');
  if(state.lastDate&&date<=state.lastDate)return {state,changed:false,message:'Already processed '+date};
  const next=structuredClone(state),cfg=next.models.M5;
  // Previous-day signals may trade at THIS close, never back-filled on signal day.
- settle(next,date,barsByCode);
+ settle(next,date,barsByCode,previousMarketDate);
  const observed=[];
  for(const stock of universe){
   if(!/^\d{6}$/.test(stock.code)||!/^(?:0|3|6)/.test(stock.code)||/\*?ST/i.test(stock.name))continue;
@@ -207,7 +211,7 @@ export async function getMarketData({fetchImpl=fetch,sectorLoader=getSectors,ran
   if(!prior||sectors[i].pct>prior.sectorPct)universe.set(st.code,{
    code:st.code,name:st.name,sector:sectors[i].name,sectorPct:sectors[i].pct});
  }
- return {date:marketDate,universe:[...universe.values()],barLoader,fetchImpl};
+ return {date:marketDate,previousMarketDate:benchmark.at(-2).date,universe:[...universe.values()],barLoader,fetchImpl};
 }
 export async function executeBot(account,{now=new Date(),getData=getMarketData}={}){
  validateBot(account);
@@ -228,7 +232,7 @@ export async function executeBot(account,{now=new Date(),getData=getMarketData}=
  }
  if(data.universe.length&&Object.keys(barsByCode).length<5)
   throw Error('Candidate OHLCV insufficient; refuse to update bot');
- return stepBot(account,{date:data.date,universe:data.universe,barsByCode});
+ return stepBot(account,{date:data.date,previousMarketDate:data.previousMarketDate,universe:data.universe,barsByCode});
 }
 if(process.argv[1]&&fileURLToPath(import.meta.url)===fileURLToPath(new URL('file://'+process.argv[1],import.meta.url))){
  const account=validateBot(JSON.parse(readFileSync(ACCOUNT_PATH,'utf8')));
