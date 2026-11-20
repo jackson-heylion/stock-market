@@ -32,20 +32,34 @@ jobs:
       - name: Save afternoon candidates when data is verified
         run: |
           if git diff --quiet -- data/morning.json; then exit 0; fi
+          # Only one immutable morning report per trade date. Parallel runs
+          # must not overwrite each other or conflict in the bot data file.
+          export SCAN_DATE=$(node -p 'require("./data/morning.json").date')
+          git fetch origin main
+          if git show origin/main:data/morning.json | python3 -c 'import json,os,sys; sys.exit(0 if json.load(sys.stdin).get("date")==os.environ["SCAN_DATE"] else 1)' ; then
+            echo "A verified morning report for $SCAN_DATE already exists on main; no duplicate commit."
+            exit 0
+          fi
           git config user.name "stock-market-paper-bot[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/morning.json
           git commit -m "data: update M5 morning-close candidates and afternoon proposals"
-          # Other repository changes may land during the 11:30 network scan.
-          # Retry a linear rebase, never force-push over someone else's work.
           for attempt in 1 2 3 4 5; do
             git fetch origin main
-            git rebase origin/main
+            if ! git rebase origin/main; then
+              git rebase --abort
+              # A parallel run may have published the same day's report.
+              if git show origin/main:data/morning.json | python3 -c 'import json,os,sys; sys.exit(0 if json.load(sys.stdin).get("date")==os.environ["SCAN_DATE"] else 1)' ; then
+                echo "A parallel run already published today's research report."
+                exit 0
+              fi
+              echo "Unrelated write conflict: report remains unchanged, no force push." >&2
+              exit 1
+            fi
             if git push origin HEAD:main; then
               echo "Morning research snapshot committed."
               exit 0
             fi
-            echo "Concurrent main update on attempt $attempt; retrying."
             sleep 2
           done
           echo "Could not commit morning snapshot after retries" >&2
