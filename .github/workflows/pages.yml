@@ -3,6 +3,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Snapshot fallback for browsers that cannot access the cross-origin news host.
+  # Scheduled Actions can run late or be skipped; the UI displays source timestamps.
+  schedule:
+    - cron: '*/10 1-9 * * 1-5'
 permissions:
   contents: read
   pages: write
@@ -26,6 +30,8 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
+      - name: Collect real 7x24 news for same-origin fallback
+        run: python3 scripts/build_news_snapshot.py
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
