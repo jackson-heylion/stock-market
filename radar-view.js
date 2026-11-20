@@ -109,9 +109,9 @@ export function renderRadar(){
   </div>
   ${stats}
   <section class="panel radar-panel">
-   <div class="panel-head"><div><h2>行业板块热度图</h2><p>板块涨跌幅决定颜色，成交额决定面积（小板块保留最低可读面积）。选择板块可进入行情中心。</p></div>
+   <div class="panel-head"><div><h2>行业板块热度图</h2><p>热图重点展示成交额前16个板块，颜色代表涨跌，面积代表成交额。其余板块在下方完整榜单中查看，不再挤进狭小格子。</p></div>
    <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('sectors')}</span>${press('sectors','刷新板块')}</div></div>
-   <div class="radar-legend"><span class="radar-legend-up">上涨板块 ${positive}</span><span class="radar-legend-down">下跌板块 ${negative}</span><span>数据源：东方财富行业板块，按成交额前36，图中重点展示前16</span></div>
+   <div class="radar-legend"><span class="radar-legend-up">上涨板块 ${positive}</span><span class="radar-legend-down">下跌板块 ${negative}</span><span>东方财富行业板块 · 热图前16 · 完整榜单前36，图中重点展示前16</span></div>
    ${heatmapHtml(sectors)}
   </section>
   <div class="radar-columns">
