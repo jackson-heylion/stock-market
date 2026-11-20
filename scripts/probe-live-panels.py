@@ -38,3 +38,33 @@ def test(arg):
  except Exception as e:return {"name":name,"error":repr(e)[:280],"ms":round((time.perf_counter()-start)*1000)}
 with concurrent.futures.ThreadPoolExecutor(max_workers=7) as pool:
  for v in pool.map(test,urls.items()):print(json.dumps(v,ensure_ascii=False),flush=True)
+
+# Diagnose recent-news JSON failure with canonical req_trace and alternate source.
+import uuid
+news_urls={
+ "news_trace":"https://np-weblist.eastmoney.com/comm/web/getFastNewsList?client=web&biz=web_724&fastColumn=102&sortEnd=&pageSize=30&req_trace="+str(uuid.uuid4()),
+ "news_trace_other":"https://np-weblist.eastmoney.com/comm/web/getFastNewsList?client=web&biz=web_724&fastColumn=101&sortEnd=&pageSize=30&req_trace="+str(uuid.uuid4()),
+ "news_column":"https://np-listapi.eastmoney.com/comm/web/getNewsByColumns?client=web&biz=web_news_col&column=350&pageSize=30&page=1&req_trace="+str(uuid.uuid4()),
+ "news_column_weblist":"https://np-weblist.eastmoney.com/comm/web/getNewsByColumns?client=web&biz=web_news_col&column=350&pageSize=30&page=1&req_trace="+str(uuid.uuid4()),
+ "news_sina":"https://zhibo.sina.com.cn/api/zhibo/feed?zhibo_id=152&tag_id=0&page=1&page_size=30",
+ "news_cls":"https://www.cls.cn/nodeapi/telegraphList?app=CailianpressWeb&os=web&refresh_type=1&rn=30&sv=8.4.6"
+}
+def check_news(item):
+ name,url=item
+ try:
+  req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0","Origin":"https://jackson-heylion.github.io","Referer":"https://kuaixun.eastmoney.com/","Accept":"application/json"})
+  with urllib.request.urlopen(req,timeout=11) as response:
+   raw=response.read(100000);cors=response.headers.get("Access-Control-Allow-Origin");status=response.status
+  s=raw.decode('utf-8',errors='replace')
+  try:
+   obj=json.loads(s);data=obj.get('data')
+   if isinstance(data,dict):
+    info={"top":{k:v for k,v in obj.items() if k!="data"},"dataKeys":list(data.keys())[:16],
+     "records":{k:len(v) for k,v in data.items() if isinstance(v,list)},
+     "sample":{k:v[:1] for k,v in data.items() if isinstance(v,list)}}
+   else:info={"top":{k:v for k,v in obj.items() if k!="data"},"data":str(data)[:200]}
+  except Exception:info={"prefix":s[:280]}
+  return {"name":name,"status":status,"cors":cors,"validForPages":cors in ("*","https://jackson-heylion.github.io"),"response":info}
+ except Exception as err:return {"name":name,"error":repr(err)[:200]}
+with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+ for item in pool.map(check_news,news_urls.items()):print(json.dumps(item,ensure_ascii=False),flush=True)
