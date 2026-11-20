@@ -129,7 +129,7 @@ try:
   headers={"User-Agent":"Mozilla/5.0","Origin":"https://jackson-heylion.github.io"}),timeout=12) as response:
   raw=response.read(100000).decode("gb18030",errors="replace")
  rows=[]
- for code,body in re.findall(r'v_((?:sh|sz)\\d{6})="([^"\\n]+)"',raw):
+ for code,body in re.findall(r'v_((?:sh|sz)\d{6})="([^"\n]+)"',raw):
   f=body.split("~")
   if len(f)<32:continue
   try:
