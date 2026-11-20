@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {getRankings,parseRanking} from '../market-center.js';
 import {CHANGE_LABELS,CHANGE_TYPES,parseChangeEvents,parseFastNews,getNewsTerms,treemapLayout,
  getLiveSectors,getLiveNews,getLiveChanges} from '../market-radar.js';
-import {radarState,renderRadar,handleRadarClick} from '../radar-view.js';
+import {radarState,renderRadar,handleRadarClick,radarSourceStatus} from '../radar-view.js';
 
 const fake=data=>({ok:true,json:async()=>data,arrayBuffer:async()=>new TextEncoder().encode(JSON.stringify(data)).buffer});
 test('speed ranking directly sorts the provider f22 field, not invented 3s snapshots',async()=>{
@@ -97,4 +97,16 @@ test('source-backed anomalies and radar UI never fabricate feeds, allow direct s
  handleRadarClick({dataset:{action:'radar-stock',code:'002095',name:'生 意 宝'}},{openStock:code=>clicked=code});
  assert.equal(clicked,'002095');
  radarState.changes.rows=old;
+});
+
+test('failed feed is clearly marked stale and never changes last success timestamp',()=>{
+ const old={...radarState.news};
+ radarState.news.updatedAt=Date.parse('2026-11-20T10:00:00+08:00');
+ radarState.news.checkedAt=Date.parse('2026-11-20T10:15:00+08:00');
+ radarState.news.error='API unavailable';
+ const label=radarSourceStatus('news');
+ assert.match(label,/源异常/);
+ assert.match(label,/沿用10:00成功快照/);
+ assert.match(label,/API unavailable/);
+ Object.assign(radarState.news,old);
 });
