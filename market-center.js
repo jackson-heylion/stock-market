@@ -21,11 +21,19 @@ export const RANK_MODES=Object.freeze({
  turnover:{label:'成交额榜',fid:'f6',po:1},
  volume:{label:'成交量榜',fid:'f5',po:1}
 });
+export const SORT_COLUMNS=Object.freeze({
+ code:{label:'股票代码',fid:'f12'},price:{label:'当前价',fid:'f2'},
+ change:{label:'涨跌额',fid:'f4'},pct:{label:'涨跌幅',fid:'f3'},
+ ytdPct:{label:'年初至今',fid:'f25'},volume:{label:'成交量',fid:'f5'},
+ turnover:{label:'成交额',fid:'f6'},turnoverRate:{label:'换手率',fid:'f8'},
+ peTtm:{label:'市盈率(TTM)',fid:'f9'},pb:{label:'市净率',fid:'f23'},
+ marketCap:{label:'总市值',fid:'f20'}
+});
 const num=x=>typeof x==='number'?x:Number(x);
 const validPct=x=>Number.isFinite(x)&&x>=-100&&x<=100;
 const rankUrl=(fs,fid,po,page,size)=>{
  const q=new URLSearchParams({pn:String(page),pz:String(size),po:String(po),np:'1',fltt:'2',invt:'2',fid,fs,
- fields:'f2,f3,f4,f5,f6,f7,f8,f12,f13,f14,f15,f16,f17,f18,f20,f21,f22,f23,f124'});
+ fields:'f2,f3,f4,f5,f6,f7,f8,f12,f13,f14,f15,f16,f17,f18,f20,f21,f22,f23,f25,f124'});
  return 'https://push2.eastmoney.com/api/qt/clist/get?'+q;
 };
 export function parseIndices(raw,receivedAt=Date.now()){
@@ -51,9 +59,13 @@ export function parseRanking(data,{board=false}={}){
   if(!board&&![0,1].includes(Number(x.f13)))return null;
   const n=k=>{const v=num(x[k]);return Number.isFinite(v)&&v>=0?v:null;};
   const priceOrNull=k=>{const v=num(x[k]);return validPrice(v)?v:null;};
+  const signedNumber=k=>{const v=num(x[k]);return Number.isFinite(v)&&v>-1e13&&v<1e13?v:null;};
+  const ratio=k=>{const v=signedNumber(k);return v===null||v<-100||v>10000?null:v;};
   return {code,name,price,pct,exchange:board?'BOARD':Number(x.f13)===1?'SH':'SZ',
    volume:n('f5'),turnover:n('f6'),high:priceOrNull('f15'),low:priceOrNull('f16'),
    open:priceOrNull('f17'),prevClose:priceOrNull('f18'),marketCap:n('f20'),
+   change:signedNumber('f4'),ytdPct:ratio('f25'),turnoverRate:ratio('f8'),
+   peTtm:signedNumber('f9'),pb:ratio('f23'),
    quoteTime:chinaTimestamp(x.f124),source:'东方财富'};
  }).filter(Boolean);
  return {rows,total:Number.isInteger(total)&&total>=0?total:null};
@@ -71,19 +83,37 @@ export async function getMarketIndices(fetchImpl=fetch){
  if(!indices.length)throw Error('主要指数报价暂不可用');
  return indices;
 }
-export async function getRankings(mode='gainers',scope='all',{fetchImpl=fetch,page=1,size=50}={}){
- if(!RANK_MODES[mode]||!SCOPES[scope])throw Error('不支持的榜单类型');
- const sort=RANK_MODES[mode],fs=SCOPES[scope].fs;
- const raw=await fetchTimeout(rankUrl(fs,sort.fid,sort.po,page,Math.min(100,Math.max(1,size))),'json',fetchImpl,9000);
+export async function getRankings(mode='gainers',scope='all',{fetchImpl=fetch,page=1,size=50,sortKey=null,descending=null,sectorCode=null}={}){
+ if(!RANK_MODES[mode])throw Error('不支持的榜单类型');
+ const sector=sectorCode!==null;
+ if(sector?!/^BK\\d{3,6}$/.test(sectorCode):!SCOPES[scope])throw Error('不支持的行情分类');
+ if(sortKey!==null&&!SORT_COLUMNS[sortKey])throw Error('不支持的排序字段');
+ if(!Number.isInteger(page)||page<1||page>2000)throw Error('无效页码');
+ if(!Number.isInteger(size)||![30,50,60,90,100].includes(size))throw Error('无效每页数量');
+ const definition=RANK_MODES[mode];
+ const fs=sector?'b:'+sectorCode:SCOPES[scope].fs;
+ const fid=sortKey?SORT_COLUMNS[sortKey].fid:definition.fid;
+ const po=descending===null?definition.po:(descending?1:0);
+ const raw=await fetchTimeout(rankUrl(fs,fid,po,page,size),'json',fetchImpl,9000);
  const parsed=parseRanking(raw);
- if(!parsed.rows.length)throw Error('股票排行暂无有效行情');
- return {...parsed,mode,scope,receivedAt:Date.now(),source:'东方财富',page};
+ if(!parsed.rows.length)throw Error('股票行情当前页暂无有效数据');
+ return {...parsed,mode,scope,receivedAt:Date.now(),source:'东方财富',page,size,sortKey:sortKey||mode,descending:po===1};
 }
+
 export async function getSectors(fetchImpl=fetch){
  const raw=await fetchTimeout(rankUrl('m:90+t:2','f3',1,1,20),'json',fetchImpl,9000);
  const parsed=parseRanking(raw,{board:true});
  if(!parsed.rows.length)throw Error('行业板块榜暂无有效数据');
  return {...parsed,source:'东方财富',receivedAt:Date.now()};
+}
+export async function getWatchQuotes(codes,fetchImpl=fetch){
+ const cleaned=[...new Set(codes)].filter(x=>/^\\d{6}$/.test(x)).slice(0,100);
+ if(!cleaned.length)return [];
+ const secids=cleaned.map(code=>(code.startsWith('6')?'1.':'0.')+code);
+ const q=new URLSearchParams({fltt:'2',secids:secids.join(','),
+  fields:'f2,f3,f4,f5,f6,f8,f9,f12,f13,f14,f15,f16,f17,f18,f20,f23,f25,f124'});
+ const raw=await fetchTimeout('https://push2.eastmoney.com/api/qt/ulist.np/get?'+q,'json',fetchImpl,9000);
+ return parseRanking(raw).rows;
 }
 export async function getMarketBreadth(fetchImpl=fetch){
  const targets=['1.000001','0.399001'];
