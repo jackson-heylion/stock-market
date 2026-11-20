@@ -1,6 +1,6 @@
 ---
 name: stock-market
- description: Manage this repository's A-share paper-trading MVP, watchlist, historical snapshots, virtual portfolio and five explainable pre-breakout models.
+description: Manage this repository's A-share paper-trading MVP, watchlist, historical snapshots, virtual portfolio and five explainable pre-breakout models.
 ---
 # Stock Market · paper trading skill
 
