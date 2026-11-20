@@ -21,11 +21,11 @@ for name, (url, extra) in urls.items():
     txt=data.decode("utf-8" if name=="eastmoney" else "gb18030",errors="replace")
     matches=[]
     if name=="tencent":
-      for code,raw in re.findall(r'v_((?:sh|sz)\\d{6})="([^"\\n]+)"',txt):
+      for code,raw in re.findall(r'v_((?:sh|sz)\d{6})="([^"\n]+)"',txt):
         f=raw.split("~")
         if len(f)>30: matches.append({"code":code,"name":f[1],"price":f[3],"quote_time":f[30]})
     elif name=="sina":
-      for code,raw in re.findall(r'var hq_str_((?:sh|sz)\\d{6})="([^"\\n]+)"',txt):
+      for code,raw in re.findall(r'var hq_str_((?:sh|sz)\d{6})="([^"\n]+)"',txt):
         f=raw.split(",")
         if len(f)>31: matches.append({"code":code,"name":f[0],"price":f[3],"quote_time":f[30]+" "+f[31]})
     else:
