@@ -39,3 +39,24 @@ for name, (url, extra) in urls.items():
     result={"name":name,"status":"ERROR","elapsed_ms":round((time.perf_counter()-start)*1000),"error":repr(e)[:250]}
   result["checked_utc"]=datetime.now(timezone.utc).isoformat()
   print(json.dumps(result,ensure_ascii=False),flush=True)
+
+# Verify separate chart hosts: a successful quote does not prove that minute/Kline CORS works.
+chart_endpoints = {
+ "minute": "https://push2.eastmoney.com/api/qt/stock/trends2/get?secid=1.601133&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58&ndays=1&iscr=0",
+ "daily": "https://push2his.eastmoney.com/api/qt/stock/kline/get?secid=1.601133&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61&klt=101&fqt=1&beg=20200101&end=20500101&lmt=140",
+}
+for name, url in chart_endpoints.items():
+ start=time.perf_counter()
+ try:
+  with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0","Origin":"https://jackson-heylion.github.io","Referer":"https://quote.eastmoney.com/"}),timeout=12) as response:
+   status=response.status
+   cors=response.headers.get("Access-Control-Allow-Origin")
+   obj=json.loads(response.read(500000).decode("utf-8"))
+  row=(obj.get("data") or {})
+  data=row.get("trends") if name=="minute" else row.get("klines")
+  result={"name":name,"status":status,"parsed":len(data or []),"sample":(data or [])[:1],
+    "cors_allow_origin":cors,"cors_for_pages":cors in ("*","https://jackson-heylion.github.io"),
+    "elapsed_ms":round((time.perf_counter()-start)*1000)}
+ except Exception as err:
+  result={"name":name,"status":"ERROR","error":repr(err)[:250]}
+ print(json.dumps(result,ensure_ascii=False),flush=True)
