@@ -85,10 +85,10 @@ export async function getMarketIndices(fetchImpl=fetch){
  return indices;
 }
 export async function getRankings(mode='gainers',scope='all',{fetchImpl=fetch,page=1,size=50,sortKey=null,descending=null,sectorCode=null}={}){
- if(!RANK_MODES[mode])throw Error('不支持的榜单类型');
+ if(!Object.hasOwn(RANK_MODES,mode))throw Error('不支持的榜单类型');
  const sector=sectorCode!==null;
- if(sector?!/^BK\d{3,6}$/.test(sectorCode):!SCOPES[scope])throw Error('不支持的行情分类');
- if(sortKey!==null&&!SORT_COLUMNS[sortKey])throw Error('不支持的排序字段');
+ if(sector?!/^BK\d{3,6}$/.test(sectorCode):!Object.hasOwn(SCOPES,scope))throw Error('不支持的行情分类');
+ if(sortKey!==null&&!Object.hasOwn(SORT_COLUMNS,sortKey))throw Error('不支持的排序字段');
  if(!Number.isInteger(page)||page<1||page>2000)throw Error('无效页码');
  if(!Number.isInteger(size)||![30,50,60,90,100].includes(size))throw Error('无效每页数量');
  const definition=RANK_MODES[mode];

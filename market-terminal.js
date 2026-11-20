@@ -166,13 +166,13 @@ export function terminalVisit(code,name){
 }
 
 export function terminalSetScope(scope){
- if(!SCOPES[scope])return false;
+ if(!Object.hasOwn(SCOPES,scope))return false;
  Object.assign(mt,{view:'rank',scope,sectorCode:null,sectorLabel:'',page:1,rows:[],total:null,updatedAt:0,error:'',search:''});
  return true;
 }
 
 export function terminalSetSort(sort){
- if(!SORT_COLUMNS[sort])return false;
+ if(!Object.hasOwn(SORT_COLUMNS,sort))return false;
  Object.assign(mt,{view:'rank',sortKey:sort,descending:sort==='code'?false:true,page:1,rows:[],total:null,updatedAt:0,error:'',search:''});
  return true;
 }
@@ -229,7 +229,7 @@ export function handleTerminalClick(btn,{rerender=()=>{},openChart=()=>{},notify
  case'mt-scope':if(!terminalSetScope(v))return;rerender();refreshTerminal(true,rerender);break;
  case'mt-sort-menu':if(!terminalSetSort(v))return;rerender();refreshTerminal(true,rerender);break;
  case'mt-sort':{
-  if(!SORT_COLUMNS[v])return;
+  if(!Object.hasOwn(SORT_COLUMNS,v))return;
   const reverse=mt.sortKey===v;
   mt.sortKey=v;mt.descending=reverse?!mt.descending:v==='code'?false:true;mt.page=1;mt.updatedAt=0;mt.rows=[];
   rerender();refreshTerminal(true,rerender);break;
