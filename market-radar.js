@@ -56,6 +56,14 @@ export const NEWS_STOP_WORDS=new Set([
  '今日','昨日','近日','同比','消息','万元','亿元','日本','欧洲','美元',
  'ETF','A股','沪指','最新','首次','高达','其中','预计'
 ]);
+// Controlled concept matcher only counts terms that literally occur in a real headline.
+// It supplements general Chinese tokenization of compound names (e.g. 智元机器人).
+export const NEWS_CONCEPT_TERMS=Object.freeze([
+ '机器人','算力','芯片','半导体','AI','PCB','光伏','储能','电力','电池','光刻胶',
+ '商业航天','无人驾驶','脑机接口','量子','大模型','人工智能','数据中心',
+ '并购','重组','涨停','跌停','减持','增持','融资','稀土','黄金','固态电池',
+ '新能源','涨价','订单','业绩','出口','关税','英伟达','Anthropic'
+]);
 export function getNewsTerms(news,{now=Date.now(),maxAgeMs=2*3600000,limit=36}={}){
  const eligible=news.filter(n=>Number.isFinite(n?.time)&&n.time<=now+300000&&now-n.time<=maxAgeMs);
  const terms=new Map();
@@ -71,6 +79,9 @@ export function getNewsTerms(news,{now=Date.now(),maxAgeMs=2*3600000,limit=36}={
    const normalized=/^[A-Za-z]+$/.test(token)?token.toUpperCase():token;
    if(NEWS_STOP_WORDS.has(normalized)||NEWS_STOP_WORDS.has(token))continue;
    found.add(normalized);
+  }
+  for(const concept of NEWS_CONCEPT_TERMS){
+   if(title.toUpperCase().includes(concept.toUpperCase()))found.add(concept);
   }
   for(const token of found)terms.set(token,(terms.get(token)||0)+1);
  }
