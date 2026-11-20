@@ -43,7 +43,7 @@ export function morningScore(stock,historical,morning,boardPct,config){
   price:morning.price,pct,provisionalMA20:round(provisionalMA20),
   halfDayVolume:morning.volume,halfDayVolumeRatio:halfDayRatio===null?null:round(halfDayRatio),
   reasons:[
-   sector?'板块截至11:30涨'+boardPct.toFixed(2)+'%':'板块上午涨幅未达标或无可靠数据',
+   sector?(stock.sectorEvidence||'板块样本')+'上涨 '+boardPct.toFixed(2)+'%':'板块上午涨幅未达标或无可靠数据',
    volume?'上午成交量/近5日全天均量一半 = '+round(halfDayRatio)+'倍':'上午相对成交量不足或不可核验',
    trend?'11:30价格高于暂算MA20':'11:30价格未站上暂算MA20'
   ]};
@@ -92,7 +92,7 @@ export async function scanMorning({
   try{boardValues.set(stock.sectorCode,await sectorLoader(stock.sectorCode,date));}
   catch(err){boardValues.set(stock.sectorCode,null);}
  }
- const candidates=[];
+ const rawCandidates=[];
  for(const stock of universe){
   try{
    const [hist,trend]=await Promise.all([
@@ -101,16 +101,40 @@ export async function scanMorning({
    const morning=atMorningClose(trend.bars,date);
    const latest=hist.filter(x=>x.date<date).at(-1);
    if(!latest)throw Error('缺少上一交易日收盘价');
-   const computed=morningScore({...stock,date},hist,morning,
-    boardValues.get(stock.sectorCode),cfg);
-   candidates.push({code:stock.code,name:stock.name,sector:stock.sector,
-    sectorCode:stock.sectorCode,sectorMorningPct:boardValues.get(stock.sectorCode),
-    prevClose:latest.close,morningTime:morning.time,...computed});
+   rawCandidates.push({stock,hist,morning,prevClose:latest.close,
+    morningPct:round((morning.price/latest.close-1)*100)});
   }catch(err){
-   candidates.push({code:stock.code,name:stock.name,sector:stock.sector,
-    sectorCode:stock.sectorCode,score:0,passed:false,price:null,
-    error:String(err?.message||err),reasons:['上午数据不足，未产生有效信号']});
+   rawCandidates.push({stock,error:String(err?.message||err)});
   }
+ }
+ // Some public sector board trend APIs return data:null. Derive an explicitly
+ // limited sector sample proxy only from true 11:30 constituent minute prices.
+ // Requires >=2 actual source-backed constituents; never call it full-sector data.
+ const sampleGroups=new Map();
+ for(const row of rawCandidates){
+  if(row.error||!row.stock.sectorCode)continue;
+  const arr=sampleGroups.get(row.stock.sectorCode)||[];
+  arr.push(row.morningPct);sampleGroups.set(row.stock.sectorCode,arr);
+ }
+ const candidates=[];
+ for(const row of rawCandidates){
+  const stock=row.stock;
+  if(row.error){
+   candidates.push({code:stock.code,name:stock.name,sector:stock.sector,
+    sectorCode:stock.sectorCode,score:0,passed:false,price:null,error:row.error,
+    reasons:['上午数据不足，未产生有效信号']});continue;
+  }
+  const official=boardValues.get(stock.sectorCode),group=sampleGroups.get(stock.sectorCode)||[];
+  const sampleOk=group.length>=2;
+  const proxy=sampleOk?round(group.reduce((sum,x)=>sum+x,0)/group.length):null;
+  const boardPct=Number.isFinite(official)?official:proxy;
+  const sectorEvidence=Number.isFinite(official)?'行业板块分时指数':
+   sampleOk?'同板块'+group.length+'只候选股的11:30平均涨幅（非板块指数）':'板块数据不完整';
+  const computed=morningScore({...stock,date,sectorEvidence},row.hist,row.morning,boardPct,cfg);
+  candidates.push({code:stock.code,name:stock.name,sector:stock.sector,
+   sectorCode:stock.sectorCode,sectorMorningPct:boardPct,
+   sectorEvidence,sectorSampleSize:sampleOk?group.length:0,
+   prevClose:row.prevClose,morningTime:row.morning.time,...computed});
  }
  candidates.sort((a,b)=>b.score-a.score||(b.halfDayVolumeRatio||0)-(a.halfDayVolumeRatio||0));
  const orders=[];
@@ -121,7 +145,7 @@ export async function scanMorning({
  return {
   schema:1,modelId:'M5',date,cutoff:date+' 11:30',runAt:now.toISOString(),
   source:'东方财富行业及分时接口（上午11:30截止）',
-  universeNote:'候选板块成分股在执行时获取，可能包含午后筛选偏差；所有用于评分的行情截断至11:30。',
+  universeNote:'候选股票所属板块在实际执行时间发现，可能包含午后筛选偏差；评分用的每只股票行情截断至11:30。板块指数缺失时采用同板块至少2只候选股的11:30平均涨幅代理，不能等同整个行业强度。',
   volumeNote:'上午成交量与近5个完整交易日均量的50%比较，是粗略近似，不是严格的同一时段同比。',
   maNote:'MA20用19个已收盘交易日+上午11:30价格暂算，不使用下午收盘价。',
   accountInitialCash:account.initialCash,
