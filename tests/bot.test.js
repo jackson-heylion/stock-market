@@ -107,3 +107,14 @@ test('sell order generated only after risk signal and constrained by next sessio
  assert.equal(Object.keys(four.holdings).length,0);
  assert.ok(Number.isFinite(four.trades.at(-1).pnl));
 });
+
+test('missed workflow session expires pending order rather than pretending next-day fill',()=>{
+ const first=stepBot(seed,{date:today,universe,barsByCode:{'600520':m5Bars(today,10,300)}}).state;
+ const late='2026-11-24';
+ const history=[...m5Bars(today,10,300),sample(next,10.1,250),sample(late,10.2,250)];
+ const r=stepBot(first,{date:late,previousMarketDate:next,universe,barsByCode:{'600520':history}}).state;
+ assert.equal(r.trades.length,0);
+ assert.equal(r.cash,800000);
+ assert.equal(r.events.some(e=>e.code==='600520'&&e.status==='过期'),true);
+ assert.equal(r.pending.every(o=>o.signalDate===late),true);
+});
