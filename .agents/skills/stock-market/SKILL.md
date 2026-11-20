@@ -34,3 +34,11 @@ Run `npm test` and `npm run check`. Test budget rounding, commission/stamp/trans
 
 ## Workflow
 Design -> create/adjust deterministic unit tests -> implement -> run both commands -> review the accounting invariants and XSS boundaries -> commit -> inspect Pages deployment. Never call a local saved browser value a shared account: all state stays in that browser's localStorage. Warn that GitHub Pages may not be available for a private repo on GitHub Free.
+
+## Quote adapters and charts
+- `market.js`: browser-side anonymous Tencent quotes, Eastmoney quote fallback and Eastmoney minute / adjusted daily-weekly-monthly candles. Never execute Tencent/Sina JS blobs; decode text and parse numbers only.
+- `charts.js`: render SVG from validated minute bars or OHLCV candles; no fabricated curves and moving averages are computed solely from returned bars.
+- `server/quote-proxy.mjs`: optional Node relay: Tencent→Sina (Referer)→Eastmoney; Pages cannot use Sina directly because Sina response lacks CORS.
+- Realtime quotes are **ephemeral view state**, not historical ledger transactions. Keep `state.trades` and seed order prices unchanged. Show source/quote time/staleness; do not claim guaranteed exchange live prices.
+- Every chart query must return real points; errors show an empty state instead of synthetic prices. `npm test` must pass for parse, fallback and candle rendering.
+- To smoke-test current anonymous public hosts with real external network, run `.github/workflows/verify-quotes.yml`. This validates a GitHub runner, not domestic latency.

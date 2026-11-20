@@ -76,7 +76,8 @@ async function refreshQuotes(){
  polling=true;
  try{
  const symbols=SECURITIES.filter(s=>!s.halted).map(s=>s.code);
- const result=await getQuotes(symbols);
+ const proxy=new URLSearchParams(location.search).get('proxy')||'';
+ const result=await getQuotes(symbols,{proxy});
  const refreshed={...liveQuotes};
  for(const q of result.quotes){if(q.price>0)refreshed[q.code]=q;}
  liveQuotes=refreshed;quotePath=result.source;quoteError=result.errors.join('；');

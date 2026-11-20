@@ -50,6 +50,17 @@ export function parseTencent(raw,receivedAt=Date.now()){
  return rows;
 }
 
+export function parseSina(raw,receivedAt=Date.now()){
+ const quotes=[];
+ for(const match of String(raw).matchAll(/var hq_str_(?:sh|sz)(\\d{6})="([^"\\r\\n]*)"/g)){
+  const f=match[2].split(","),price=Number(f[3]),prevClose=Number(f[2]);
+  if(f.length<32||!validPrice(price))continue;
+  quotes.push({code:match[1],name:f[0],price,prevClose:validPrice(prevClose)?prevClose:null,
+  pct:validPrice(prevClose)?(price-prevClose)/prevClose*100:null,
+  time:chinaTimestamp(f[30]+" "+f[31]),receivedAt,source:"新浪财经"});
+ }
+ return quotes;
+}
 export function parseEastmoney(raw,receivedAt=Date.now()){
  const diff=raw?.data?.diff;
  if(!Array.isArray(diff))return [];
@@ -71,8 +82,19 @@ export async function fetchTimeout(url,kind,fetchImpl=fetch,timeoutMs=6500){
  }finally{clearTimeout(timer);}
 }
 
-export async function getQuotes(symbols,{fetchImpl=fetch,now=()=>Date.now()}={}){
+export async function getQuotes(symbols,{fetchImpl=fetch,now=()=>Date.now(),proxy=''}={}){
  const symbolsOk=symbols.filter(x=>/^\d{6}$/.test(x)),known=new Set(symbolsOk);
+ if(proxy){
+  try{
+   const url=new URL(proxy);
+   if(url.protocol!=="https:"&&!["localhost","127.0.0.1"].includes(url.hostname))throw Error("代理必须使用HTTPS");
+   const data=await fetchTimeout(url.origin+url.pathname.replace(/\\/$/,"")+"/api/quotes?codes="+encodeURIComponent(symbolsOk.join(",")),"json",fetchImpl);
+   const quotes=(Array.isArray(data?.quotes)?data.quotes:[]).filter(q=>known.has(String(q.code))&&validPrice(Number(q.price)))
+    .map(q=>({...q,code:String(q.code),price:Number(q.price),time:chinaTimestamp(q.time)||null}));
+   if(quotes.length)return {quotes,errors:[],source:"行情代理（腾讯/新浪/东财）"};
+  }catch(err){/* anonymous direct sources remain available when private proxy is offline */}
+ }
+
  const codes=symbolsOk.map(exchangePrefix).map((prefix,i)=>prefix+symbolsOk[i]);
  const nowAt=now(),errors=[];
  let main=[];
