@@ -49,7 +49,7 @@ test('rank requests use correct exchange filters and sort direction',async()=>{
  await getRankings('turnover','all',{fetchImpl});
  assert.match(seen[1],/fid=f6/);
  assert.ok(SCOPES.all.fs.includes('m:1+t:23'));
- assert.deepEqual(Object.keys(RANK_MODES),['gainers','losers','turnover','volume']);
+ assert.deepEqual(Object.keys(RANK_MODES),['gainers','losers','turnover','volume','speed']);
  await assert.rejects(getRankings('invalid','all',{fetchImpl}));
 });
 test('index history uses exchange-qualified secids, without using stock marketPrefix',async()=>{
