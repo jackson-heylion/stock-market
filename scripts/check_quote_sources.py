@@ -60,3 +60,33 @@ for name, url in chart_endpoints.items():
  except Exception as err:
   result={"name":name,"status":"ERROR","error":repr(err)[:250]}
  print(json.dumps(result,ensure_ascii=False),flush=True)
+
+# Market center / indices diagnostic. Unofficial Eastmoney discovery endpoints.
+market_urls={
+ "indices_tencent":"https://qt.gtimg.cn/q=sh000001,sz399001,sz399006,sh000688,sh000300",
+ "market_gainers":"https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=20&po=1&np=1&fltt=2&fid=f3&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23&fields=f2,f3,f5,f6,f12,f13,f14,f15,f16,f17,f18",
+ "market_losers":"https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=20&po=0&np=1&fltt=2&fid=f3&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23&fields=f2,f3,f5,f6,f12,f13,f14,f15,f16,f17,f18",
+ "market_turnover":"https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=20&po=1&np=1&fltt=2&fid=f6&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23&fields=f2,f3,f5,f6,f12,f13,f14,f15,f16,f17,f18",
+ "sector_industry":"https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=15&po=1&np=1&fltt=2&fid=f3&fs=m:90+t:2&fields=f2,f3,f5,f6,f12,f13,f14",
+ "breadth_sse":"https://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&fields=f43,f57,f58,f104,f105,f106,f47,f48&secid=1.000001",
+ "breadth_szse":"https://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&fields=f43,f57,f58,f104,f105,f106,f47,f48&secid=0.399001",
+}
+for name,url in market_urls.items():
+ start=time.perf_counter()
+ try:
+  with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0","Origin":"https://jackson-heylion.github.io","Referer":"https://quote.eastmoney.com/"}),timeout=12) as response:
+   status=response.status
+   cors=response.headers.get("Access-Control-Allow-Origin")
+   txt=response.read(700000).decode("gb18030" if name=="indices_tencent" else "utf-8",errors="replace")
+  if name=="indices_tencent":
+   sample=[x for x in re.findall(r'(v_(?:sh|sz)\\d{6}="[^"]+")',txt)][:2]
+   summary={"count":txt.count("v_"),"sample":sample}
+  else:
+   obj=json.loads(txt)
+   data=obj.get("data") or {}
+   diff=data.get("diff") or []
+   summary={"total":data.get("total"),"count":len(diff) if isinstance(diff,list) else 0,"sample":diff[:2] if isinstance(diff,list) else data}
+  out={"name":name,"status":status,"elapsed_ms":round((time.perf_counter()-start)*1000),
+   "cors":cors,"cors_for_pages":cors in ("*","https://jackson-heylion.github.io"),"result":summary}
+ except Exception as err:out={"name":name,"status":"ERROR","error":repr(err)[:200]}
+ print(json.dumps(out,ensure_ascii=False),flush=True)
