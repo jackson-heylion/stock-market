@@ -100,3 +100,20 @@ for name,url in [("breadth_payload","https://push2.eastmoney.com/api/qt/stock/ge
   obj=json.loads(body) if name=="breadth_payload" else body[:300]
   print(json.dumps({"name":name,"payload":obj},ensure_ascii=False),flush=True)
  except Exception as err:print(json.dumps({"name":name,"error":str(err)},ensure_ascii=False),flush=True)
+
+# Can the market-wide A-share list be retrieved to compute breadth with a complete denominator?
+try:
+ u="https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=6000&po=1&np=1&fltt=2&fid=f3&fs=m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23&fields=f3,f6,f12,f13"
+ ts=time.perf_counter()
+ with urllib.request.urlopen(urllib.request.Request(u,headers={"User-Agent":"Mozilla/5.0","Origin":"https://jackson-heylion.github.io"}),timeout=20) as rr:
+  body=rr.read(3000000)
+  cors=rr.headers.get("Access-Control-Allow-Origin")
+ data=json.loads(body.decode("utf-8")).get("data") or {}
+ items=data.get("diff") or []
+ print(json.dumps({"name":"market_breadth_full_probe","total":data.get("total"),"count":len(items),
+ "up":sum(1 for x in items if isinstance(x.get("f3"),(int,float)) and x["f3"]>0),
+ "down":sum(1 for x in items if isinstance(x.get("f3"),(int,float)) and x["f3"]<0),
+ "flat":sum(1 for x in items if isinstance(x.get("f3"),(int,float)) and x["f3"]==0),
+ "body_bytes":len(body),"elapsed_ms":round((time.perf_counter()-ts)*1000),
+ "cors_for_pages":cors in ("*","https://jackson-heylion.github.io")},ensure_ascii=False),flush=True)
+except Exception as err:print(json.dumps({"name":"market_breadth_full_probe","error":repr(err)[:300]}),flush=True)
