@@ -1,0 +1,74 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {INDEXES,SCOPES,RANK_MODES,parseIndices,parseRanking,parseMarketBreadth,getMarketIndices,getRankings,getSectors,getIndexHistory,getMarketBreadth} from '../market-center.js';
+const qq=Array(50).fill('0');qq[1]='上证指数';qq[3]='3514.92';qq[4]='3577.62';qq[30]='20261120095712';
+const indexData='v_sh000001="'+qq.join('~')+'";';
+const rank={data:{total:5565,diff:[
+ {f12:'300812',f13:0,f14:'易天股份',f2:18,f3:20,f5:199220,f6:341992183.54,f15:18,f16:14.61,f17:15,f18:15},
+ {f12:'600520',f13:1,f14:'三佳科技',f2:22.17,f3:10.02,f5:2000,f6:12345,f15:23,f16:20,f17:22,f18:20.15},
+ {f12:'junk',f13:1,f14:'无效',f2:14,f3:5},
+ {f12:'300829',f13:0,f14:'坏报价',f2:'-',f3:3}
+]}};
+const board={data:{total:496,diff:[{f12:'BK1340',f13:90,f14:'印制电路板',f2:8982.93,f3:0.72,f6:17276315664}]}};
+const fakeReply=data=>({ok:true,json:async()=>data,arrayBuffer:async()=>new TextEncoder().encode(typeof data==='string'?data:JSON.stringify(data)).buffer});
+test('major-index list uses qualified exchange keys, no 000001 ambiguity',()=>{
+ assert.equal(INDEXES.length,5);
+ assert.equal(INDEXES.find(x=>x.key==='sh000001').secid,'1.000001');
+ assert.equal(parseIndices(indexData).length,1);
+ const ix=parseIndices(indexData)[0];
+ assert.equal(ix.key,'sh000001');assert.equal(ix.price,3514.92);assert.ok(ix.pct<0);
+ assert.equal(ix.time,Date.parse('2026-11-20T09:57:12+08:00'));
+ assert.equal(parseIndices('v_sz000001="'+qq.join('~')+'";').length,0);
+});
+test('A-share ranking rejects invalid quotes and preserves source totals',()=>{
+ const result=parseRanking(rank);
+ assert.equal(result.total,5565);assert.equal(result.rows.length,2);
+ assert.equal(result.rows[0].name,'易天股份');assert.equal(result.rows[0].pct,20);
+ assert.equal(result.rows[0].turnover,341992183.54);
+ assert.equal(result.rows[0].quoteTime,null);
+ assert.equal(parseRanking(null).rows.length,0);
+ assert.equal(parseRanking({data:{total:0,diff:[]}}).total,0);
+});
+test('sector boards are parsed separately and excluded from stock orders',()=>{
+ assert.equal(parseRanking(board).rows.length,0);
+ assert.equal(parseRanking(board,{board:true}).rows[0].exchange,'BOARD');
+ assert.equal(parseRanking(board,{board:true}).rows[0].code,'BK1340');
+});
+test('market breadth displays unavailable when source contains nonnumeric placeholders',()=>{
+ assert.equal(parseMarketBreadth({data:{f104:'-',f105:'-',f106:100}}),null);
+ assert.deepEqual(parseMarketBreadth({data:{f104:1200,f105:900,f106:100}}),
+ {up:1200,down:900,flat:100,name:''});
+});
+test('rank requests use correct exchange filters and sort direction',async()=>{
+ const seen=[];
+ const fetchImpl=async url=>{seen.push(String(url));return fakeReply(rank);};
+ const r=await getRankings('losers','gem',{fetchImpl,page:1,size:60});
+ assert.equal(r.rows.length,2);
+ assert.match(seen[0],/po=0/);
+ assert.match(decodeURIComponent(seen[0]),/m:0\+t:80/);
+ await getRankings('turnover','all',{fetchImpl});
+ assert.match(seen[1],/fid=f6/);
+ assert.ok(SCOPES.all.fs.includes('m:1+t:23'));
+ assert.deepEqual(Object.keys(RANK_MODES),['gainers','losers','turnover','volume']);
+ await assert.rejects(getRankings('invalid','all',{fetchImpl}));
+});
+test('index history uses exchange-qualified secids, without using stock marketPrefix',async()=>{
+ const seen=[],fetchImpl=async url=>{
+  seen.push(String(url));
+  return fakeReply(url.includes('trends2')?{data:{prePrice:3000,trends:['2026-11-20 09:30,3000,3010,3020,2990,30,10000,3005']}}:
+  {data:{klines:['2026-11-19,3000,3010,3020,2990,100,300000']}});
+ };
+ const a=await getIndexHistory('sh000001','minute',fetchImpl),b=await getIndexHistory('sz399006','day',fetchImpl);
+ assert.equal(a.bars.length,1);assert.equal(b.bars.length,1);
+ assert.match(seen[0],/secid=1.000001/);
+ assert.match(seen[1],/secid=0.399006/);
+ assert.match(seen[1],/fqt=0/);
+});
+test('index / sector / breadth handlers tolerate independently unavailable data',async()=>{
+ const ok=await getMarketIndices(async()=>fakeReply(indexData));
+ assert.equal(ok[0].name,'上证指数');
+ const sectors=await getSectors(async()=>fakeReply(board));
+ assert.equal(sectors.rows.length,1);
+ const nullBreadth=await getMarketBreadth(async()=>fakeReply({data:{f104:'-',f105:'-',f106:100}}));
+ assert.equal(nullBreadth,null);
+});
