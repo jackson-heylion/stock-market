@@ -14,7 +14,7 @@ function m5Bars(day,close=10,vol=300){
 const today='2026-11-20',next='2026-11-23';
 test('paper bot starts completely empty and M1-M4 require evidence, no seeded wins',()=>{
  validateBot(seed);
- assert.equal(seed.cash,800000);
+ assert.equal(seed.cash,1000000);
  assert.equal(seed.trades.length,0);
  assert.equal(seed.signals.length,0);
  assert.equal(seed.history.length,0);
@@ -47,7 +47,7 @@ test('signal is recorded after close but never filled on signal date',()=>{
  assert.equal(out.state.pending[0].signalDate,today);
  assert.equal(out.state.pending[0].side,'BUY');
  assert.equal(out.state.trades.length,0);
- assert.equal(out.state.cash,800000);
+ assert.equal(out.state.cash,1000000);
  assert.equal(out.state.signals[0].score,3);
  assert.equal(stepBot(out.state,{date:today,universe,barsByCode:{'600520':m5Bars(today,10,300)}}).changed,false);
 });
@@ -61,7 +61,7 @@ test('only next trading-session close can hypothetically fill: fee, lots and 10%
  assert.equal(second.trades[0].quantity%100,0);
  assert.equal(second.trades[0].price,10.11);
  assert.ok(second.trades[0].fee>0);
- assert.ok(second.cash<800000);
+ assert.ok(second.cash<1000000);
  assert.equal(Object.keys(second.holdings).length,1);
  assert.equal(second.holdings['600520'].buyDate,next);
  assert.equal(second.history.at(-1).date,next);
@@ -79,7 +79,7 @@ test('limit-up, invalid trading date and no volume cannot claim fills',()=>{
  const first=stepBot(seed,{date:today,universe,barsByCode:{'600520':m5Bars(today,10,300)}}).state;
  const second=stepBot(first,{date:next,universe,barsByCode:{'600520':[...m5Bars(today,10,300),sample(next,11,600)]}}).state;
  assert.equal(second.trades.length,0);
- assert.equal(second.cash,800000);
+ assert.equal(second.cash,1000000);
  assert.equal(second.events.at(-1).status,'未成交');
 });
 test('failed or delayed exchange data does not mutate account state',async()=>{
@@ -114,7 +114,7 @@ test('missed workflow session expires pending order rather than pretending next-
  const history=[...m5Bars(today,10,300),sample(next,10.1,250),sample(late,10.2,250)];
  const r=stepBot(first,{date:late,previousMarketDate:next,universe,barsByCode:{'600520':history}}).state;
  assert.equal(r.trades.length,0);
- assert.equal(r.cash,800000);
+ assert.equal(r.cash,1000000);
  assert.equal(r.events.some(e=>e.code==='600520'&&e.status==='过期'),true);
  assert.equal(r.pending.every(o=>o.signalDate===late),true);
 });
