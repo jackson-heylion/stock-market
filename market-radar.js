@@ -123,13 +123,42 @@ export async function getLiveSectors(fetchImpl=fetch){
  return {rows:sectors.sort((a,b)=>(b.turnover||0)-(a.turnover||0)).slice(0,36),total:raw?.data?.total??null,
   receivedAt:Date.now(),source:'东方财富行业板块'};
 }
-export async function getLiveNews(fetchImpl=fetch,{trace=()=>String(Date.now())+'-'+Math.random().toString(36).slice(2)}={}){
- const q=new URLSearchParams({client:'web',biz:'web_724',fastColumn:'102',sortEnd:'',pageSize:'60',req_trace:trace()});
- const raw=await fetchTimeout(NEWS_URL+'?'+q,'json',fetchImpl,10000);
- const rows=parseFastNews(raw);
- if(!rows.length)throw Error('7×24快讯暂未返回真实标题');
- return {rows,source:'东方财富7×24快讯',receivedAt:Date.now()};
+export function parseNewsSnapshot(payload,{now=Date.now(),maxAgeMs=2*3600000}={}){
+ if(!payload||payload.schema!==1||!Array.isArray(payload.articles))throw Error('同域快讯格式无效');
+ const fetchedAt=Date.parse(String(payload.fetchedAt||''));
+ if(!Number.isFinite(fetchedAt)||fetchedAt>now+300000||now-fetchedAt>maxAgeMs)
+  throw Error('同域快讯快照过期，不能当成实时新闻');
+ const rows=parseFastNews({data:{fastNewsList:payload.articles.map(x=>({
+  code:x.id, title:x.title, showTime:x.showTime
+ }))}});
+ if(!rows.length)throw Error('同域快讯没有真实标题记录');
+ return {rows,source:'东方财富7×24 · GitHub Pages同域快照',receivedAt:fetchedAt,
+  via:'snapshot',warning:now-fetchedAt>20*60000?'快照更新时间较早，可能滞后':''};
 }
+export async function getLiveNews(fetchImpl=fetch,{
+ trace=()=>String(Date.now())+'-'+Math.random().toString(36).slice(2),
+ snapshotUrl='./data/fast-news.json',
+ now=()=>Date.now()
+}={}){
+ const q=new URLSearchParams({client:'web',biz:'web_724',fastColumn:'102',sortEnd:'',pageSize:'60',req_trace:trace()});
+ let liveError='';
+ try{
+  const raw=await fetchTimeout(NEWS_URL+'?'+q,'json',fetchImpl,4200);
+  const rows=parseFastNews(raw);
+  if(!rows.length)throw Error('新闻接口无有效标题');
+  return {rows,source:'东方财富7×24快讯（直连）',receivedAt:now(),via:'live',warning:''};
+ }catch(err){liveError=String(err?.message||err);}
+ try{
+  // Same-origin Pages file bypasses the user's cross-origin news-host restrictions.
+  const cacheBust=Math.floor(now()/60000);
+  const joiner=snapshotUrl.includes('?')?'&':'?';
+  const snapshot=await fetchTimeout(snapshotUrl+joiner+'v='+cacheBust,'json',fetchImpl,6500);
+  return parseNewsSnapshot(snapshot,{now:now()});
+ }catch(err){
+  throw Error('新闻源直连失败：'+liveError+'；同域备份失败：'+String(err?.message||err));
+ }
+}
+
 export async function getLiveChanges(fetchImpl=fetch){
  const q=new URLSearchParams({type:CHANGE_TYPES,ut:'7eea3edcaed734bea9cbfc24409ed989',
   pageindex:'0',pagesize:'100',dpt:'wzchanges'});
