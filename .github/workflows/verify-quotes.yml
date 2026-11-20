@@ -1,0 +1,17 @@
+name: Verify anonymous A-share quote sources
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'scripts/check_quote_sources.py'
+      - '.github/workflows/verify-quotes.yml'
+permissions:
+  contents: read
+jobs:
+  quotes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check anonymous HTTP sources
+        run: python3 scripts/check_quote_sources.py
