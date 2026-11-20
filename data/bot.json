@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "description": "与浏览器手动模拟盘完全独立的 GitHub Actions 自动模拟账户；尚未运行，不包含任何预置买卖。",
+  "initialCash": 800000,
+  "cash": 800000,
+  "lastDate": null,
+  "updatedAt": null,
+  "models": {
+    "M1": {
+      "enabled": false,
+      "name": "中船特气｜产品涨价",
+      "reason": "必须先接入具有公开时点的产品价格与供需证据"
+    },
+    "M2": {
+      "enabled": false,
+      "name": "利通电子｜订单业绩",
+      "reason": "必须先验证公开订单和利润数据"
+    },
+    "M3": {
+      "enabled": false,
+      "name": "锋龙股份｜控制权变更",
+      "reason": "不能预测未公告的控制权交易"
+    },
+    "M4": {
+      "enabled": false,
+      "name": "新华传媒｜资产重组",
+      "reason": "不能预测未公告的重组"
+    },
+    "M5": {
+      "enabled": true,
+      "name": "华电辽能｜板块量价启动",
+      "version": "M5-v1",
+      "volumeMultiplier": 1.5,
+      "minSectorChangePct": 0,
+      "maxPositions": 3,
+      "positionFraction": 0.1,
+      "stopLossPct": 0.06,
+      "takeProfitPct": 0.12
+    }
+  },
+  "holdings": {},
+  "pending": [],
+  "trades": [],
+  "events": [],
+  "signals": [],
+  "history": []
+}
