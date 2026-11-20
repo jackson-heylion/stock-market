@@ -18,17 +18,18 @@
         <button class="nav-link active" data-page="overview"><span>◫</span> 资产总览</button>
         <button class="nav-link" data-page="watchlist"><span>◎</span> 观察列表</button>
         <button class="nav-link" data-page="models"><span>◇</span> 策略模型</button>
+        <button class="nav-link" data-page="charts"><span>▥</span> 行情图表</button>
         <button class="nav-link" data-page="trades"><span>≡</span> 成交流水</button>
       </nav>
-      <div class="sidebar-bottom"><div class="pulse-dot"></div><span>独立本地模拟账户</span><small>无券商连接 · 非实时行情</small></div>
+      <div class="sidebar-bottom"><div class="pulse-dot"></div><span>独立本地模拟账户</span><small>无券商连接 · 非交易所授权行情</small></div>
     </aside>
     <div class="workspace">
       <header class="topbar">
         <div class="breadcrumbs"><span>交易工作台</span><b>/</b><span id="page-heading">资产总览</span></div>
-        <div class="top-actions"><span class="snapshot-pill"><span class="pulse-dot"></span> 2026.11.19 收盘快照</span><button class="icon-btn" id="export-btn" title="导出账本">↧ <span>导出</span></button></div>
+        <div class="top-actions"><span class="snapshot-pill"><span class="pulse-dot"></span><span id="market-status">行情连接中 · 初始快照 11.19</span></span><button class="icon-btn" id="export-btn" title="导出账本">↧ <span>导出</span></button></div>
       </header>
       <main class="main" id="main" tabindex="-1"></main>
-      <footer class="footer">见微 Stock Market Lab <span>模拟交易仅用于研究 · 价格需要手动更新 · 本地浏览器保存</span></footer>
+      <footer class="footer">见微 Stock Market Lab <span>模拟交易仅用于研究 · 公开行情可能延迟 · 本地浏览器保存</span></footer>
     </div>
   </div>
   <dialog id="trade-dialog" class="modal">
@@ -38,7 +39,7 @@
       <div class="segmented"><label><input type="radio" name="side" value="BUY" checked><span>买入</span></label><label><input type="radio" name="side" value="SELL"><span>卖出</span></label></div>
       <div class="fields"><label>成交价（元）<input id="trade-price" type="number" step="0.01" min="0.01" required></label><label>股数（100的整数倍）<input id="trade-qty" type="number" min="100" step="100" required></label></div>
       <div id="order-preview" class="order-preview"></div>
-      <p class="form-tip">手动模拟按输入价立即成交，不提供撮合、盘口、真实订单。A股买入遵守整手和T+1限制；卖出收取模拟印花税。</p>
+      <p class="form-tip">模拟按手动输入价记账，不保证实际可成交；盘中报价仅供参考，不提供真实撮合、盘口或委托。A股买入遵守整手和T+1限制；卖出收取模拟印花税。</p>
       <div class="dialog-actions"><button type="button" class="btn subtle" data-close="trade-dialog">取消</button><button type="submit" class="btn primary">确认模拟成交</button></div>
     </form>
   </dialog>
