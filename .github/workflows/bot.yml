@@ -1,6 +1,12 @@
 name: Daily paper-trading bot
 on:
   workflow_dispatch:
+  # Trigger an integration smoke run when the bot itself changes; paper data commits do not retrigger this.
+  push:
+    branches: [main]
+    paths:
+      - bot.js
+      - .github/workflows/bot.yml
   schedule:
     # Beijing 16:40, Monday-Friday. Holidays/data delays are checked by bot.js.
     - cron: '40 8 * * 1-5'
