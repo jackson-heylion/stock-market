@@ -90,3 +90,13 @@ for name,url in market_urls.items():
    "cors":cors,"cors_for_pages":cors in ("*","https://jackson-heylion.github.io"),"result":summary}
  except Exception as err:out={"name":name,"status":"ERROR","error":repr(err)[:200]}
  print(json.dumps(out,ensure_ascii=False),flush=True)
+
+# Show actual index payload and market breadth fields rather than misinterpreting null diff.
+for name,url in [("breadth_payload","https://push2.eastmoney.com/api/qt/stock/get?invt=2&fltt=2&fields=f43,f57,f58,f104,f105,f106,f47,f48&secid=1.000001"),
+("index_tencent_sample","https://qt.gtimg.cn/q=sh000001,sz399001")]:
+ try:
+  with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0","Origin":"https://jackson-heylion.github.io"}),timeout=10) as resp:
+   body=resp.read(100000).decode("gb18030",errors="replace")
+  obj=json.loads(body) if name=="breadth_payload" else body[:300]
+  print(json.dumps({"name":name,"payload":obj},ensure_ascii=False),flush=True)
+ except Exception as err:print(json.dumps({"name":name,"error":str(err)},ensure_ascii=False),flush=True)
