@@ -1,0 +1,16 @@
+name: Probe public live market signals
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - scripts/probe-live-panels.py
+      - .github/workflows/probe-live-panels.yml
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/probe-live-panels.py
