@@ -130,3 +130,14 @@ html[data-theme="light"] .radar-root{
 @media (max-width:1260px){.radar-sector-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:850px){.radar-sector-grid{grid-template-columns:1fr}.radar-treemap{height:400px}}
 @media (max-width:700px){.radar-treemap{height:360px}.radar-sector-item{grid-template-columns:22px minmax(0,1fr) 74px 70px;padding:10px 9px}}
+
+/* Full-name readability overrides legacy ticker truncation in the details grid. */
+.radar-sector-item-name{
+ white-space:normal;
+ overflow:visible;
+ text-overflow:clip;
+ overflow-wrap:anywhere;
+ line-height:1.5;
+}
+.radar-heat-name{font-size:14px;font-weight:750}
+.radar-heat-pct{font-size:15px;font-weight:750}
