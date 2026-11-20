@@ -39,6 +39,7 @@ export function heatmapHtml(rows){
    const up=x.pct>=0,prec=x.pct>0?'+':'';
    const style=`left:${x.x.toFixed(4)}%;top:${x.y.toFixed(4)}%;width:${x.w.toFixed(4)}%;height:${x.h.toFixed(4)}%;--heat-intensity:${intensity.toFixed(1)}%;--heat-active:var(${up?'--radar-up':'--radar-down'});`;
    return `<button class="radar-heat-cell" style="${style}" data-action="radar-sector" data-code="${h(x.code)}" data-name="${h(x.name)}" title="${h(x.name)}：${prec}${x.pct.toFixed(2)}%，成交额${radarShort(x.turnover)}">
+      <span class="radar-heat-index">${String(x.index+1).padStart(2,"0")}</span>
       <span class="radar-heat-name">${h(x.name)}</span>
       <strong class="radar-heat-pct">${prec}${x.pct.toFixed(2)}%</strong>
       <small class="radar-heat-turnover">${radarShort(x.turnover)}</small>
