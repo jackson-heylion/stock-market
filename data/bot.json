@@ -43,5 +43,47 @@
   "trades": [],
   "events": [],
   "signals": [],
-  "history": []
+  "history": [],
+  "openFive": {
+    "targetDate": "2026-11-24",
+    "previousDate": "2026-11-23",
+    "enabled": true,
+    "status": "armed",
+    "description": "仅2026年11月24日09:35五分钟结束后，在09:36至09:44间允许真实报价验证与机器人模拟买入；不动本地手动盘",
+    "candidates": [
+      {
+        "code": "002642",
+        "name": "荣联科技",
+        "modelId": "M2-OPEN5",
+        "basis": "11月19日晚公告8.49亿元存储设备项目中选（未签合同），11月23日连续涨停后仅观察回落承接",
+        "evidenceUrl": "https://static.cninfo.com.cn/finalpage/2026-11-20/1225679535.PDF",
+        "sectorRequired": false,
+        "sectorKeywords": []
+      },
+      {
+        "code": "301041",
+        "name": "金百泽",
+        "modelId": "M5-OPEN5",
+        "basis": "PCB板块题材候选，需确认实际开盘量价与行业板块上涨",
+        "sectorRequired": true,
+        "sectorKeywords": [
+          "印制电路板",
+          "元件"
+        ]
+      }
+    ],
+    "rules": {
+      "minOpeningVolumeRatio": 1.5,
+      "minGainPct": 0.8,
+      "maxGainPct": 5,
+      "minLimitDistanceYuan": 0.02,
+      "maxPerStockFraction": 0.05,
+      "slippagePct": 0.001,
+      "quoteMaxAgeSeconds": 15,
+      "priceAboveMA20": true,
+      "maxOrders": 2
+    },
+    "results": [],
+    "message": "等待2026-11-24北京时间09:35五分钟信号和09:36-09:44有效报价，条件不满足则不买入。"
+  }
 }
