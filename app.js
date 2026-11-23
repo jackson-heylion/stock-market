@@ -188,11 +188,42 @@ function renderMorningReport(){
  </section>`;
 }
 
+function renderOpenFive(){
+ const p=botAccount?.openFive;
+ if(!p)return '';
+ const rows=Array.isArray(p.results)?p.results:[];
+ const expire=p.status==='expired',done=p.status==='completed';
+ const candidates=p.candidates||[];
+ const limit=botAccount.initialCash*p.rules.maxPerStockFraction;
+ return '<section class="panel bot-panel"><div class="panel-head"><div><h2>11月24日开盘5分钟 · 条件模拟买入</h2>'+
+  '<p>仅执行一次：09:35形成信号，09:36-09:44根据真实报价核验后才允许模拟成交</p></div>'+
+  '<button class="btn mini subtle" data-action="refresh-bot">刷新执行记录</button></div>'+
+  '<div class="bot-summary">'+
+   '<div><small>状态</small><strong>'+e(done?'已核验':expire?'已过期':'等待执行')+'</strong></div>'+
+   '<div><small>候选股票</small><strong>'+candidates.length+'只</strong></div>'+
+   '<div><small>模拟已成交</small><strong>'+rows.filter(x=>x.status==='模拟已成交').length+'笔</strong></div>'+
+   '<div><small>单只资金上限</small><strong>'+money(limit)+'</strong></div>'+
+  '</div><div class="table-wrap"><table class="data-table bot-table"><thead>'+
+  '<tr><th>候选股票</th><th>开盘条件</th><th>状态</th><th>模拟成交</th><th>判断原因</th></tr>'+
+  '</thead><tbody>'+candidates.map(c=>{
+    const r=rows.find(x=>x.code===c.code);
+    const guard='五分钟量比≥'+num(p.rules.minOpeningVolumeRatio)+'倍；涨幅'+
+       num(p.rules.minGainPct)+'%～'+num(p.rules.maxGainPct)+'%；高于MA20'+
+       (c.sectorRequired?'；PCB板块上涨':'');
+    return '<tr><td class="name">'+e(c.name)+'<small>'+e(c.code)+' · '+e(c.modelId)+'</small></td>'+
+      '<td>'+guard+'</td><td><span class="tag">'+e(r?.status||(expire?'未执行':'待验证'))+'</span></td>'+
+      '<td>'+(r?.status==='模拟已成交'?num(r.quantity)+'股 × '+money(r.price):'--')+'</td>'+
+      '<td>'+e(r?.reason||c.basis)+'</td></tr>';
+   }).join('')+'</tbody></table></div>'+
+   '<div class="hint">'+e(p.message||'等待核验')+
+   '。独立机器人模拟账户；不接真实券商，不修改本地手动账户。GitHub Actions可能延迟，错过时间不倒填成交。</div></section>';
+}
+
 function renderBotModel(){
  if(!botAccount)return '<section class="panel bot-panel">'+botHeader()+
   '<div class="hint">'+e(botError||'正在获取仓库的自动模拟账本…')+'</div></section>';
  const b=botAccount,cfg=b.models.M5,signals=b.signals||[],
-  equity=b.history?.at(-1)?.total??b.initialCash,profit=equity-b.initialCash;
+  equity=b.cash+Object.values(b.holdings||{}).reduce((s,h)=>s+h.quantity*(h.lastPrice||h.avgCost),0),profit=equity-b.initialCash;
  const passed=signals.filter(x=>x.passed);
  return `<section class="panel bot-panel">${botHeader()}
   ${botError?'<div class="hint">最近获取失败，展示之前成功的数据：'+e(botError)+'</div>':''}
@@ -216,18 +247,19 @@ function renderBotTrades(){
  if(!botAccount)return '<section class="panel bot-panel">'+botHeader()+
   '<div class="hint">'+e(botError||'加载自动模拟账户中…')+'</div></section>';
  const b=botAccount,history=b.history||[],last=history.at(-1),trades=b.trades||[];
+ const currentEstimate=b.cash+Object.values(b.holdings||{}).reduce((s,h)=>s+h.quantity*(h.lastPrice||h.avgCost),0);
  const realized=trades.filter(t=>t.side==='SELL'),wins=realized.filter(t=>t.pnl>0);
  const rate=realized.length?Math.round(wins.length/realized.length*100)+'%':'暂无';
  return `<section class="panel bot-panel">${botHeader()}
   <div class="bot-summary">
    <div><small>可用现金</small><strong>${money(b.cash)}</strong></div>
-   <div><small>盘后资产</small><strong>${money(last?.total??b.initialCash)}</strong></div>
+   <div><small>最新参考资产</small><strong>${money(currentEstimate)}</strong></div>
    <div><small>已成交</small><strong>${trades.length}笔</strong></div>
    <div><small>已平仓交易胜率</small><strong>${rate}</strong></div>
   </div>
   <div class="table-wrap"><table class="data-table bot-table">
    <thead><tr><th>信号日 / 成交日</th><th>股票</th><th>方向</th><th>数量</th><th>假设成交价</th><th>费用</th><th>盈亏（卖出）</th></tr></thead>
-   <tbody>${[...trades].reverse().slice(0,35).map(t=>`<tr><td>${e(t.signalDate)}<small>${e(t.date)}</small></td>
+   <tbody>${[...trades].reverse().slice(0,35).map(t=>`<tr><td>${e(t.signalDate||t.date)}<small>${e(t.quoteTime?new Date(t.quoteTime).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}):t.date)}</small></td>
       <td class="name">${e(t.name)}<small>${e(t.code)}</small></td>
       <td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td>
       <td>${num(t.quantity)}</td><td>${money(t.price)}</td><td>${money(t.fee)}</td>
@@ -291,10 +323,10 @@ function renderSettings(){
 }
 
 function renderModels(){return `${heading('MODELS','策略模型','五套牛股启动模型规则核验与扫描')}
-${renderMorningReport()}${renderBotModel()}<div class="account-notes">可解释的规则清单核验；信号由11月19日公开事件初筛，突破与量能结合日K核验。</div>
+${renderOpenFive()}${renderMorningReport()}${renderBotModel()}<div class="account-notes">可解释的规则清单核验；信号由11月19日公开事件初筛，突破与量能结合日K核验。</div>
 <div class="model-grid">${MODEL_DEFINITIONS.map(m=>{const applied=SECURITIES.filter(s=>s.models.includes(m.id));return `<article class="model-card"><span class="model-no">MODEL / ${m.id}</span><h3>${m.name}</h3><div class="model-type">${m.type}</div><p>${m.description}</p><ul class="checklist">${m.checks.map((check,i)=>`<li><span>${String(i+1).padStart(2,'0')}</span>${check}</li>`).join('')}</ul><div class="risk">风险提示：${m.risk}</div><div class="model-applications"><div class="panel-head"><div><h2>观察股证据核验</h2><p>修改结果仅保存在当前浏览器</p></div></div>${applied.map(s=>{const info=modelEvidence(state,s.code,m.id);return `<div class="model-applied"><span class="tag">${e(s.name)}</span><small>${info.confirmed}/${info.total} 确认${info.contradicted?' · 存在反证':''}</small>${m.checks.map((c,i)=>`<div class="signal-row"><label title="${e(c)}">${i+1}. ${e(c)}</label><select aria-label="${e(s.name)} ${e(c)}" data-action="signal" data-code="${s.code}" data-model="${m.id}" data-index="${i}"><option value="0" ${info.flags[i]===0?'selected':''}>待核</option><option value="1" ${info.flags[i]===1?'selected':''}>确认</option><option value="-1" ${info.flags[i]===-1?'selected':''}>不符合</option></select></div>`).join('')}</div>`;}).join('')}</div></article>`;}).join('')}</div>`;}
 function renderTrades(){return `${heading('LEDGER','成交流水','模拟交易成交明细与执行记录','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-action="import">导入备份</button><button class="btn subtle" data-action="reset">恢复初始盘</button>')}
-${renderBotTrades()}<section class="panel"><div class="panel-head"><div><h2>交易流水</h2><p>按成交时间排序 · T+1交割约束</p></div><span class="count">${state.trades.length} 笔</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>单号 / 日期</th><th>证券</th><th>方向</th><th>数量</th><th>成交价</th><th>成交金额</th><th>费用</th><th>说明</th></tr></thead><tbody>${[...state.trades].reverse().map(t=>`<tr><td>${e(t.id)}<small>${e(t.date)}</small></td><td class="name">${e(stock(t.code).name)}<small>${e(t.code)}</small></td><td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td><td>${num(t.quantity)}</td><td>¥${t.price.toFixed(2)}</td><td>${money(t.gross)}</td><td>${money(t.fee)}</td><td>${t.seed?'<span class="tag">历史快照初始化</span>':'<span class="tag">手动模拟成交</span>'}</td></tr>`).join('')}</tbody></table></div><div class="hint">模拟费率：佣金 0.025%（最低5元），过户费 0.001%，卖出印花税 0.05%。仅供参考测算。</div></section>`;}
+${renderOpenFive()}${renderBotTrades()}<section class="panel"><div class="panel-head"><div><h2>交易流水</h2><p>按成交时间排序 · T+1交割约束</p></div><span class="count">${state.trades.length} 笔</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>单号 / 日期</th><th>证券</th><th>方向</th><th>数量</th><th>成交价</th><th>成交金额</th><th>费用</th><th>说明</th></tr></thead><tbody>${[...state.trades].reverse().map(t=>`<tr><td>${e(t.id)}<small>${e(t.date)}</small></td><td class="name">${e(stock(t.code).name)}<small>${e(t.code)}</small></td><td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td><td>${num(t.quantity)}</td><td>¥${t.price.toFixed(2)}</td><td>${money(t.gross)}</td><td>${money(t.fee)}</td><td>${t.seed?'<span class="tag">历史快照初始化</span>':'<span class="tag">手动模拟成交</span>'}</td></tr>`).join('')}</tbody></table></div><div class="hint">模拟费率：佣金 0.025%（最低5元），过户费 0.001%，卖出印花税 0.05%。仅供参考测算。</div></section>`;}
 function openTrade(code){const dialog=$('#trade-dialog'),sel=$('#trade-code');sel.innerHTML=SECURITIES.filter(s=>!s.halted).map(s=>`<option value="${s.code}">${s.name} ${s.code}</option>`).join('');sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;$('#trade-form').reset();sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;const s=stock(sel.value);$('#trade-price').value=priceInfo(s.code)?.price??state.prices[s.code]?.price??s.close;$('#trade-qty').value=budgetQuantity(uiPrefs.defaultBudget,Number($('#trade-price').value));updateOrderPreview();dialog.showModal();}
 function updateOrderPreview(){const p=Number($('#trade-price').value),q=Number($('#trade-qty').value),side=$('input[name="side"]:checked')?.value??'BUY';if(!Number.isFinite(p)||p<=0||!Number.isInteger(q)||q<=0){$('#order-preview').textContent='输入有效价格与股数以预览';return;}const gross=p*q,fee=feeTotal(fees(side,gross));$('#order-preview').textContent=`成交金额 ${money(gross)} · 费用约 ${money(fee)} · ${side==='BUY'?'所需资金':'预计到账'} ${money(side==='BUY'?gross+fee:gross-fee)}`;}
 function openQuote(code){const sel=$('#quote-code');sel.innerHTML=SECURITIES.filter(s=>!s.halted).map(s=>`<option value="${s.code}">${s.name} ${s.code}</option>`).join('');sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;$('#quote-price').value=state.prices[sel.value]?.price;$('#quote-date').value=shDate();$('#quote-dialog').showModal();}
