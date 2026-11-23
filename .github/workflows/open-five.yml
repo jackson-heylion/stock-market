@@ -1,0 +1,66 @@
+name: One-off 09:35 conditional paper buy (Nov 24)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - open-five.js
+      - .github/workflows/open-five.yml
+  schedule:
+    # Beijing 09:37/09:40/09:43 on November 24 ONLY.
+    # A single one-off targetDate gate in data/bot.json prevents yearly re-runs.
+    # The 09:35 signal is scored only on completed 09:31..09:35 bars.
+    - cron: '37,40,43 1 24 11 *'
+permissions:
+  contents: write
+concurrency:
+  group: stock-market-robot-account
+  cancel-in-progress: false
+jobs:
+  opening:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify strict no-lookahead and ledger safety
+        run: npm test && npm run check
+      - name: Run one-off conditional opening paper execution
+        run: node open-five.js
+      - name: Commit bot-only ledger if the scheduled decision changed it
+        run: |
+          if git diff --quiet -- data/bot.json; then
+            echo "No authorized signal window, no fresh quote, or already completed."
+            exit 0
+          fi
+          git config user.name "stock-market-paper-bot[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/bot.json
+          git commit -m "data: record Nov 24 opening-five-minute conditional paper orders"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            # A prior scheduled execution must never get duplicated.
+            if git show origin/main:data/bot.json | node -e '
+              let s="";process.stdin.on("data",x=>s+=x);
+              process.stdin.on("end",()=>{let a=JSON.parse(s).openFive;
+                process.exit(a && ["completed","expired"].includes(a.status)?0:1)})'; then
+              echo "Another run already completed this one-off simulation."
+              exit 0
+            fi
+            if ! git rebase origin/main; then
+              echo "Concurrent bot data conflict; refuse unsafe overwrite." >&2
+              git rebase --abort
+              exit 1
+            fi
+            if git push origin HEAD:main; then
+              echo "One-off paper decision committed."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Failed to commit without a concurrent conflict." >&2
+          exit 1
