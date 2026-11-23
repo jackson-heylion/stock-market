@@ -149,3 +149,75 @@ try:
   ensure_ascii=False),flush=True)
 except Exception as err:
  print(json.dumps({"name":"tail_manual_portfolio","error":repr(err)[:350]},ensure_ascii=False),flush=True)
+
+
+# Verified after-close 7-symbol stock analysis, source-stamped and read-only.
+# Keep it useful as a repeatable diagnostic (no persistent portfolio mutation).
+import concurrent.futures
+initial={"601133":(5700,17.33),"300829":(3700,27.00),
+ "603931":(3400,29.15),"600156":(11200,8.90),
+ "600520":(4500,22.17),"301348":(4600,21.66),
+ "002579":(8200,12.17)}
+def history_row(code):
+ secid=("1." if code.startswith("6") else "0.")+code
+ url=("https://push2his.eastmoney.com/api/qt/stock/kline/get?secid="+secid+
+ "&fields1=f1,f2,f3,f4,f5,f6&fields2=f51,f52,f53,f54,f55,f56,f57"
+ "&klt=101&fqt=0&beg=20261001&end=20500101&lmt=30")
+ try:
+  with urllib.request.urlopen(urllib.request.Request(url,headers={
+    "User-Agent":"Mozilla/5.0","Referer":"https://quote.eastmoney.com/"}),timeout=13) as rr:
+   obj=json.loads(rr.read(150000).decode("utf-8"))
+  arr=(obj.get("data") or {}).get("klines") or []
+  bars=[]
+  for line in arr:
+   f=line.split(",")
+   if len(f)>=6:
+    try:
+     bars.append({"date":f[0],"open":float(f[1]),"close":float(f[2]),
+       "high":float(f[3]),"low":float(f[4]),"volume":float(f[5])})
+    except ValueError:pass
+  if not bars:return {"code":code,"error":"no daily bars"}
+  close=bars[-1]["close"]
+  out={"code":code,"lastDate":bars[-1]["date"],"close":close,
+    "lastBar":bars[-1],"prior3":bars[-4:-1],
+    "ma5":round(sum(x["close"] for x in bars[-5:])/len(bars[-5:]),3),
+    "ma10":round(sum(x["close"] for x in bars[-10:])/len(bars[-10:]),3),
+    "ma20":round(sum(x["close"] for x in bars[-20:])/len(bars[-20:]),3),
+    "recentLow5":min(x["low"] for x in bars[-5:]),
+    "recentHigh5":max(x["high"] for x in bars[-5:]),
+    "barCount":len(bars)}
+  return out
+ except Exception as e:return {"code":code,"error":repr(e)[:150]}
+with concurrent.futures.ThreadPoolExecutor(max_workers=7) as pool:
+ daily=list(pool.map(history_row,initial))
+dailies={x["code"]:x for x in daily}
+try:
+ url="https://qt.gtimg.cn/q=sh601133,sz300829,sh603931,sh600156,sh600520,sz301348,sz002579,sh000001,sz399006"
+ with urllib.request.urlopen(urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0",
+  "Origin":"https://jackson-heylion.github.io"}),timeout=12) as rr:
+  content=rr.read(90000).decode("gb18030",errors="replace")
+ parsed=[]
+ for code,raw in re.findall(r'v_((?:sh|sz)\d{6})="([^"\n]+)"',content):
+  f=raw.split("~")
+  if len(f)<35:continue
+  try:
+   cur,prev=float(f[3]),float(f[4])
+   q={"code":code[2:],"name":f[1],"price":cur,"prevClose":prev,
+     "pct":round((cur/prev-1)*100,3) if prev else None,
+     "quoteTime":f[30],"high":float(f[33]),"low":float(f[34]),
+     "closeWindowVerified":f[30].startswith("20261123") and
+       f[30][8:12]>="1455"}
+   if q["code"] in initial:
+    qty,entry=initial[q["code"]]
+    q.update({"seedQty":qty,"seedPrice":entry,
+      "seedReturnPct":round((cur/entry-1)*100,3),
+      "seedMarketValue":round(qty*cur,2),
+      "history":dailies.get(q["code"])})
+   parsed.append(q)
+  except (ValueError,ZeroDivisionError):pass
+ print(json.dumps({"name":"close_20261123_manual_analysis","checkedUTC":datetime.now(timezone.utc).isoformat(),
+  "quotes":parsed,"historyErrors":{x["code"]:x["error"] for x in daily if x.get("error")}},
+  ensure_ascii=False),flush=True)
+except Exception as exc:
+ print(json.dumps({"name":"close_20261123_manual_analysis","error":repr(exc)[:260],
+  "history":daily},ensure_ascii=False),flush=True)
