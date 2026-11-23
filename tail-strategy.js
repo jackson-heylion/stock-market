@@ -18,7 +18,7 @@ export const TAIL_POLICY=Object.freeze({
 const halfLots=q=>Math.floor(q*TAIL_POLICY.maxSellFraction/100)*100;
 function priceLimit(code,name){
  if(/\*?ST/i.test(name))return .05;
- return /^(30|68)/.test(code)?.20:.10;
+ return /^(30|68)/.test(code)?0.20:0.10;
 }
 export function proposeTailOrders(state,quotes,{now=Date.now()}={}){
  const date=shDate(new Date(now)),tradeOpen=session(now)==='open';
