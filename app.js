@@ -5,6 +5,7 @@ import {chartSvg} from './charts.js';
 import {initTheme,applyTheme,THEME_KEY} from './theme.js';
 import {readPrefs,savePrefs,resetPrefs,DEFAULT_PREFS} from './preferences.js';
 import {renderRadar,refreshRadar,handleRadarClick} from './radar-view.js';
+import {proposeTailOrders,TAIL_POLICY} from './tail-strategy.js';
 import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal,setTerminalPageSize} from './market-terminal.js';
 import {INDEXES,SCOPES,RANK_MODES,getMarketIndices,getRankings,getSectors,getMarketBreadth,getIndexHistory} from './market-center.js';
 let uiPrefs=readPrefs();
@@ -70,10 +71,50 @@ function heading(kicker,title,sub,actions=''){return `<div class="hero"><div><di
 function stat(label,value,sub,special=false,style=''){return `<div class="stat ${special?'special':''}"><div class="stat-label">${label}<span>${special?'●':''}</span></div><div class="stat-number ${style}">${value}</div><div class="stat-sub">${sub}</div></div>`;}
 function compactTable(limit=20){const p=portfolio(displayState());return `<div class="table-wrap"><table class="data-table"><thead><tr><th>证券</th><th>持仓股数</th><th>摊薄成本</th><th>参考价</th><th>市值</th><th>浮动盈亏</th></tr></thead><tbody>${p.holds.slice(0,limit).map(h=>`<tr><td><button class="section-action name" data-action="open-charts" data-code="${e(h.code)}">${e(h.name)} ↗</button><small>${e(h.code)}</small></td><td>${num(h.quantity)}</td><td>¥${h.avgCost.toFixed(3)}</td><td>¥${h.quote.toFixed(2)}</td><td>${money(h.value)}</td><td class="${cls(h.unrealized)}">${money(h.unrealized)}</td></tr>`).join('')}</tbody></table></div>`;}
 function allocation(){const p=portfolio(displayState()),palette=['#d8b070','#c7786e','#64a8b8','#a39bcb','#a6bc80','#d18dbe','#7395ad'];const parts=p.holds.map((h,i)=>({...h,share:h.value/p.total*100,color:palette[i%palette.length]}));return `<div class="allocation" aria-label="资产配置条"><span style="width:${p.cash/p.total*100}%;background:#566c80" title="现金"></span>${parts.map(h=>`<span style="width:${h.share}%;background:${h.color}" title="${e(h.name)} ${h.share.toFixed(1)}%"></span>`).join('')}</div><div class="legend"><div><i style="background:#566c80"></i><label>剩余现金</label><b>${(p.cash/p.total*100).toFixed(1)}%</b></div>${parts.map(h=>`<div><i style="background:${h.color}"></i><label>${e(h.name)}</label><b>${h.share.toFixed(1)}%</b></div>`).join('')}</div>`;}
+function renderTailStrategy(){
+ const plan=proposeTailOrders(state,liveQuotes);
+ const rows=plan.rows;
+ const good=plan.orders;
+ const fmtPct=v=>Number.isFinite(v)?signed(v):'--';
+ return `<section class="panel tail-panel">
+  <div class="panel-head"><div><h2>手动账户 · 尾盘防守策略</h2>
+   <p>规则版本 ${e(TAIL_POLICY.version)} · 只对你本浏览器的实际持仓计算 · 当前可用拟单 ${good.length}笔</p>
+  </div><button class="btn mini subtle" data-action="tail-refresh">核对最新报价</button></div>
+  <p class="bot-method">策略：浮亏超过6%时考虑减半；当日跌超5%且浮亏超过3%时考虑减半；盈利超过15%且未封涨停时考虑减三分之一。每次最多提示3笔，不新增买入。<strong>策略不会自动修改账本。</strong></p>
+  <div class="table-wrap"><table class="data-table bot-table"><thead><tr>
+    <th>持仓</th><th>股数</th><th>参考均价</th><th>最新价</th><th>相对成本</th><th>策略建议</th><th>模拟操作</th>
+  </tr></thead><tbody>${rows.map(x=>`<tr>
+    <td class="name">${e(stock(x.code).name)}<small>${e(x.code)}</small></td>
+    <td>${num(x.quantity)}</td><td>${money(x.avgCost)}</td>
+    <td>${x.price===null?'--':money(x.price)}</td>
+    <td class="${cls(x.profitPct||0)}">${fmtPct(x.profitPct)}</td>
+    <td>${e(x.reason)}</td>
+    <td>${good.some(o=>o.code===x.code)?`<button class="btn mini primary" data-action="tail-sell" data-code="${e(x.code)}">模拟卖${num(x.suggestedQty)}股</button>`:'暂不操作'}</td>
+  </tr>`).join('')||'<tr><td colspan="7">当前没有手动持仓。</td></tr>'}</tbody></table></div>
+  <div class="hint">仅在A股交易时段、报价时间不超过15秒、证券未受跌停限制且满足T+1时提供模拟卖出按钮。点击后仍需确认，才写入当前浏览器账本。并非真实券商交易。</div>
+ </section>`;
+}
+function executeTailRecommendation(code){
+ const plan=proposeTailOrders(state,liveQuotes);
+ const order=plan.orders.find(x=>x.code===code);
+ if(!order){toast('报价过期或持仓/策略已变化，禁止用旧拟单成交');return;}
+ if(!confirm('确认按'+order.quoteSource+'最新参考价'+money(order.price)+'，模拟卖出'+stock(code).name+' '+order.suggestedQty+'股？\n此操作只记录模拟成交，并不联系券商。'))return;
+ const date=shDate();
+ transaction(next=>{
+  // Recheck the current browser state and source timestamp immediately before write.
+  const refreshed=proposeTailOrders(next,liveQuotes).orders.find(x=>x.code===code);
+  if(!refreshed||refreshed.suggestedQty!==order.suggestedQty||refreshed.price!==order.price)
+   return {ok:false,error:'拟单已失效，请刷新报价'};
+  const result=executeTrade(next,{code,side:'SELL',quantity:refreshed.suggestedQty,
+   price:refreshed.price,date});
+  return result.ok?{ok:true,message:'已记录模拟卖出：'+stock(code).name+' '+refreshed.suggestedQty+'股'}:result;
+ });
+}
+
 function renderOverview(){const p=portfolio(displayState()),totalSeed=state.trades.filter(t=>t.seed&&t.side==='BUY').length;
 return `${heading('OVERVIEW','资产总览','11月19日初始基准快照，支持手动模拟交易与持仓估值。','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-page="watchlist">观察列表 ↗</button>')}
 <div class="summary-grid">${stat('模拟总资产',money(p.total),'账户本金 '+money(state.initialCash),true)}${stat('股票持仓市值',money(p.marketValue),`${p.holds.length} 只股票持仓`)}${stat('可用现金',money(p.cash),'账户可用余额')}${stat('累计模拟收益',money(p.profit),`收益率 ${signed(p.profitRate)} · 已计交易费`,false,cls(p.profit))}</div>
-<div class="grid-main"><section class="panel"><div class="panel-head"><div><h2>我的持仓</h2><p>成本含模拟买入佣金与过户费</p></div><button class="section-action" data-page="trades">全部成交 ↗</button></div>${compactTable()}</section>
+${renderTailStrategy()}<div class="grid-main"><section class="panel"><div class="panel-head"><div><h2>我的持仓</h2><p>成本含模拟买入佣金与过户费</p></div><button class="section-action" data-page="trades">全部成交 ↗</button></div>${compactTable()}</section>
 <section class="panel"><div class="panel-head"><div><h2>资产配置</h2><p>持仓与现金占比</p></div></div>${allocation()}<hr class="divider"><div class="panel-head"><div><h2>策略模型</h2><p>五套牛股启动模型清单</p></div></div>${MODEL_DEFINITIONS.map(m=>`<div class="model-applied"><span class="tag">${m.id}</span><label>${m.type}</label><button class="section-action" data-page="models">核验 ↗</button></div>`).join('')}</section></div>`;}
 function renderWatchlist(){const p=portfolio(displayState());return `${heading('WATCHLIST','观察列表','8只核心候选股行情跟踪与模型匹配','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-action="open-quote">手动更新价格</button>')}
 <section class="panel"><div class="panel-head"><div><h2>行情观察板</h2><p>可核验的公开行情快照</p></div><span class="count">${SECURITIES.length} 只</span></div><div class="watchcards">${SECURITIES.map(s=>{const q=displayState().prices[s.code],h=p.holds.find(x=>x.code===s.code),v=q?.price;return `<article class="watchcard"><div style="display:flex;justify-content:space-between;gap:12px"><div><h3>${e(s.name)}</h3><span class="code">${e(s.code)} · ${e(s.market)}</span></div><span class="tag ${s.halted?'warn':'success'}">${s.halted?'种子停牌':'行情观察'}</span></div><div class="watchcard-price">${s.halted?'—':money(v)}</div><div class="${cls(s.pct)}" style="font-size:12px;font-weight:700">${s.halted?'11月19日无成交':priceInfo(s.code)?.pct!=null?signed(priceInfo(s.code).pct)+' · 对前收':signed(s.pct)+' · 11/19 涨跌'}</div><p>${e(s.note)}</p><div>${s.models.map(m=>`<span class="tag">${m}</span>`).join('')}${s.tags.map(t=>`<span class="tag">${e(t)}</span>`).join('')}</div><div class="signal-summary">${s.halted?`停牌前参考价 ${money(s.referencePrice)}（${s.referenceDate}，仅参考）`:h?`持仓 ${num(h.quantity)} 股 · 浮动盈亏 ${money(h.unrealized)} · ${e(latestLabel(s.code))}`:'未持仓'}</div><div style="display:flex;gap:8px;margin-top:16px;align-items:center"><button class="btn mini" data-action="open-charts" data-code="${s.code}">分时 / K线</button><button class="btn mini" data-action="open-trade" data-code="${s.code}" ${s.halted?'disabled':''}>模拟交易</button><button class="btn mini subtle" data-action="open-quote" data-code="${s.code}" ${s.halted?'disabled':''}>更新参考价</button><a class="source-link" href="${e(s.source)}" target="_blank" rel="noopener noreferrer">数据来源 ↗</a></div></article>`;}).join('')}</div></section>`;}
@@ -300,7 +341,9 @@ case'index-period':indexPeriod=btn.dataset.period;render();requestIndexChart();b
 case'index-refresh':refreshMarket(true);requestIndexChart(true);break;
 case'rank-mode':ranked.mode=btn.dataset.mode;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
 case'rank-scope':ranked.scope=btn.dataset.scope;ranked.search='';ranked.rows=[];ranked.total=null;ranked.updatedAt=0;render();refreshRankings(true);break;
-case'rank-refresh':refreshRankings(true);break;case'chart-period':chartPeriod=btn.dataset.period;render();requestChart();break;case'chart-symbol':chartCode=btn.dataset.code;render();requestChart();break;case'chart-refresh':requestChart(true);break;case'quotes-refresh':refreshQuotes();break;case'refresh-bot':refreshBot(true);break;case'open-trade':openTrade(btn.dataset.code);break;case'open-quote':openQuote(btn.dataset.code);break;case'import':$('#import-file').click();break;case'export':exportFile();break;
+case'rank-refresh':refreshRankings(true);break;case'chart-period':chartPeriod=btn.dataset.period;render();requestChart();break;case'chart-symbol':chartCode=btn.dataset.code;render();requestChart();break;case'chart-refresh':requestChart(true);break;case'quotes-refresh':refreshQuotes();break;case'refresh-bot':refreshBot(true);break;case'tail-sell':executeTailRecommendation(btn.dataset.code);break;
+case'tail-refresh':refreshQuotes();break;
+case'open-trade':openTrade(btn.dataset.code);break;case'open-quote':openQuote(btn.dataset.code);break;case'import':$('#import-file').click();break;case'export':exportFile();break;
 case'refresh-morning':refreshMorning(true);break;
 case'settings-reset-prefs':{const v=resetPrefs();if(!v){toast('存储不可用');break;}uiPrefs=v;applyUiPrefs();render();toast('已恢复默认界面设置');break;}
 case'settings-clear-recent':if(confirm('清除本浏览器行情中心最近访问记录？')){localStorage.removeItem('stock-market-terminal-recent-v1');toast('最近访问已清除，刷新页面生效');}break;
