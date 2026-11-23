@@ -14,7 +14,7 @@ permissions:
   contents: write
   actions: write
 concurrency:
-  group: daily-paper-bot
+  group: stock-market-robot-account
   cancel-in-progress: false
 jobs:
   paper:
