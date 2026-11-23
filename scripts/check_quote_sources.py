@@ -142,5 +142,10 @@ try:
    rows.append(row)
   except (ValueError,ZeroDivisionError):continue
  print(json.dumps({"name":"tail_manual_portfolio","checked_utc":now.isoformat(),"quotes":rows},ensure_ascii=False),flush=True)
+ print(json.dumps({"name":"tail_strategy_live_audit","quote_count":len(rows),
+  "quote_dates":sorted(set(str(x["quote_ts"])[:8] for x in rows)),
+  "quote_min_time":min((x["quote_ts"] for x in rows),default=None),
+  "quote_max_time":max((x["quote_ts"] for x in rows),default=None)},
+  ensure_ascii=False),flush=True)
 except Exception as err:
  print(json.dumps({"name":"tail_manual_portfolio","error":repr(err)[:350]},ensure_ascii=False),flush=True)
