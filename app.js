@@ -193,13 +193,17 @@ function renderOpenFive(){
  if(!p)return '';
  const rows=Array.isArray(p.results)?p.results:[];
  const expire=p.status==='expired',done=p.status==='completed';
+ const nowParts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date());
+ const part=k=>nowParts.find(x=>x.type===k)?.value;
+ const localDate=[part('year'),part('month'),part('day')].join('-'),clock=part('hour')+':'+part('minute');
+ const missed=localDate>p.targetDate||localDate===p.targetDate&&clock>'09:44';
  const candidates=p.candidates||[];
  const limit=botAccount.initialCash*p.rules.maxPerStockFraction;
  return '<section class="panel bot-panel"><div class="panel-head"><div><h2>11月24日开盘5分钟 · 条件模拟买入</h2>'+
   '<p>仅执行一次：09:35形成信号，09:36-09:44根据真实报价核验后才允许模拟成交</p></div>'+
   '<button class="btn mini subtle" data-action="refresh-bot">刷新执行记录</button></div>'+
   '<div class="bot-summary">'+
-   '<div><small>状态</small><strong>'+e(done?'已核验':expire?'已过期':'等待执行')+'</strong></div>'+
+   '<div><small>状态</small><strong>'+e(done?'已核验':expire||missed?'已错过':'等待执行')+'</strong></div>'+
    '<div><small>候选股票</small><strong>'+candidates.length+'只</strong></div>'+
    '<div><small>模拟已成交</small><strong>'+rows.filter(x=>x.status==='模拟已成交').length+'笔</strong></div>'+
    '<div><small>单只资金上限</small><strong>'+money(limit)+'</strong></div>'+
