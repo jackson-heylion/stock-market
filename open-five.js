@@ -36,7 +36,8 @@ export function evaluateOpening(candidate,{daily,minute,quote,sectors},plan,now)
  if(prev.at(-1).date!==plan.previousDate)throw Error(candidate.code+'上一交易日K线尚未更新');
  const first=firstFiveBars(minute,plan.targetDate);
  const pre=prev.at(-1),price=quote.price,cap=capPercent(candidate.code,candidate.name);
- const quoteAt=shClock(quote.time),quoteFresh=quoteState(quote,now.getTime()).tradable;
+ const quoteAt=Number.isFinite(quote.time)?shClock(quote.time):{date:null,clock:''};
+ const quoteFresh=quoteState(quote,now.getTime()).tradable;
  const mid=prev.slice(-20).reduce((s,x)=>s+x.close,0)/20;
  const avgFive=prev.slice(-5).reduce((s,x)=>s+x.volume,0)/5;
  const ratio=avgFive>0?first.volume/(avgFive/48):0;
@@ -65,7 +66,7 @@ export function evaluateOpening(candidate,{daily,minute,quote,sectors},plan,now)
  return {code:candidate.code,name:candidate.name,modelId:candidate.modelId,
   candidateBasis:candidate.basis,passed:checks.every(c=>c.pass),checks,
   reason:checks.every(c=>c.pass)?'开盘5分钟量价与风控条件全部通过':notes.join('；'),
-  quoteTime:new Date(quote.time).toISOString(),quotePrice:price,ma20:round(mid),
+  quoteTime:Number.isFinite(quote.time)?new Date(quote.time).toISOString():null,quotePrice:price,ma20:round(mid),
   openingVolumeRatio:round(ratio),openingPrice:first.openingPrice,
   fiveMinuteClose:first.closeAt935,prevClose:pre.close,gainPct:round(gain)};
 }
@@ -78,6 +79,8 @@ function buy(next,item,plan,now){
   return {...item,status:'未下单',reason:'已有同股待执行模拟买入指令'};
  const cashLimit=Math.min(next.cash,next.initialCash*plan.rules.maxPerStockFraction);
  const maxPrice=round(item.quotePrice*(1+plan.rules.slippagePct));
+ const upper=round(item.prevClose*(1+capPercent(item.code,item.name)));
+ if(maxPrice>=upper-0.01)return {...item,status:'未下单',reason:'模拟滑点后成交价接近或超过涨停，禁止虚拟成交'};
  let quantity=Math.floor(cashLimit/maxPrice/100)*100;
  while(quantity>=100){
   const gross=round(quantity*maxPrice),fee=feeTotal(fees('BUY',gross));
