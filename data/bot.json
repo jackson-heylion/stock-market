@@ -48,7 +48,7 @@
     "targetDate": "2026-11-24",
     "previousDate": "2026-11-23",
     "enabled": true,
-    "status": "armed",
+    "status": "expired",
     "description": "2026-11-24 09:35隔夜英伟达事件驱动修复专项：先确认五分钟承接、板块共振与不过热，再于09:36-09:44按真实报价模拟买入；不动手动盘",
     "candidates": [
       {
@@ -92,7 +92,7 @@
       "maxPullbackFrom935Pct": 0.5
     },
     "results": [],
-    "message": "隔夜AI修复专项已更新：中际旭创、胜宏科技，五分钟量比代理≥1.8、板块≥1%、回撤≤0.5%、涨幅0.8%～5%、站上MA20；条件不足或行情缺失宁可空仓。",
+    "message": "GitHub Actions错过09:36-09:44允许执行的时段，禁止倒填交易",
     "strategyVersion": "NVDA-RELIEF-20261124-v2",
     "eventEvidence": {
       "date": "2026-11-23",
@@ -132,7 +132,8 @@
         ],
         "reason": "本次事件专项不参与自动拟买，保留原研究依据"
       }
-    ]
+    ],
+    "checkedAt": "2026-11-24T11:34:03.321Z"
   },
   "afternoon": {
     "version": "M5-1430-v1",
