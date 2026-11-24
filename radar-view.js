@@ -2,7 +2,10 @@
 import {getLiveSectors,getLiveNews,getLiveChanges,getNewsTerms,treemapLayout,newsSentiment,sentimentTerms} from './market-radar.js';
 import {getMarketBreadth,getMarketIndices} from './market-center.js';
 import {calculateFearGreed} from './fear-greed.js';
+import {getCommunity,communityReport} from './community.js';
 export const radarState={
+ community:{rows:[],boards:[],updatedAt:0,checkedAt:0,source:'',warning:'',error:'',loading:false},
+ communityHours:2,communityTone:'all',communityWord:'',communityBoard:'all',
  breadth:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  indices:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  sectors:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
@@ -116,6 +119,28 @@ export function fearGreedHtml(report){
  '<p class="radar-caveat">0–24极度恐慌，25–44恐慌，45–55中性，56–75贪婪，76–100极度贪婪。指数动量按±3%映射到0–100；涨跌家数和行业强弱按上涨加半数平盘比例；新闻方向映射到0–100。三项市场因子必须有效，缺少新闻则按85%权重归一。非连续交易时段不生成新的综合指数。东方财富/腾讯公开报价，非CNN官方指数或交易指令。</p></section>';
 }
 
+export function communityHtml(){
+ const s=radarState.community,now=Date.now(),fresh=s.updatedAt&&now-s.updatedAt<=2*3600000&&!s.error;
+ const all=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours});
+ const report=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours,board:radarState.communityBoard});
+ const word=radarState.communityWord,tone=radarState.communityTone;
+ const rows=report.rows.filter(x=>(tone==='all'||x.tone===tone)&&(!word||x.title.toUpperCase().includes(word.toUpperCase())));
+ const labels={positive:'偏多',negative:'偏空',mixed:'分歧',neutral:'中性'};
+ const active=Object.keys(labels),counts=report.counts,score=report.score;
+ const sourceCount=s.boards.filter(b=>b.status==='ok').length;
+ const max=Math.max(1,...report.terms.map(t=>t.count));
+ return '<section class="panel radar-panel community-panel"><div class="panel-head"><div><h2>社区舆情 · 股吧讨论</h2><p>公开帖子标题样本 · 独立于财经新闻 · 不代表事实或全体投资者</p></div><div class="radar-panel-actions"><span class="radar-status">'+radarSourceStatus('community')+'</span><button class="btn mini subtle" data-action="radar-refresh" data-source="community">刷新讨论</button></div></div>'+
+ '<div class="radar-filters">'+[2,6,24].map(n=>'<button data-action="radar-community-hours" data-value="'+n+'" class="'+(radarState.communityHours===n?'active':'')+'">近'+n+'小时</button>').join('')+'</div>'+
+ '<div class="community-summary"><div><small>社区方向指数</small><strong class="tone-text-'+(score===null?'neutral':score>0?'positive':score<0?'negative':'mixed')+'">'+(score===null?'--':score)+'</strong><span>'+(score===null?'样本不足':score>20?'偏多':score<-20?'偏空':'分歧')+'</span></div><div><small>去重讨论样本</small><strong>'+report.total+'</strong><span>明确方向 '+report.coverage+'%</span></div><div><small>成功采集讨论区</small><strong>'+sourceCount+' / '+s.boards.length+'</strong><span>仅监控样本</span></div></div>'+
+ '<div class="radar-sentiment-bar">'+active.map(k=>'<span class="tone-'+k+'" style="width:'+(report.total?counts[k]/report.total*100:0)+'%"></span>').join('')+'</div>'+
+ '<div class="radar-tone-filters">'+[['all','全部'],...active.map(k=>[k,labels[k]])].map(([k,l])=>'<button data-action="radar-community-tone" data-value="'+k+'" class="'+(tone===k?'active':'')+' tone-text-'+k+'">'+l+' '+(k==='all'?report.total:counts[k])+'</button>').join('')+'</div>'+
+ '<div class="radar-news-head"><strong>讨论热度排行</strong><button class="btn mini subtle" data-action="radar-community-board" data-value="all">全部讨论区</button></div><div class="community-board-list">'+all.boards.map(b=>'<button data-action="radar-community-board" data-value="'+h(b.code)+'" class="'+(radarState.communityBoard===b.code?'active':'')+'"><strong>'+h(b.name)+'</strong><small>'+b.count+'帖 · 多'+b.positive+' / 空'+b.negative+' · 评论 '+(b.comments??'--')+'</small></button>').join('')+'</div>'+
+ '<div class="radar-news-head"><strong>社区情绪词云</strong>'+(word?'<button class="btn mini subtle" data-action="radar-community-word" data-value="">清除“'+h(word)+'”</button>':'')+'</div><div class="radar-cloud">'+report.terms.map(t=>'<button class="radar-word tone-word-'+t.tone+(word===t.word?' active':'')+'" data-action="radar-community-word" data-value="'+h(t.word)+'" style="font-size:'+(14+20*t.count/max)+'px">'+h(t.word)+' <small>'+t.count+'</small></button>').join('')+'</div>'+
+ '<div class="radar-news-head"><strong>公开讨论原帖</strong><a href="https://guba.eastmoney.com/" target="_blank" rel="noopener noreferrer">股吧来源 ↗</a></div>'+
+ (rows.length?'<div class="radar-news-list sentiment-news-list">'+rows.slice(0,80).map(x=>'<article class="radar-news-line"><time>'+h(new Date(x.time).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}))+'</time><div><span class="radar-tone-label tone-text-'+x.tone+'">'+labels[x.tone]+'</span> <a href="'+h(x.url)+'" target="_blank" rel="noopener noreferrer">'+h(x.title)+'</a><small>'+h(x.board)+' · 阅读 '+(x.reads??'--')+' · 评论 '+(x.comments??'--')+' · 识别词 '+h([...x.positive,...x.negative].join('、')||'无')+'</small></div></article>').join('')+'</div>':'<div class="radar-empty">'+(fresh?'当前筛选无有效样本':'社区数据未取得或已过期，不计算情绪')+'</div>')+
+ '<p class="radar-caveat">仅上证、创业板及观察/持仓相关股吧公开标题，不采集用户身份、正文或私人内容。指数至少10条去重标题和5条方向明确标题才计算。阅读及评论为来源累积计数，不代表独立用户。词典可能误判反讽；不作为真实交易信号，且不改动综合恐慌贪婪指数权重。</p></section>';
+}
+
 export function renderRadar(){
  const sectors=radarState.sectors.rows,news=radarState.news.rows,changes=radarState.changes.rows;
  const positive=sectors.filter(x=>x.pct>0).length,negative=sectors.filter(x=>x.pct<0).length;
@@ -159,6 +184,7 @@ export function renderRadar(){
       <p class="radar-caveat">接口返回最新分笔异动，休市展示当日最后事件。<a href="https://quote.eastmoney.com/changes/" target="_blank" rel="noopener noreferrer">异动来源 ↗</a></p>
     </section>
   </div>
+  ${communityHtml()}
   <div class="radar-footer">数据来自公开快照，服务异常时保留上一有效记录并标注来源状态。</div>
  </div>`;
 }
@@ -169,6 +195,7 @@ export async function refreshRadar({force=false,source='all',onUpdate=()=>{}}={}
   {key:'indices',ttl:45000,fn:async()=>({rows:await getMarketIndices(),source:'腾讯财经主要指数',receivedAt:Date.now()})},
   {key:'sectors',ttl:45000,fn:getLiveSectors},
   {key:'news',ttl:60000,fn:getLiveNews},
+  {key:'community',ttl:60000,fn:getCommunity},
   {key:'changes',ttl:15000,fn:getLiveChanges}
  ];
  const now=Date.now();
@@ -178,7 +205,7 @@ export async function refreshRadar({force=false,source='all',onUpdate=()=>{}}={}
   const s=radarState[c.key];s.loading=true;
   try{
    const result=await c.fn();
-   s.rows=result.rows;s.source=result.source;s.updatedAt=result.receivedAt||Date.now();s.warning=result.warning||'';s.error='';
+   s.rows=result.rows;if(c.key==='community')s.boards=result.boards||[];s.source=result.source;s.updatedAt=result.receivedAt||Date.now();s.warning=result.warning||'';s.error='';
   }catch(err){s.error=String(err.message||err);}
   finally{s.checkedAt=Date.now();s.loading=false;}
  });
@@ -194,6 +221,10 @@ export function handleRadarClick(btn,{onUpdate=()=>{},openStock=()=>{},openSecto
  }
  if(action==='radar-news-hours'&&[2,6,24].includes(Number(btn.dataset.value))){radarState.newsHours=Number(btn.dataset.value);onUpdate();return true;}
  if(action==='radar-news-tone'&&['all',...Object.keys(TONE_LABELS)].includes(btn.dataset.value)){radarState.newsTone=btn.dataset.value;onUpdate();return true;}
+ if(action==='radar-community-hours'&&[2,6,24].includes(Number(btn.dataset.value))){radarState.communityHours=Number(btn.dataset.value);onUpdate();return true;}
+ if(action==='radar-community-tone'&&['all','positive','negative','mixed','neutral'].includes(btn.dataset.value)){radarState.communityTone=btn.dataset.value;onUpdate();return true;}
+ if(action==='radar-community-word'){const w=String(btn.dataset.value||'');radarState.communityWord=radarState.communityWord===w?'':w;onUpdate();return true;}
+ if(action==='radar-community-board'){const v=String(btn.dataset.value||'all');if(v==='all'||radarState.community.rows.some(x=>x.code===v)){radarState.communityBoard=v;onUpdate();}return true;}
  if(action==='radar-word'){
   const word=String(btn.dataset.word||'');
   if(!word)return true;
