@@ -4,6 +4,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import json, re, time, urllib.request, urllib.parse, urllib.robotparser, html
 from concurrent.futures import ThreadPoolExecutor
+from forum_sources import collect_forum
 ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / 'data' / 'community.json'
 NOW = datetime.now(timezone.utc)
@@ -100,8 +101,12 @@ def build():
             rows,status=collect(code,board,robots);posts.extend(rows);statuses.append(status)
     except Exception as e:
         posts=[];statuses=[{'code':'','board':'股吧','status':'unavailable','error':'robots/source unavailable: '+str(e)[:100]}]
-    posts=sorted({p['id']:p for p in posts}.values(),key=lambda p:datetime.fromisoformat(p['publishedAt']),reverse=True)[:500]
-    payload={'schema':1,'fetchedAt':datetime.now(timezone.utc).isoformat(),'source':'东方财富股吧公开讨论样本',
+    # Independent sources: a blocked Guba endpoint must not block other communities.
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        for rows,status in pool.map(lambda key:collect_forum(key,NOW), ('hupu','tgb')):
+            posts.extend(rows);statuses.append(status)
+    posts=sorted({(p['source'],p['id']):p for p in posts}.values(),key=lambda p:datetime.fromisoformat(p['publishedAt']),reverse=True)[:700]
+    payload={'schema':1,'fetchedAt':datetime.now(timezone.utc).isoformat(),'source':'公开财经社区讨论样本（股吧、虎扑、淘股吧）',
              'state':'fresh' if posts else 'unavailable','boards':statuses,'posts':posts}
     DEST.parent.mkdir(parents=True,exist_ok=True)
     DEST.write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':')),encoding='utf-8')

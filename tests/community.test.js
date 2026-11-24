@@ -19,3 +19,13 @@ test('community report separates sample size and directional score',()=>{
 test('empty source is not synthetic neutral sentiment',()=>{
  assert.throws(()=>parseCommunity({...payload,posts:[],boards:[{status:'unavailable'}]},{now}),/未取得/);
 });
+
+test('forum IDs and source-specific original URLs stay separate; source filter works',()=>{
+ const p=structuredClone(payload);
+ p.posts.push({id:'100000',code:'hupu',source:'虎扑',board:'虎扑股票区',title:'看多科技',publishedAt:at,comments:3},{id:'2wXTmYDlbQe',code:'tgb',source:'淘股吧',board:'淘股吧社区总版',title:'看空科技',publishedAt:at,url:'https://bad.example'});
+ const rows=parseCommunity(p,{now}).rows;
+ assert.equal(rows.length,14);
+ const h=rows.find(x=>x.source==='虎扑'),t=rows.find(x=>x.source==='淘股吧');
+ assert.equal(h.timeKind,'activity');assert.equal(h.url,'https://bbs.hupu.com/100000.html');assert.equal(t.url,'https://www.tgb.cn/a/2wXTmYDlbQe');
+ assert.equal(communityReport(rows,{now,source:'虎扑'}).total,1);
+});

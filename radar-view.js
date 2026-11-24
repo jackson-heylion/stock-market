@@ -5,7 +5,7 @@ import {calculateFearGreed} from './fear-greed.js';
 import {getCommunity,communityReport} from './community.js';
 export const radarState={
  community:{rows:[],boards:[],updatedAt:0,checkedAt:0,source:'',warning:'',error:'',loading:false},
- communityHours:2,communityTone:'all',communityWord:'',communityBoard:'all',
+ communityHours:2,communityTone:'all',communityWord:'',communityBoard:'all',communitySource:'all',
  breadth:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  indices:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  sectors:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
@@ -121,24 +121,25 @@ export function fearGreedHtml(report){
 
 export function communityHtml(){
  const s=radarState.community,now=Date.now(),fresh=s.updatedAt&&now-s.updatedAt<=2*3600000&&!s.error;
- const all=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours});
- const report=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours,board:radarState.communityBoard});
+ const all=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours,source:radarState.communitySource});
+ const report=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours,board:radarState.communityBoard,source:radarState.communitySource});
  const word=radarState.communityWord,tone=radarState.communityTone;
  const rows=report.rows.filter(x=>(tone==='all'||x.tone===tone)&&(!word||x.title.toUpperCase().includes(word.toUpperCase())));
  const labels={positive:'偏多',negative:'偏空',mixed:'分歧',neutral:'中性'};
  const active=Object.keys(labels),counts=report.counts,score=report.score;
  const sourceCount=s.boards.filter(b=>b.status==='ok').length;
  const max=Math.max(1,...report.terms.map(t=>t.count));
- return '<section class="panel radar-panel community-panel"><div class="panel-head"><div><h2>社区舆情 · 股吧讨论</h2><p>公开帖子标题样本 · 独立于财经新闻 · 不代表事实或全体投资者</p></div><div class="radar-panel-actions"><span class="radar-status">'+radarSourceStatus('community')+'</span><button class="btn mini subtle" data-action="radar-refresh" data-source="community">刷新讨论</button></div></div>'+
+ return '<section class="panel radar-panel community-panel"><div class="panel-head"><div><h2>社区舆情 · 股吧 / 虎扑 / 淘股吧</h2><p>公开帖子标题样本 · 独立于财经新闻 · 不代表事实或全体投资者</p></div><div class="radar-panel-actions"><span class="radar-status">'+radarSourceStatus('community')+'</span><button class="btn mini subtle" data-action="radar-refresh" data-source="community">刷新讨论</button></div></div>'+
  '<div class="radar-filters">'+[2,6,24].map(n=>'<button data-action="radar-community-hours" data-value="'+n+'" class="'+(radarState.communityHours===n?'active':'')+'">近'+n+'小时</button>').join('')+'</div>'+
+ '<div class="radar-filters">'+[['all','全部平台'],['东方财富股吧','东方财富股吧'],['虎扑','虎扑股票区'],['淘股吧','淘股吧']].map(([id,label])=>{const b=s.boards.filter(x=>x.source===id),n=b.filter(x=>x.status==='ok').length;return '<button data-action="radar-community-source" data-value="'+h(id)+'" class="'+(radarState.communitySource===id?'active':'')+'">'+h(label)+(id==='all'?'':' · '+n+'/'+b.length)+'</button>';}).join('')+'</div>'+
  '<div class="community-summary"><div><small>社区方向指数</small><strong class="tone-text-'+(score===null?'neutral':score>0?'positive':score<0?'negative':'mixed')+'">'+(score===null?'--':score)+'</strong><span>'+(score===null?'样本不足':score>20?'偏多':score<-20?'偏空':'分歧')+'</span></div><div><small>去重讨论样本</small><strong>'+report.total+'</strong><span>明确方向 '+report.coverage+'%</span></div><div><small>成功采集讨论区</small><strong>'+sourceCount+' / '+s.boards.length+'</strong><span>仅监控样本</span></div></div>'+
  '<div class="radar-sentiment-bar">'+active.map(k=>'<span class="tone-'+k+'" style="width:'+(report.total?counts[k]/report.total*100:0)+'%"></span>').join('')+'</div>'+
  '<div class="radar-tone-filters">'+[['all','全部'],...active.map(k=>[k,labels[k]])].map(([k,l])=>'<button data-action="radar-community-tone" data-value="'+k+'" class="'+(tone===k?'active':'')+' tone-text-'+k+'">'+l+' '+(k==='all'?report.total:counts[k])+'</button>').join('')+'</div>'+
  '<div class="radar-news-head"><strong>讨论热度排行</strong><button class="btn mini subtle" data-action="radar-community-board" data-value="all">全部讨论区</button></div><div class="community-board-list">'+all.boards.map(b=>'<button data-action="radar-community-board" data-value="'+h(b.code)+'" class="'+(radarState.communityBoard===b.code?'active':'')+'"><strong>'+h(b.name)+'</strong><small>'+b.count+'帖 · 多'+b.positive+' / 空'+b.negative+' · 评论 '+(b.comments??'--')+'</small></button>').join('')+'</div>'+
  '<div class="radar-news-head"><strong>社区情绪词云</strong>'+(word?'<button class="btn mini subtle" data-action="radar-community-word" data-value="">清除“'+h(word)+'”</button>':'')+'</div><div class="radar-cloud">'+report.terms.map(t=>'<button class="radar-word tone-word-'+t.tone+(word===t.word?' active':'')+'" data-action="radar-community-word" data-value="'+h(t.word)+'" style="font-size:'+(14+20*t.count/max)+'px">'+h(t.word)+' <small>'+t.count+'</small></button>').join('')+'</div>'+
  '<div class="radar-news-head"><strong>公开讨论原帖</strong><a href="https://guba.eastmoney.com/" target="_blank" rel="noopener noreferrer">股吧来源 ↗</a></div>'+
- (rows.length?'<div class="radar-news-list sentiment-news-list">'+rows.slice(0,80).map(x=>'<article class="radar-news-line"><time>'+h(new Date(x.time).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}))+'</time><div><span class="radar-tone-label tone-text-'+x.tone+'">'+labels[x.tone]+'</span> <a href="'+h(x.url)+'" target="_blank" rel="noopener noreferrer">'+h(x.title)+'</a><small>'+h(x.board)+' · 阅读 '+(x.reads??'--')+' · 评论 '+(x.comments??'--')+' · 识别词 '+h([...x.positive,...x.negative].join('、')||'无')+'</small></div></article>').join('')+'</div>':'<div class="radar-empty">'+(fresh?'当前筛选无有效样本':'社区数据未取得或已过期，不计算情绪')+'</div>')+
- '<p class="radar-caveat">仅上证、创业板及观察/持仓相关股吧公开标题，不采集用户身份、正文或私人内容。指数至少10条去重标题和5条方向明确标题才计算。阅读及评论为来源累积计数，不代表独立用户。词典可能误判反讽；不作为真实交易信号，且不改动综合恐慌贪婪指数权重。</p></section>';
+ (rows.length?'<div class="radar-news-list sentiment-news-list">'+rows.slice(0,80).map(x=>'<article class="radar-news-line"><time>'+h(new Date(x.time).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false}))+'</time><div><span class="radar-tone-label tone-text-'+x.tone+'">'+labels[x.tone]+'</span> <a href="'+h(x.url)+'" target="_blank" rel="noopener noreferrer">'+h(x.title)+'</a><small>'+h(x.source)+' · '+h(x.board)+' · '+(x.timeKind==='activity'?'列表活动时间':'发帖时间')+' · 阅读 '+(x.reads??'--')+' · 评论 '+(x.comments??'--')+' · 识别词 '+h([...x.positive,...x.negative].join('、')||'无')+'</small></div></article>').join('')+'</div>':'<div class="radar-empty">'+(fresh?'当前筛选无有效样本':'社区数据未取得或已过期，不计算情绪')+'</div>')+
+ '<p class="radar-caveat">东方财富股吧覆盖观察及持仓相关股票，虎扑股票区、淘股吧社区总版覆盖公开讨论列表。虎扑默认最新回复列表，时间标为活动时间而非发帖时间；各来源样本不代表全站，不采集用户身份、正文或私人内容。指数至少10条去重标题和5条方向明确标题才计算。阅读及评论为来源累积计数，不代表独立用户。词典可能误判反讽；不作为真实交易信号，且不改动综合恐慌贪婪指数权重。</p></section>';
 }
 
 export function renderRadar(){
@@ -221,6 +222,7 @@ export function handleRadarClick(btn,{onUpdate=()=>{},openStock=()=>{},openSecto
  }
  if(action==='radar-news-hours'&&[2,6,24].includes(Number(btn.dataset.value))){radarState.newsHours=Number(btn.dataset.value);onUpdate();return true;}
  if(action==='radar-news-tone'&&['all',...Object.keys(TONE_LABELS)].includes(btn.dataset.value)){radarState.newsTone=btn.dataset.value;onUpdate();return true;}
+ if(action==='radar-community-source'&&['all','东方财富股吧','虎扑','淘股吧'].includes(btn.dataset.value)){radarState.communitySource=btn.dataset.value;radarState.communityBoard='all';radarState.communityWord='';onUpdate();return true;}
  if(action==='radar-community-hours'&&[2,6,24].includes(Number(btn.dataset.value))){radarState.communityHours=Number(btn.dataset.value);onUpdate();return true;}
  if(action==='radar-community-tone'&&['all','positive','negative','mixed','neutral'].includes(btn.dataset.value)){radarState.communityTone=btn.dataset.value;onUpdate();return true;}
  if(action==='radar-community-word'){const w=String(btn.dataset.value||'');radarState.communityWord=radarState.communityWord===w?'':w;onUpdate();return true;}

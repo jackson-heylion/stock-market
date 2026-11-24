@@ -21,22 +21,28 @@ export function parseCommunity(payload,{now=Date.now()}={}){
  const seen=new Set(),rows=[];
  for(const x of payload.posts){
   const id=String(x?.id||''),code=String(x?.code||''),title=String(x?.title||'').trim().slice(0,160),t=Date.parse(x?.publishedAt);
-  if(!/^\d{5,20}$/.test(id)||!/^(?:\d{6}|zs(?:sh|sz)\d{6})$/.test(code)||title.length<2||!Number.isFinite(t)||t>now||now-t>86400000||seen.has(id))continue;
-  seen.add(id);
-  rows.push({id,code,title,board:String(x.board||code).slice(0,30),time:t,source:'东方财富股吧',url:'https://guba.eastmoney.com/news,'+code+','+id+'.html',
+  const source=x?.source||'东方财富股吧';
+  let url=null,timeKind='published';
+  if(source==='东方财富股吧'&&/^\d{5,20}$/.test(id)&&/^(?:\d{6}|zs(?:sh|sz)\d{6})$/.test(code))url='https://guba.eastmoney.com/news,'+code+','+id+'.html';
+  if(source==='虎扑'&&code==='hupu'&&/^\d{5,20}$/.test(id)){url='https://bbs.hupu.com/'+id+'.html';timeKind='activity';}
+  if(source==='淘股吧'&&code==='tgb'&&/^[A-Za-z0-9]{5,30}$/.test(id))url='https://www.tgb.cn/a/'+id;
+  const key=source+':'+id;
+  if(!url||title.length<2||!Number.isFinite(t)||t>now||now-t>86400000||seen.has(key))continue;
+  seen.add(key);
+  rows.push({id,code,title,board:String(x.board||code).slice(0,30),time:t,timeKind,source,url,
    reads:validCount(x.reads),comments:validCount(x.comments),...classifyCommunity(title)});
  }
- const boards=payload.boards.slice(0,20).map(b=>({code:String(b?.code||''),board:String(b?.board||'').slice(0,30),status:['ok','blocked','unavailable'].includes(b?.status)?b.status:'unavailable',count:validCount(b?.count)}));
+ const boards=payload.boards.slice(0,24).map(b=>({source:b?.source==='虎扑'||b?.source==='淘股吧'?b.source:'东方财富股吧',code:String(b?.code||''),board:String(b?.board||'').slice(0,30),status:['ok','blocked','unavailable'].includes(b?.status)?b.status:'unavailable',count:validCount(b?.count)}));
  if(!rows.length&&boards.every(b=>b.status!=='ok'))throw Error('社区源未取得可核验讨论（受限或接口变化）');
- return {rows:rows.sort((a,b)=>b.time-a.time),source:'东方财富股吧 · 同域快照',receivedAt:fetchedAt,boards,warning:boards.some(b=>b.status!=='ok')?'部分讨论区不可用':''};
+ return {rows:rows.sort((a,b)=>b.time-a.time),source:'股吧 / 虎扑 / 淘股吧 · 同域快照',receivedAt:fetchedAt,boards,warning:boards.some(b=>b.status!=='ok')?'部分讨论区不可用':''};
 }
 export async function getCommunity(fetchImpl=fetch,{now=()=>Date.now()}={}){
  return parseCommunity(await fetchTimeout('./data/community.json?v='+Math.floor(now()/60000),'json',fetchImpl,8000),{now:now()});
 }
-export function communityReport(rows,{now=Date.now(),hours=2,board='all'}={}){
+export function communityReport(rows,{now=Date.now(),hours=2,board='all',source='all'}={}){
  const unique=new Set(),selected=[];
  for(const row of rows){
-  if(row.time>now||now-row.time>hours*3600000||board!=='all'&&row.code!==board)continue;
+  if(row.time>now||now-row.time>hours*3600000||board!=='all'&&row.code!==board||source!=='all'&&row.source!==source)continue;
   const key=row.title.replace(/\s+/g,'').trim();if(unique.has(key))continue;unique.add(key);selected.push({...row,...classifyCommunity(row.title)});
  }
  const counts={positive:0,negative:0,mixed:0,neutral:0};for(const r of selected)counts[r.tone]++;
