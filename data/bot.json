@@ -4,7 +4,7 @@
   "initialCash": 1000000,
   "cash": 1000000,
   "lastDate": null,
-  "updatedAt": null,
+  "updatedAt": "2026-11-24T06:30:13.419Z",
   "models": {
     "M1": {
       "enabled": false,
@@ -133,5 +133,322 @@
         "reason": "本次事件专项不参与自动拟买，保留原研究依据"
       }
     ]
+  },
+  "afternoon": {
+    "version": "M5-1430-v1",
+    "date": "2026-11-24",
+    "checkedAt": "2026-11-24T06:30:13.419Z",
+    "marketOk": true,
+    "indices": [
+      {
+        "key": "sh000001",
+        "pct": 0.2057107334096328,
+        "time": 1795501809000
+      },
+      {
+        "key": "sz399001",
+        "pct": -0.17820299071107124,
+        "time": 1795501809000
+      },
+      {
+        "key": "sz399006",
+        "pct": 0.29295675817911987,
+        "time": 1795501809000
+      },
+      {
+        "key": "sh000688",
+        "pct": 1.7583008249924599,
+        "time": 1795501809000
+      },
+      {
+        "key": "sh000300",
+        "pct": 0.17911775034169164,
+        "time": 1795501809000
+      }
+    ],
+    "scores": [
+      {
+        "code": "002103",
+        "name": "广博股份",
+        "sector": "文化用品",
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": true
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": false
+          },
+          {
+            "name": "站上MA20",
+            "pass": false
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "实际累计量/前5日完整日均量未达标；站上MA20未达标；涨幅与承接未达标",
+        "price": 5.77,
+        "prevClose": 5.68,
+        "quoteTime": 1795501809000,
+        "source": "腾讯财经",
+        "ma20": 6.29,
+        "ratio": 0.94,
+        "gain": 1.58,
+        "fade": 3.51,
+        "sectorPct": 6.18,
+        "open": 5.73
+      },
+      {
+        "code": "601133",
+        "name": "柏诚股份",
+        "sector": null,
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": false
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": false
+          },
+          {
+            "name": "站上MA20",
+            "pass": false
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "行业强度未达标；实际累计量/前5日完整日均量未达标；站上MA20未达标；涨幅与承接未达标",
+        "price": 16.77,
+        "prevClose": 16.83,
+        "quoteTime": 1795501810000,
+        "source": "腾讯财经",
+        "ma20": 16.77,
+        "ratio": 0.74,
+        "gain": -0.36,
+        "fade": 5.52,
+        "sectorPct": null,
+        "open": 17.5
+      },
+      {
+        "code": "300829",
+        "name": "金丹科技",
+        "sector": null,
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": false
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": true
+          },
+          {
+            "name": "站上MA20",
+            "pass": true
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "行业强度未达标；涨幅与承接未达标",
+        "price": 31.79,
+        "prevClose": 31.44,
+        "quoteTime": 1795501809000,
+        "source": "腾讯财经",
+        "ma20": 26.15,
+        "ratio": 1.42,
+        "gain": 1.11,
+        "fade": 11.37,
+        "sectorPct": null,
+        "open": 32.81
+      },
+      {
+        "code": "603931",
+        "name": "格林达",
+        "sector": null,
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": false
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": true
+          },
+          {
+            "name": "站上MA20",
+            "pass": true
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "行业强度未达标；涨幅与承接未达标",
+        "price": 30.05,
+        "prevClose": 29.01,
+        "quoteTime": 1795501810000,
+        "source": "腾讯财经",
+        "ma20": 26.84,
+        "ratio": 1.54,
+        "gain": 3.58,
+        "fade": 3.06,
+        "sectorPct": null,
+        "open": 29.1
+      },
+      {
+        "code": "600156",
+        "name": "华升股份",
+        "sector": null,
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": false
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": false
+          },
+          {
+            "name": "站上MA20",
+            "pass": true
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "行业强度未达标；实际累计量/前5日完整日均量未达标；涨幅与承接未达标",
+        "price": 8.93,
+        "prevClose": 8.82,
+        "quoteTime": 1795501812000,
+        "source": "腾讯财经",
+        "ma20": 7.06,
+        "ratio": 1.15,
+        "gain": 1.25,
+        "fade": 7.84,
+        "sectorPct": null,
+        "open": 8.74
+      },
+      {
+        "code": "600520",
+        "name": "三佳科技",
+        "sector": null,
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": false
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": false
+          },
+          {
+            "name": "站上MA20",
+            "pass": false
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "行业强度未达标；实际累计量/前5日完整日均量未达标；站上MA20未达标；涨幅与承接未达标",
+        "price": 20.26,
+        "prevClose": 20.41,
+        "quoteTime": 1795501810000,
+        "source": "腾讯财经",
+        "ma20": 20.29,
+        "ratio": 0.91,
+        "gain": -0.73,
+        "fade": 4.84,
+        "sectorPct": null,
+        "open": 21
+      },
+      {
+        "code": "301348",
+        "name": "蓝箭电子",
+        "sector": null,
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": false
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": true
+          },
+          {
+            "name": "站上MA20",
+            "pass": true
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "行业强度未达标；涨幅与承接未达标",
+        "price": 21.57,
+        "prevClose": 21.44,
+        "quoteTime": 1795501809000,
+        "source": "腾讯财经",
+        "ma20": 19.08,
+        "ratio": 1.42,
+        "gain": 0.61,
+        "fade": 4.43,
+        "sectorPct": null,
+        "open": 21.8
+      },
+      {
+        "code": "002579",
+        "name": "中京电子",
+        "sector": null,
+        "passed": false,
+        "checks": [
+          {
+            "name": "行业强度",
+            "pass": false
+          },
+          {
+            "name": "实际累计量/前5日完整日均量",
+            "pass": false
+          },
+          {
+            "name": "站上MA20",
+            "pass": true
+          },
+          {
+            "name": "涨幅与承接",
+            "pass": false
+          }
+        ],
+        "reason": "行业强度未达标；实际累计量/前5日完整日均量未达标；涨幅与承接未达标",
+        "price": 16.2,
+        "prevClose": 14.73,
+        "quoteTime": 1795501809000,
+        "source": "腾讯财经",
+        "ma20": 12.15,
+        "ratio": 0.58,
+        "gain": 9.98,
+        "fade": 0,
+        "sectorPct": null,
+        "open": 16.2
+      }
+    ],
+    "results": [],
+    "message": "模拟买入 0 笔、卖出 0 笔；未触发则不交易"
   }
 }
