@@ -3,43 +3,108 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # Snapshot fallback for browsers that cannot access the cross-origin news host.
-  # Scheduled Actions can run late or be skipped; the UI displays source timestamps.
+  # Refresh data snapshots committed by the separate sentiment and bot workflows.
   schedule:
     - cron: '*/10 1-9 * * 1-5'
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      artifact_name: ${{ steps.release.outputs.artifact_name }}
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm test && npm run check
+      - name: Validate community parser
+        run: python3 scripts/test_community_snapshot.py
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Validate community parser
-        run: python3 scripts/test_community_snapshot.py
-      - name: Write release metadata
+      - name: Stage public site only
+        id: release
+        shell: bash
         run: |
-          mkdir -p data
-          printf '{"sha":"%s"}\n' "$GITHUB_SHA" > data/version.json
+          set -euo pipefail
+          mkdir -p _site/data
+          cp index.html ./*.js ./*.css _site/
+          cp data/*.json _site/data/
+          printf '{"sha":"%s"}\n' "$GITHUB_SHA" > _site/data/version.json
+          test -s _site/index.html
+          test -s _site/app.js
+          test -s _site/data/bot.json
+          echo "artifact_name=github-pages-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+          echo "sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          name: ${{ steps.release.outputs.artifact_name }}
+          path: _site
+          retention-days: 3
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Wait for exactly one finalized artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: ${{ needs.build.outputs.artifact_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 12); do
+            if json=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" -f name="$ARTIFACT_NAME" -X GET); then
+              count=$(jq --arg name "$ARTIFACT_NAME" '[.artifacts[] | select(.name == $name and .expired == false)] | length' <<< "$json")
+              if [ "$count" = 1 ]; then
+                jq --arg name "$ARTIFACT_NAME" '.artifacts[] | select(.name == $name and .expired == false) | {id,name,size_in_bytes}' <<< "$json"
+                exit 0
+              fi
+              if [ "$count" -gt 1 ]; then
+                echo "::error::Duplicate Pages artifacts for this build"; exit 1
+              fi
+            fi
+            echo "Waiting for artifact visibility: attempt $attempt/12"
+            sleep 5
+          done
+          echo "::error::Pages artifact is not visible after bounded polling"
+          exit 1
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        with:
+          artifact_name: ${{ needs.build.outputs.artifact_name }}
+      - name: Verify published release
+        env:
+          EXPECTED_SHA: ${{ needs.build.outputs.sha }}
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 15); do
+            version=$(curl --fail --silent --show-error --max-time 10 -H 'Cache-Control: no-cache' "${PAGE_URL%/}/data/version.json?v=${GITHUB_RUN_ID}-${attempt}" 2>/dev/null || true)
+            if [ "$(jq -r '.sha // empty' <<< "$version" 2>/dev/null || true)" = "$EXPECTED_SHA" ]; then
+              curl --fail --silent --show-error --max-time 10 "${PAGE_URL%/}/app.js?v=$EXPECTED_SHA" -o /tmp/published-app.js
+              test -s /tmp/published-app.js
+              echo "Verified public release $EXPECTED_SHA at $PAGE_URL"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Public URL has not served the expected release SHA"
+          exit 1
