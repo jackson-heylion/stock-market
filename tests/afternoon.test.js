@@ -1,0 +1,16 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {AFTERNOON_VERSION,afternoonWindow,scoreStock,holdingDecision} from '../afternoon-rules.js';
+import {decideAfternoon} from '../afternoon.js';
+const now=Date.parse('2026-11-24T14:31:00+08:00'),date='2026-11-24';
+const account=()=>({schema:1,cash:1000000,initialCash:1000000,models:{M5:{enabled:true,maxPositions:3}},holdings:{},trades:[],signals:[],history:[],pending:[]});
+const stock={code:'601133',name:'柏诚股份',sector:'测试行业',sectorPct:2,sectorTime:now-5000};
+const quote={code:stock.code,price:10.3,prevClose:10,time:now-1000,source:'测试行情'};
+const rank={code:stock.code,price:10.3,quoteTime:now-2000,volume:1500,high:10.35,open:10.1};
+const daily=Array.from({length:20},(_,i)=>({date:'2026-11-'+String(i+4).padStart(2,'0'),close:10,volume:1000}));
+const snap=()=>({stocks:[stock],previousDate:'2026-11-23',quotes:{[stock.code]:quote},ranks:{[stock.code]:rank},daily:{[stock.code]:daily},indices:['sh000001','sz399001','sz399006'].map(key=>({key,price:1000,pct:1,time:now-1000}))});
+test('exact Beijing time gate and no weekend execution',()=>{assert.equal(afternoonWindow(now),true);assert.equal(afternoonWindow(now-120000),false);assert.equal(afternoonWindow(now+1800000),false);assert.equal(afternoonWindow(Date.parse('2026-11-28T14:31:00+08:00')),false);});
+test('M5 candidate requires dated historical bars and no unverified rank or board',()=>{const x={quote,rank,daily,previousDate:'2026-11-23',now};assert.equal(scoreStock(stock,x).passed,true);assert.equal(scoreStock(stock,{...x,rank:{...rank,quoteTime:null}}).passed,false);assert.equal(scoreStock({...stock,sectorTime:null},x).passed,false);assert.equal(scoreStock(stock,{...x,quote:{...quote,time:now+1}}).passed,false);});
+test('conditional paper open, fees and daily idempotency',()=>{const r=decideAfternoon(account(),snap(),now);assert.equal(r.changed,true);assert.equal(r.state.trades.length,1);assert.equal(r.state.trades[0].modelId,AFTERNOON_VERSION);assert.ok(r.state.cash>=950000);assert.equal(decideAfternoon(r.state,snap(),now+1000).changed,false);});
+test('risk stop clears previous-day holding but same-day T+1 blocks',()=>{const h={code:stock.code,avgCost:12,buyDate:'2026-11-23'};assert.equal(holdingDecision(h,quote,null,now).action,'CLEAR');assert.equal(holdingDecision({...h,buyDate:date},quote,null,now).action,'HOLD');});
+test('missing market and stale stock do not create orders',()=>{const s=snap();s.indices=[];assert.equal(decideAfternoon(account(),s,now).changed,false);const t=snap();t.quotes={};assert.equal(decideAfternoon(account(),t,now).changed,false);});
