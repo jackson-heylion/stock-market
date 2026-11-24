@@ -16,7 +16,7 @@ export function fearGreedLabel(score){
  return score<=24?{label:'极度恐慌',tone:'fear-extreme'}:score<=44?{label:'恐慌',tone:'fear'}:score<=55?{label:'中性',tone:'neutral'}:score<=75?{label:'贪婪',tone:'greed'}:{label:'极度贪婪',tone:'greed-extreme'};
 }
 function available(feed,now,limit){
- return !!feed&&!feed.error&&Number.isFinite(feed.updatedAt)&&feed.updatedAt<=now&&now-feed.updatedAt<=limit;
+ return !!feed&&!feed.error&&!feed.historical&&Number.isFinite(feed.updatedAt)&&feed.updatedAt<=now&&now-feed.updatedAt<=limit;
 }
 export function calculateFearGreed({breadth,indices,sectors,news}={},now=Date.now()){
  const open=session(now)==='open',marketTTL=2*60000,newsTTL=20*60000;

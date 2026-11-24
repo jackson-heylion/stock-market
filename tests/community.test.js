@@ -6,7 +6,7 @@ const payload={schema:1,fetchedAt:at,boards:[{code:'300308',board:'中际旭创'
 test('community snapshot verifies dates, codes, URLs and provenance',()=>{
  const x=structuredClone(payload);x.posts.push({...x.posts[0],id:'999999',publishedAt:new Date(now+1).toISOString()},{...x.posts[0],id:'888888',code:'bad'});
  const r=parseCommunity(x,{now});assert.equal(r.rows.length,12);assert.match(r.rows[0].url,/^https:\/\/guba\.eastmoney\.com\/news,300308,/);
- assert.throws(()=>parseCommunity({...payload,fetchedAt:new Date(now-3*3600000).toISOString()},{now}),/过期/);
+ const old=parseCommunity({...payload,fetchedAt:new Date(now-3*3600000).toISOString()},{now});assert.equal(old.historical,true);assert.equal(old.rows.length,12);assert.throws(()=>parseCommunity({...payload,fetchedAt:new Date(now-25*3600000).toISOString()},{now}),/过期/);
 });
 test('opinion classification handles slang and disagreement',()=>{
  assert.equal(classifyCommunity('看多加仓').tone,'positive');assert.equal(classifyCommunity('诱多砸盘').tone,'negative');assert.equal(classifyCommunity('看多但谨防砸盘').tone,'mixed');assert.equal(classifyCommunity('不要追高').tone,'negative');

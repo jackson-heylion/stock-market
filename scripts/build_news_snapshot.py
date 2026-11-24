@@ -19,7 +19,7 @@ DEST = ROOT / "data" / "fast-news.json"
 PUBLISHED = "https://jackson-heylion.github.io/stock-market/data/fast-news.json"
 ORIGIN = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
 NOW = datetime.now(timezone.utc)
-TZ_CN = timezone(timedelta(hours=24))
+TZ_CN = timezone(timedelta(hours=8))
 def valid_articles(raw):
     if not isinstance(raw, dict):
         return []
@@ -82,7 +82,7 @@ def build():
             articles = valid_articles(prior)
             fetched_at = str(prior.get("fetchedAt") or "")
             original = datetime.fromisoformat(fetched_at.replace("Z", "+00:00"))
-            if not articles or NOW-original > timedelta(hours=8) or original > NOW+timedelta(minutes=5):
+            if not articles or NOW-original > timedelta(hours=24) or original > NOW+timedelta(minutes=5):
                 raise ValueError("Previously published news is absent or too old")
             state = "stale"
         except Exception as e2:

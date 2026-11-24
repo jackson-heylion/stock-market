@@ -31,16 +31,21 @@ jobs:
           node-version: '22'
       - name: News snapshot
         run: python3 scripts/build_news_snapshot.py
+        continue-on-error: true
       - name: Market breadth, indices, sectors and events snapshot
         run: node scripts/build_radar_snapshot.mjs
+        continue-on-error: true
       - name: Community snapshot
         run: python3 scripts/build_community_snapshot.py
+        continue-on-error: true
       - name: Publish only data files
         id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/fast-news.json data/community.json data/radar-market.json
+          for file in data/fast-news.json data/community.json data/radar-market.json; do
+            if [ -s "$file" ]; then git add "$file"; fi
+          done
           git diff --cached --quiet && exit 0
           git commit -m "data: update public sentiment snapshots"
           for attempt in 1 2 3; do
