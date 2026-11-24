@@ -51,7 +51,7 @@ export function evaluateOpening(candidate,{daily,minute,quote,sectors},plan,now)
  add('昨收一致',matched,'券商行情昨收与历史日K不一致，暂停撮合');
  add('开盘五分钟放量',ratio>=plan.rules.minOpeningVolumeRatio,
   '09:31-09:35量比 '+round(ratio)+'，阈值 '+plan.rules.minOpeningVolumeRatio);
- add('趋势突破',price>mid&&first.closeAt935>=first.openingPrice&&latestTo935>=-1,
+ add('趋势突破',price>mid&&first.closeAt935>=first.openingPrice&&latestTo935>=-(plan.rules.maxPullbackFrom935Pct??1),
   '现价 '+round(price)+' / MA20 '+round(mid)+' / 五分钟开盘价 '+round(first.openingPrice));
  add('涨幅不过热',gain>=plan.rules.minGainPct&&gain<=plan.rules.maxGainPct,
   '较昨收涨幅 '+round(gain)+'%，要求 '+plan.rules.minGainPct+'%～'+plan.rules.maxGainPct+'%');
@@ -59,9 +59,10 @@ export function evaluateOpening(candidate,{daily,minute,quote,sectors},plan,now)
   '涨停参考价 '+limit+'，当前价 '+round(price));
  if(candidate.sectorRequired){
   const board=sectors.find(x=>candidate.sectorKeywords.some(k=>x.name.includes(k)));
-  const fresh=!!board&&Number.isFinite(board.pct)&&board.pct>0;
+  const sectorMin=plan.rules.minSectorChangePct??0;
+  const fresh=!!board&&Number.isFinite(board.pct)&&board.pct>0&&board.pct>=sectorMin;
   add('板块共振',fresh,
-   board?board.name+' '+board.pct.toFixed(2)+'%':'行业榜前20名无可验证的强势PCB板块');
+   board?board.name+' '+board.pct.toFixed(2)+'%':'行业榜前20名无可验证的候选所属强势板块');
  }
  return {code:candidate.code,name:candidate.name,modelId:candidate.modelId,
   candidateBasis:candidate.basis,passed:checks.every(c=>c.pass),checks,

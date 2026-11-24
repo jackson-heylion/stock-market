@@ -49,8 +49,67 @@
     "previousDate": "2026-11-23",
     "enabled": true,
     "status": "armed",
-    "description": "仅2026年11月24日09:35五分钟结束后，在09:36至09:44间允许真实报价验证与机器人模拟买入；不动本地手动盘",
+    "description": "2026-11-24 09:35隔夜英伟达事件驱动修复专项：先确认五分钟承接、板块共振与不过热，再于09:36-09:44按真实报价模拟买入；不动手动盘",
     "candidates": [
+      {
+        "code": "300308",
+        "name": "中际旭创",
+        "modelId": "M5-OPEN5",
+        "basis": "光模块/高速互联，11月18日报道公司未见主要客户砍单或下调2027年需求；11月23日已涨6.10%，只接受低追涨、放量承接与通信板块共振，不假定新增英伟达订单",
+        "evidenceUrl": "https://www.cls.cn/detail/2537293",
+        "sectorRequired": true,
+        "sectorKeywords": [
+          "光通信",
+          "光模块",
+          "通信设备"
+        ]
+      },
+      {
+        "code": "300476",
+        "name": "胜宏科技",
+        "modelId": "M5-OPEN5",
+        "basis": "AI服务器高端PCB，11月18日报道在手订单处历史高位、部分需求延续至2028年；仅在PCB/元件行业共振时参与，不把复职等同于新增订单",
+        "evidenceUrl": "https://www.cls.cn/detail/2537293",
+        "sectorRequired": true,
+        "sectorKeywords": [
+          "印制电路板",
+          "PCB",
+          "元件"
+        ]
+      }
+    ],
+    "rules": {
+      "minOpeningVolumeRatio": 1.8,
+      "minGainPct": 0.8,
+      "maxGainPct": 5,
+      "minLimitDistanceYuan": 0.02,
+      "maxPerStockFraction": 0.05,
+      "slippagePct": 0.001,
+      "quoteMaxAgeSeconds": 15,
+      "priceAboveMA20": true,
+      "maxOrders": 2,
+      "minSectorChangePct": 1,
+      "maxPullbackFrom935Pct": 0.5
+    },
+    "results": [],
+    "message": "隔夜AI修复专项已更新：中际旭创、胜宏科技，五分钟量比代理≥1.8、板块≥1%、回撤≤0.5%、涨幅0.8%～5%、站上MA20；条件不足或行情缺失宁可空仓。",
+    "strategyVersion": "NVDA-RELIEF-20261124-v2",
+    "eventEvidence": {
+      "date": "2026-11-23",
+      "event": "黄仁勋恢复英伟达CEO职务，风险溢价修复而非新增订单保证；出口管制风险仍存",
+      "nvdaPct": 31.48,
+      "nasdaqPct": 6.51,
+      "soxPct": 14.03,
+      "priorAShareContext": "11月23日创业板已涨3.08%，中际旭创已涨6.10%，存在提前定价与高开兑现风险",
+      "sources": [
+        "https://www.reuters.com/technology/nvidia-reinstates-jensen-huang-ceo-2026-11-23/",
+        "https://finance.eastmoney.com/a/202611243937776142.html",
+        "https://www.reuters.com/business/us-blacklist-megaspeed-chip-firm-linked-nvidia-scandal-source-says-2026-11-23/",
+        "https://news.10jqka.com.cn/20261123/c682101377.shtml",
+        "https://stock.cngold.org/c/2026-11-23/c10897761.html"
+      ]
+    },
+    "previousCandidates": [
       {
         "code": "002642",
         "name": "荣联科技",
@@ -58,7 +117,8 @@
         "basis": "11月19日晚公告8.49亿元存储设备项目中选（未签合同），11月23日连续涨停后仅观察回落承接",
         "evidenceUrl": "https://static.cninfo.com.cn/finalpage/2026-11-20/1225679535.PDF",
         "sectorRequired": false,
-        "sectorKeywords": []
+        "sectorKeywords": [],
+        "reason": "本次事件专项不参与自动拟买，保留原研究依据"
       },
       {
         "code": "301041",
@@ -69,21 +129,9 @@
         "sectorKeywords": [
           "印制电路板",
           "元件"
-        ]
+        ],
+        "reason": "本次事件专项不参与自动拟买，保留原研究依据"
       }
-    ],
-    "rules": {
-      "minOpeningVolumeRatio": 1.5,
-      "minGainPct": 0.8,
-      "maxGainPct": 5,
-      "minLimitDistanceYuan": 0.02,
-      "maxPerStockFraction": 0.05,
-      "slippagePct": 0.001,
-      "quoteMaxAgeSeconds": 15,
-      "priceAboveMA20": true,
-      "maxOrders": 2
-    },
-    "results": [],
-    "message": "等待2026-11-24北京时间09:35五分钟信号和09:36-09:44有效报价，条件不满足则不买入。"
+    ]
   }
 }

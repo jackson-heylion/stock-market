@@ -14,14 +14,14 @@ const minute=[
  {date:'2026-11-24 09:40',open:11.5,price:20,volume:100000000}
 ];
 const makeQuote=(code,price=10.4,at='2026-11-24T09:37:58+08:00')=>({
- code,name:code==='002642'?'荣联科技':'金百泽',price,prevClose:10,
+ code,name:base.openFive.candidates.find(c=>c.code===code)?.name,price,prevClose:10,
  pct:(price/10-1)*100,time:Date.parse(at),source:'腾讯财经'
 });
 const snapshot=({price=10.4,quoteTime='2026-11-24T09:37:58+08:00',boardPct=2.3}={})=>({
  date:'2026-11-24',
  candidates:Object.fromEntries(base.openFive.candidates.map(x=>[x.code,
   {daily,minute,quote:makeQuote(x.code,price,quoteTime)}])),
- sectors:boardPct==null?[]:[{name:'印制电路板',pct:boardPct}]
+ sectors:boardPct==null?[]:[{name:'通信设备',pct:boardPct},{name:'印制电路板',pct:boardPct}]
 });
 test('plan is only armed for November 24, 2026, and manual account remains separate',()=>{
  assert.equal(base.openFive.targetDate,'2026-11-24');
@@ -31,6 +31,11 @@ test('plan is only armed for November 24, 2026, and manual account remains separ
  assert.equal(base.cash,1000000);
  assert.equal(base.trades.length,0);
  assert.equal(base.openFive.rules.maxPerStockFraction,0.05);
+ assert.deepEqual(base.openFive.candidates.map(c=>c.code),['300308','300476']);
+ assert.ok(base.openFive.candidates.every(c=>c.sectorRequired));
+ assert.equal(base.openFive.rules.minOpeningVolumeRatio,1.8);
+ assert.equal(base.openFive.rules.minSectorChangePct,1);
+ assert.equal(base.openFive.rules.maxPullbackFrom935Pct,0.5);
 });
 test('first-five-minute price and volume exclude auction and any minute after 09:35',()=>{
  const f=firstFiveBars(minute,'2026-11-24');
@@ -57,9 +62,10 @@ test('both vetted candidates may paper buy only when conditions and fresh timest
 });
 test('sector loss cannot trigger M5 even with a valid opening momentum signal',()=>{
  const a=openingState(base,{now:time,market:snapshot({boardPct:null})});
- assert.equal(a.state.trades.length,1);
- assert.equal(a.state.trades[0].code,'002642');
- assert.equal(a.state.openFive.results.find(x=>x.code==='301041').status,'未触发');
+ assert.equal(a.state.trades.length,0);
+ assert.ok(a.state.openFive.results.every(x=>x.status==='未触发'));
+ const weak=openingState(base,{now:time,market:snapshot({boardPct:0.9})});
+ assert.equal(weak.state.trades.length,0);
 });
 test('failing chase/gap, stale quotes, and missing five-minute candles fail closed',()=>{
  for(const price of [9.5,10.75]){
@@ -70,7 +76,7 @@ test('failing chase/gap, stale quotes, and missing five-minute candles fail clos
  const stale=openingState(base,{now:time,market:snapshot({quoteTime:'2026-11-24T09:35:00+08:00'})});
  assert.equal(stale.state.trades.length,0);
  const missing=snapshot();
- missing.candidates['301041'].minute=minute.slice(0,4);
+ missing.candidates['300476'].minute=minute.slice(0,4);
  assert.throws(()=>openingState(base,{now:time,market:missing}),/五根完整分钟/);
  assert.equal(base.openFive.status,'armed');
 });
@@ -88,12 +94,23 @@ test('outside exact date or opening window no buy; missed run is recorded withou
 });
 test('reused bot holdings cannot be double bought; after 09:35 engine never touches manual localStorage',async()=>{
  const prepared=structuredClone(base);
- prepared.holdings['002642']={code:'002642',quantity:100,cost:1000,avgCost:10,
+ prepared.holdings['300308']={code:'300308',quantity:100,cost:1000,avgCost:10,
   lastPrice:10,buyDate:'2026-11-23',modelId:'M2-OPEN5'};
  const a=openingState(prepared,{now:time,market:snapshot()});
- assert.equal(a.state.openFive.results.find(x=>x.code==='002642').status,'未下单');
- assert.equal(a.state.holdings['002642'].quantity,100);
+ assert.equal(a.state.openFive.results.find(x=>x.code==='300308').status,'未下单');
+ assert.equal(a.state.holdings['300308'].quantity,100);
  const outside=await executeOpening(base,{now:()=>new Date('2026-11-23T15:59:00+08:00'),
   snapshot:async()=>{throw Error('never contact exchange before target date')}});
  assert.equal(outside.changed,false);
+});
+
+test('overnight relief plan rejects post-09:35 fade, insufficient proxy volume and one-board false resonance',()=>{
+ const fade=openingState(base,{now:time,market:snapshot({price:10.34})});
+ assert.equal(fade.state.trades.length,0);
+ const low=snapshot();
+ for(const v of Object.values(low.candidates))v.minute=minute.map(b=>({...b,volume:25}));
+ assert.equal(openingState(base,{now:time,market:low}).state.trades.length,0);
+ const onlyPCB=snapshot();onlyPCB.sectors=[{name:'印制电路板',pct:2.3}];
+ const result=openingState(base,{now:time,market:onlyPCB});
+ assert.deepEqual(result.state.trades.map(t=>t.code),['300476']);
 });
