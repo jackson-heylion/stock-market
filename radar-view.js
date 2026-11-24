@@ -1,6 +1,10 @@
 
 import {getLiveSectors,getLiveNews,getLiveChanges,getNewsTerms,treemapLayout,newsSentiment,sentimentTerms} from './market-radar.js';
+import {getMarketBreadth,getMarketIndices} from './market-center.js';
+import {calculateFearGreed} from './fear-greed.js';
 export const radarState={
+ breadth:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
+ indices:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  sectors:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  news:{rows:[],updatedAt:0,checkedAt:0,source:'',warning:'',error:'',loading:false},
  changes:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
@@ -97,6 +101,21 @@ export function anomaliesHtml(){
    </div>`).join('')+'</div>';
 }
 
+export function fearGreedHtml(report){
+ const {score,label,tone,coverage,factors,marketDate,session}=report;
+ const angle=score===null?null:Math.PI*(1-score/100);
+ const needle=angle===null?'':('<line x1="160" y1="151" x2="'+(160+110*Math.cos(angle)).toFixed(2)+'" y2="'+(151-110*Math.sin(angle)).toFixed(2)+'" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="160" cy="151" r="5" fill="currentColor"/>');
+ const arcs=[[0,25,'#16896e'],[25,45,'#6eae93'],[45,56,'#b4a26c'],[56,76,'#e48582'],[76,100,'#d84c62']].map(([a,b,c])=>{
+  const point=v=>[160+126*Math.cos(Math.PI*(1-v/100)),151-126*Math.sin(Math.PI*(1-v/100))].map(x=>x.toFixed(2)).join(' ');
+  return '<path d="M '+point(a)+' A 126 126 0 0 1 '+point(b)+'" fill="none" stroke="'+c+'" stroke-width="20"/>';
+ }).join('');
+ return '<section class="panel radar-panel fg-panel"><div class="panel-head"><div><h2>A股恐慌与贪婪指数</h2><p>自研风险偏好代理 · 0–100 · '+h(session)+'</p></div><button class="btn mini subtle" data-action="radar-refresh" data-source="fear-greed">刷新指数</button></div>'+
+ '<div class="fg-layout"><div class="fg-meter"><svg viewBox="0 0 320 180" role="img" aria-label="恐慌贪婪指数 '+h(score??'未计算')+'">'+arcs+needle+'<text x="24" y="176" font-size="11" fill="currentColor">0 恐慌</text><text x="296" y="176" font-size="11" text-anchor="end" fill="currentColor">100 贪婪</text><text x="160" y="18" text-anchor="middle" font-size="10" fill="currentColor">50</text></svg>'+
+ '<div class="fg-value '+h(tone)+'"><strong>'+(score??'--')+'</strong><span>'+h(label)+'</span></div><small>有效权重 '+coverage+'% · 行情日期 '+h(marketDate||'未核验')+'</small></div>'+
+ '<div class="fg-factors">'+factors.map(f=>'<div class="fg-factor"><div><b>'+h(f.label)+'</b><span>权重 '+f.weight+'% · '+(f.score??'缺失')+'</span></div><div class="fg-track"><i style="width:'+(f.score??0)+'%"></i></div><small>'+h(f.detail)+'</small></div>').join('')+'</div></div>'+
+ '<p class="radar-caveat">0–24极度恐慌，25–44恐慌，45–55中性，56–75贪婪，76–100极度贪婪。指数动量按±3%映射到0–100；涨跌家数和行业强弱按上涨加半数平盘比例；新闻方向映射到0–100。三项市场因子必须有效，缺少新闻则按85%权重归一。非连续交易时段不生成新的综合指数。东方财富/腾讯公开报价，非CNN官方指数或交易指令。</p></section>';
+}
+
 export function renderRadar(){
  const sectors=radarState.sectors.rows,news=radarState.news.rows,changes=radarState.changes.rows;
  const positive=sectors.filter(x=>x.pct>0).length,negative=sectors.filter(x=>x.pct<0).length;
@@ -115,6 +134,7 @@ export function renderRadar(){
     <div class="action-row"><button class="btn primary" data-action="radar-refresh" data-source="all">刷新所有数据</button><button class="btn subtle" data-page="quotes">行情中心 ↗</button></div>
   </div>
   ${stats}
+  ${fearGreedHtml(calculateFearGreed(radarState))}
   <section class="panel radar-panel">
    <div class="panel-head"><div><h2>行业板块热度图</h2><p>按成交额与涨跌幅呈现行业热度</p></div>
    <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('sectors')}</span>${press('sectors','刷新板块')}</div></div>
@@ -145,12 +165,14 @@ export function renderRadar(){
 
 export async function refreshRadar({force=false,source='all',onUpdate=()=>{}}={}){
  const config=[
+  {key:'breadth',ttl:45000,fn:async()=>{const b=await getMarketBreadth();if(!b)throw Error('涨跌家数不可用');return {rows:[b],source:b.source,receivedAt:Date.now()};}},
+  {key:'indices',ttl:45000,fn:async()=>({rows:await getMarketIndices(),source:'腾讯财经主要指数',receivedAt:Date.now()})},
   {key:'sectors',ttl:45000,fn:getLiveSectors},
   {key:'news',ttl:60000,fn:getLiveNews},
   {key:'changes',ttl:15000,fn:getLiveChanges}
  ];
  const now=Date.now();
- const tasks=config.filter(c=>source==='all'||source===c.key).filter(c=>{
+ const tasks=config.filter(c=>source==='all'||source===c.key||source==='fear-greed'&&['breadth','indices','sectors','news'].includes(c.key)).filter(c=>{
   const target=radarState[c.key];return !target.loading&&(force||!(target.checkedAt||target.updatedAt)||now-(target.checkedAt||target.updatedAt)>=c.ttl);
  }).map(async c=>{
   const s=radarState[c.key];s.loading=true;
