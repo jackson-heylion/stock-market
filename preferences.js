@@ -3,7 +3,7 @@ export const PREF_KEY='stock-market-ui-settings-v1';
 export const DEFAULT_PREFS=Object.freeze({
  autoQuotes:true,quoteInterval:3000,defaultBudget:100000,
  confirmTrades:true,tablePageSize:30,defaultChartPeriod:'minute',showRiskHints:true,
- autoBotRefresh:true
+ autoBotRefresh:true,autoOpeningHold:true
 });
 export function normalizePrefs(raw){
  const x=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
@@ -15,7 +15,8 @@ export function normalizePrefs(raw){
  tablePageSize:[30,60,90].includes(Number(x.tablePageSize))?Number(x.tablePageSize):30,
  defaultChartPeriod:['minute','day','week','month'].includes(x.defaultChartPeriod)?x.defaultChartPeriod:'minute',
  showRiskHints:typeof x.showRiskHints==='boolean'?x.showRiskHints:true,
- autoBotRefresh:typeof x.autoBotRefresh==='boolean'?x.autoBotRefresh:true
+ autoBotRefresh:typeof x.autoBotRefresh==='boolean'?x.autoBotRefresh:true,
+ autoOpeningHold:typeof x.autoOpeningHold==='boolean'?x.autoOpeningHold:true
  };
 }
 export function readPrefs(store=typeof localStorage==='undefined'?null:localStorage){

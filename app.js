@@ -6,6 +6,7 @@ import {initTheme,applyTheme,THEME_KEY} from './theme.js';
 import {readPrefs,savePrefs,resetPrefs,DEFAULT_PREFS} from './preferences.js';
 import {renderRadar,refreshRadar,handleRadarClick} from './radar-view.js';
 import {proposeTailOrders,TAIL_POLICY} from './tail-strategy.js';
+import {HOLD_POLICY,holdWindow,applyLocalOpening} from './holding-opening.js';
 import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal,setTerminalPageSize} from './market-terminal.js';
 import {INDEXES,SCOPES,RANK_MODES,getMarketIndices,getRankings,getSectors,getMarketBreadth,getIndexHistory} from './market-center.js';
 let uiPrefs=readPrefs();
@@ -111,10 +112,48 @@ function executeTailRecommendation(code){
  });
 }
 
+let openingHoldRows=[],openingHoldTrends={},openingHoldFetchAt=0,openingHoldError='';
+function renderOpeningHold(){
+ const trades=state.trades.filter(t=>t.strategyVersion===HOLD_POLICY.version&&t.date===HOLD_POLICY.date);
+ const rows=openingHoldRows;
+ return '<section class="panel"><div class="panel-head"><div><h2>手动持仓 · 11月24日开盘自动风控</h2><p>09:36–09:44，仅当前浏览器实际持仓；'+(uiPrefs.autoOpeningHold?'已启用':'已关闭')+' · 已模拟减仓 '+trades.length+' 笔</p></div><button class="btn mini subtle" data-page="settings">设置</button></div>'+
+ '<p class="bot-method">先风控存量：亏损6%减半；当日跌5%且浮亏3%减半；高开3%后承接转弱或盈利15%且转弱减三分之一。最多3笔，每股一次，100股整手，T+1，0.1%不利滑点。没有有效行情不成交。</p>'+
+ '<div class="hint">'+e(openingHoldError||'须保持本页前台打开和行情刷新；关闭页面不运行，不补记成交，不会触碰GitHub机器人账户。')+'</div>'+
+ '<div class="table-wrap"><table class="data-table"><thead><tr><th>证券</th><th>状态</th><th>原因</th></tr></thead><tbody>'+
+ (rows.length?rows.map(r=>'<tr><td>'+e(stock(r.code)?.name||r.code)+'</td><td>'+e(r.status)+'</td><td>'+e(r.reason)+'</td></tr>').join(''):'<tr><td colspan="3">等待09:36–09:44有效分时及报价</td></tr>')+'</tbody></table></div></section>';
+}
+async function runLocalOpeningHold(proxy){
+ if(!uiPrefs.autoOpeningHold||document.hidden||!holdWindow())return;
+ if(!navigator.locks?.request){openingHoldError='浏览器不支持跨标签页锁，自动执行暂停';return;}
+ if(Date.now()-openingHoldFetchAt>=15000){
+  openingHoldFetchAt=Date.now();
+  const codes=positions(state).map(p=>p.code);
+  const entries=await Promise.allSettled(codes.map(async code=>[code,await getHistory(code,'minute')]));
+  for(const item of entries)if(item.status==='fulfilled')openingHoldTrends[item.value[0]]=item.value[1];
+ }
+ if(!uiPrefs.autoOpeningHold||document.hidden||!holdWindow())return;
+ const result=await getQuotes(positions(state).map(p=>p.code),{proxy});
+ const quotes=Object.fromEntries(result.quotes.map(q=>[q.code,q]));
+ await navigator.locks.request('stock-market-opening-hold-v1',{ifAvailable:true},lock=>{
+  if(!lock||document.hidden||!readPrefs().autoOpeningHold||!holdWindow())return;
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw){openingHoldError='本地账本尚未持久化，未执行';return;}
+  const current=JSON.parse(raw);
+  if(!validateState(current)){openingHoldError='本地账本未通过校验，未执行';return;}
+  // Re-read latest localStorage under lock, not an outdated in-memory position.
+  const output=applyLocalOpening(current,quotes,openingHoldTrends);
+  openingHoldRows=output.rows;
+  if(output.changed){
+   if(localStorage.getItem(STORAGE_KEY)!==raw||!persist(output.state)){openingHoldError='账本变化或保存失败，未执行';return;}
+   state=output.state;openingHoldError='已按实际模拟成交写入当前浏览器账本';
+   toast('开盘自动风控已记录模拟减仓');
+  }else{state=current;openingHoldError='已核验实际持仓；没有新增自动模拟成交';}
+ });
+}
 function renderOverview(){const p=portfolio(displayState()),totalSeed=state.trades.filter(t=>t.seed&&t.side==='BUY').length;
 return `${heading('OVERVIEW','资产总览','11月19日初始基准快照，支持手动模拟交易与持仓估值。','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-page="watchlist">观察列表 ↗</button>')}
 <div class="summary-grid">${stat('模拟总资产',money(p.total),'账户本金 '+money(state.initialCash),true)}${stat('股票持仓市值',money(p.marketValue),`${p.holds.length} 只股票持仓`)}${stat('可用现金',money(p.cash),'账户可用余额')}${stat('累计模拟收益',money(p.profit),`收益率 ${signed(p.profitRate)} · 已计交易费`,false,cls(p.profit))}</div>
-${renderTailStrategy()}<div class="grid-main"><section class="panel"><div class="panel-head"><div><h2>我的持仓</h2><p>成本含模拟买入佣金与过户费</p></div><button class="section-action" data-page="trades">全部成交 ↗</button></div>${compactTable()}</section>
+${renderOpeningHold()}${renderTailStrategy()}<div class="grid-main"><section class="panel"><div class="panel-head"><div><h2>我的持仓</h2><p>成本含模拟买入佣金与过户费</p></div><button class="section-action" data-page="trades">全部成交 ↗</button></div>${compactTable()}</section>
 <section class="panel"><div class="panel-head"><div><h2>资产配置</h2><p>持仓与现金占比</p></div></div>${allocation()}<hr class="divider"><div class="panel-head"><div><h2>策略模型</h2><p>五套牛股启动模型清单</p></div></div>${MODEL_DEFINITIONS.map(m=>`<div class="model-applied"><span class="tag">${m.id}</span><label>${m.type}</label><button class="section-action" data-page="models">核验 ↗</button></div>`).join('')}</section></div>`;}
 function renderWatchlist(){const p=portfolio(displayState());return `${heading('WATCHLIST','观察列表','8只核心候选股行情跟踪与模型匹配','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-action="open-quote">手动更新价格</button>')}
 <section class="panel"><div class="panel-head"><div><h2>行情观察板</h2><p>可核验的公开行情快照</p></div><span class="count">${SECURITIES.length} 只</span></div><div class="watchcards">${SECURITIES.map(s=>{const q=displayState().prices[s.code],h=p.holds.find(x=>x.code===s.code),v=q?.price;return `<article class="watchcard"><div style="display:flex;justify-content:space-between;gap:12px"><div><h3>${e(s.name)}</h3><span class="code">${e(s.code)} · ${e(s.market)}</span></div><span class="tag ${s.halted?'warn':'success'}">${s.halted?'种子停牌':'行情观察'}</span></div><div class="watchcard-price">${s.halted?'—':money(v)}</div><div class="${cls(s.pct)}" style="font-size:12px;font-weight:700">${s.halted?'11月19日无成交':priceInfo(s.code)?.pct!=null?signed(priceInfo(s.code).pct)+' · 对前收':signed(s.pct)+' · 11/19 涨跌'}</div><p>${e(s.note)}</p><div>${s.models.map(m=>`<span class="tag">${m}</span>`).join('')}${s.tags.map(t=>`<span class="tag">${e(t)}</span>`).join('')}</div><div class="signal-summary">${s.halted?`停牌前参考价 ${money(s.referencePrice)}（${s.referenceDate}，仅参考）`:h?`持仓 ${num(h.quantity)} 股 · 浮动盈亏 ${money(h.unrealized)} · ${e(latestLabel(s.code))}`:'未持仓'}</div><div style="display:flex;gap:8px;margin-top:16px;align-items:center"><button class="btn mini" data-action="open-charts" data-code="${s.code}">分时 / K线</button><button class="btn mini" data-action="open-trade" data-code="${s.code}" ${s.halted?'disabled':''}>模拟交易</button><button class="btn mini subtle" data-action="open-quote" data-code="${s.code}" ${s.halted?'disabled':''}>更新参考价</button><a class="source-link" href="${e(s.source)}" target="_blank" rel="noopener noreferrer">数据来源 ↗</a></div></article>`;}).join('')}</div></section>`;}
@@ -213,7 +252,7 @@ function renderOpenFive(){
     const r=rows.find(x=>x.code===c.code);
     const guard='五分钟量比≥'+num(p.rules.minOpeningVolumeRatio)+'倍；涨幅'+
        num(p.rules.minGainPct)+'%～'+num(p.rules.maxGainPct)+'%；高于MA20'+
-       (c.sectorRequired?'；PCB板块上涨':'');
+       (c.sectorRequired?'；所属板块≥'+num(p.rules.minSectorChangePct??0)+'%':'')+'；回撤≤'+num(p.rules.maxPullbackFrom935Pct??1)+'%';
     return '<tr><td class="name">'+e(c.name)+'<small>'+e(c.code)+' · '+e(c.modelId)+'</small></td>'+
       '<td>'+guard+'</td><td><span class="tag">'+e(r?.status||(expire?'未执行':'待验证'))+'</span></td>'+
       '<td>'+(r?.status==='模拟已成交'?num(r.quantity)+'股 × '+money(r.price):'--')+'</td>'+
@@ -293,6 +332,7 @@ function renderSettings(){
  ${setting('自动机器人初始资金','来自GitHub仓库的独立账户。','<strong>'+money(botAccount?.initialCash??1000000)+'</strong>')}
  ${setting('手动下单默认预算','影响今后的新订单预填股数，不改变已成交订单。',select('defaultBudget',[[50000,'5万元'],[100000,'10万元'],[150000,'15万元'],[200000,'20万元']]))}
  ${setting('下单前二次确认','仅手动模拟下单会弹出确认。',toggle('confirmTrades'))}
+ ${setting('11月24日开盘持仓自动减仓','仅09:36–09:44前台页面，真实时间戳行情核验后执行模拟卖出，可随时关闭。',toggle('autoOpeningHold'))}
  </section>
  <section class="panel settings-card"><div class="panel-head"><h2>行情和图表</h2></div>
  ${setting('自动刷新行情','关闭后只在点击手动刷新时拉取最新行情。',toggle('autoQuotes'))}
@@ -330,7 +370,7 @@ function renderModels(){return `${heading('MODELS','策略模型','五套牛股�
 ${renderOpenFive()}${renderMorningReport()}${renderBotModel()}<div class="account-notes">可解释的规则清单核验；信号由11月19日公开事件初筛，突破与量能结合日K核验。</div>
 <div class="model-grid">${MODEL_DEFINITIONS.map(m=>{const applied=SECURITIES.filter(s=>s.models.includes(m.id));return `<article class="model-card"><span class="model-no">MODEL / ${m.id}</span><h3>${m.name}</h3><div class="model-type">${m.type}</div><p>${m.description}</p><ul class="checklist">${m.checks.map((check,i)=>`<li><span>${String(i+1).padStart(2,'0')}</span>${check}</li>`).join('')}</ul><div class="risk">风险提示：${m.risk}</div><div class="model-applications"><div class="panel-head"><div><h2>观察股证据核验</h2><p>修改结果仅保存在当前浏览器</p></div></div>${applied.map(s=>{const info=modelEvidence(state,s.code,m.id);return `<div class="model-applied"><span class="tag">${e(s.name)}</span><small>${info.confirmed}/${info.total} 确认${info.contradicted?' · 存在反证':''}</small>${m.checks.map((c,i)=>`<div class="signal-row"><label title="${e(c)}">${i+1}. ${e(c)}</label><select aria-label="${e(s.name)} ${e(c)}" data-action="signal" data-code="${s.code}" data-model="${m.id}" data-index="${i}"><option value="0" ${info.flags[i]===0?'selected':''}>待核</option><option value="1" ${info.flags[i]===1?'selected':''}>确认</option><option value="-1" ${info.flags[i]===-1?'selected':''}>不符合</option></select></div>`).join('')}</div>`;}).join('')}</div></article>`;}).join('')}</div>`;}
 function renderTrades(){return `${heading('LEDGER','成交流水','模拟交易成交明细与执行记录','<button class="btn primary" data-action="open-trade">＋ 模拟下单</button><button class="btn subtle" data-action="import">导入备份</button><button class="btn subtle" data-action="reset">恢复初始盘</button>')}
-${renderOpenFive()}${renderBotTrades()}<section class="panel"><div class="panel-head"><div><h2>交易流水</h2><p>按成交时间排序 · T+1交割约束</p></div><span class="count">${state.trades.length} 笔</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>单号 / 日期</th><th>证券</th><th>方向</th><th>数量</th><th>成交价</th><th>成交金额</th><th>费用</th><th>说明</th></tr></thead><tbody>${[...state.trades].reverse().map(t=>`<tr><td>${e(t.id)}<small>${e(t.date)}</small></td><td class="name">${e(stock(t.code).name)}<small>${e(t.code)}</small></td><td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td><td>${num(t.quantity)}</td><td>¥${t.price.toFixed(2)}</td><td>${money(t.gross)}</td><td>${money(t.fee)}</td><td>${t.seed?'<span class="tag">历史快照初始化</span>':'<span class="tag">手动模拟成交</span>'}</td></tr>`).join('')}</tbody></table></div><div class="hint">模拟费率：佣金 0.025%（最低5元），过户费 0.001%，卖出印花税 0.05%。仅供参考测算。</div></section>`;}
+${renderOpenFive()}${renderBotTrades()}<section class="panel"><div class="panel-head"><div><h2>交易流水</h2><p>按成交时间排序 · T+1交割约束</p></div><span class="count">${state.trades.length} 笔</span></div><div class="table-wrap"><table class="data-table"><thead><tr><th>单号 / 日期</th><th>证券</th><th>方向</th><th>数量</th><th>成交价</th><th>成交金额</th><th>费用</th><th>说明</th></tr></thead><tbody>${[...state.trades].reverse().map(t=>`<tr><td>${e(t.id)}<small>${e(t.date)}</small></td><td class="name">${e(stock(t.code).name)}<small>${e(t.code)}</small></td><td class="${t.side==='BUY'?'up':'down'}">${t.side==='BUY'?'买入':'卖出'}</td><td>${num(t.quantity)}</td><td>¥${t.price.toFixed(2)}</td><td>${money(t.gross)}</td><td>${money(t.fee)}</td><td>${t.seed?'<span class="tag">历史快照初始化</span>':t.strategyVersion===HOLD_POLICY.version?'<span class="tag">开盘自动风控</span><small>'+e(t.reason)+'</small>':'<span class="tag">手动模拟成交</span>'}</td></tr>`).join('')}</tbody></table></div><div class="hint">模拟费率：佣金 0.025%（最低5元），过户费 0.001%，卖出印花税 0.05%。仅供参考测算。</div></section>`;}
 function openTrade(code){const dialog=$('#trade-dialog'),sel=$('#trade-code');sel.innerHTML=SECURITIES.filter(s=>!s.halted).map(s=>`<option value="${s.code}">${s.name} ${s.code}</option>`).join('');sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;$('#trade-form').reset();sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;const s=stock(sel.value);$('#trade-price').value=priceInfo(s.code)?.price??state.prices[s.code]?.price??s.close;$('#trade-qty').value=budgetQuantity(uiPrefs.defaultBudget,Number($('#trade-price').value));updateOrderPreview();dialog.showModal();}
 function updateOrderPreview(){const p=Number($('#trade-price').value),q=Number($('#trade-qty').value),side=$('input[name="side"]:checked')?.value??'BUY';if(!Number.isFinite(p)||p<=0||!Number.isInteger(q)||q<=0){$('#order-preview').textContent='输入有效价格与股数以预览';return;}const gross=p*q,fee=feeTotal(fees(side,gross));$('#order-preview').textContent=`成交金额 ${money(gross)} · 费用约 ${money(fee)} · ${side==='BUY'?'所需资金':'预计到账'} ${money(side==='BUY'?gross+fee:gross-fee)}`;}
 function openQuote(code){const sel=$('#quote-code');sel.innerHTML=SECURITIES.filter(s=>!s.halted).map(s=>`<option value="${s.code}">${s.name} ${s.code}</option>`).join('');sel.value=code&&!stock(code).halted?code:SECURITIES[0].code;$('#quote-price').value=state.prices[sel.value]?.price;$('#quote-date').value=shDate();$('#quote-dialog').showModal();}
@@ -420,6 +460,7 @@ async function refreshQuotes(){
  const refreshed={...liveQuotes};
  for(const q of result.quotes){if(q.price>0)refreshed[q.code]=q;}
  liveQuotes=refreshed;quotePath=result.source;quoteError=result.errors.join('；');
+ if(uiPrefs.autoOpeningHold&&holdWindow())try{await runLocalOpeningHold(proxy);}catch(err){openingHoldError='开盘持仓核验失败：'+String(err.message);}
  if(page==='quotes'||page==='market'){
   const status=$('#market-status');if(status){const fresh=Object.values(liveQuotes).filter(q=>quoteState(q).fresh).length;status.textContent=(fresh?'行情接入 '+fresh+'只 · ':'')+quotePath+(quoteError?' · 部分源异常':'');}
  }else render();
