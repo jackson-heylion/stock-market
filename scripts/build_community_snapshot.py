@@ -105,9 +105,18 @@ def build():
     with ThreadPoolExecutor(max_workers=2) as pool:
         for rows,status in pool.map(lambda key:collect_forum(key,NOW), ('hupu','tgb')):
             posts.extend(rows);statuses.append(status)
-    posts=sorted({(p['source'],p['id']):p for p in posts}.values(),key=lambda p:datetime.fromisoformat(p['publishedAt']),reverse=True)[:700]
-    payload={'schema':1,'fetchedAt':datetime.now(timezone.utc).isoformat(),'source':'公开财经社区讨论样本（股吧、虎扑、淘股吧）',
-             'state':'fresh' if posts else 'unavailable','boards':statuses,'posts':posts}
+    for status in statuses:
+        status.setdefault('source','东方财富股吧')
+    fresh_count=len(posts)
+    try:
+        prior=json.loads(DEST.read_text(encoding='utf-8'))
+        previous=[p for p in prior.get('posts',[]) if (t:=post_time(p.get('publishedAt'))) and t<=NOW and NOW-t<=timedelta(hours=24)]
+    except Exception:
+        prior={};previous=[]
+    posts=sorted({(p['source'],p['id']):p for p in previous+posts}.values(),key=lambda p:datetime.fromisoformat(p['publishedAt']),reverse=True)[:700]
+    collected_at=datetime.now(timezone.utc).isoformat()
+    payload={'schema':1,'fetchedAt':collected_at if fresh_count else prior.get('fetchedAt') or collected_at,'checkedAt':collected_at,'source':'公开财经社区讨论样本（股吧、虎扑、淘股吧）',
+             'state':'fresh' if fresh_count else 'stale' if posts else 'unavailable','boards':statuses,'posts':posts}
     DEST.parent.mkdir(parents=True,exist_ok=True)
     DEST.write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
     print('community posts:',len(posts),'boards:',len(statuses))

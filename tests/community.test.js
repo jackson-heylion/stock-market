@@ -17,7 +17,7 @@ test('community report separates sample size and directional score',()=>{
  assert.equal(communityReport(r.rows.slice(0,3),{now}).score,null);
 });
 test('empty source is not synthetic neutral sentiment',()=>{
- assert.throws(()=>parseCommunity({...payload,posts:[],boards:[{status:'unavailable'}]},{now}),/未取得/);
+ const r=parseCommunity({...payload,posts:[],boards:[{status:'unavailable',error:'403'}]},{now});assert.equal(r.rows.length,0);assert.equal(r.boards[0].error,'403');assert.match(r.warning,/未取得/);
 });
 
 test('forum IDs and source-specific original URLs stay separate; source filter works',()=>{

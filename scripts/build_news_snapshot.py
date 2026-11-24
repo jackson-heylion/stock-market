@@ -19,7 +19,7 @@ DEST = ROOT / "data" / "fast-news.json"
 PUBLISHED = "https://jackson-heylion.github.io/stock-market/data/fast-news.json"
 ORIGIN = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
 NOW = datetime.now(timezone.utc)
-TZ_CN = timezone(timedelta(hours=8))
+TZ_CN = timezone(timedelta(hours=24))
 def valid_articles(raw):
     if not isinstance(raw, dict):
         return []
@@ -37,7 +37,7 @@ def valid_articles(raw):
             timestamp = datetime.strptime(show_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=TZ_CN)
         except ValueError:
             continue
-        if len(title) < 4 or title in found or timestamp > NOW + timedelta(minutes=5):
+        if len(title) < 4 or title in found or timestamp > NOW + timedelta(minutes=5) or NOW-timestamp > timedelta(hours=24):
             continue
         found.add(title)
         result.append({
@@ -66,7 +66,11 @@ def build():
         source_articles = valid_articles(fetch_json(ORIGIN + "?" + params))
         if not source_articles:
             raise RuntimeError("Upstream returned no validated news headlines")
-        articles = source_articles
+        try:
+            previous = valid_articles(json.loads(DEST.read_text(encoding='utf-8')))
+        except Exception:
+            previous = []
+        articles = valid_articles({'articles':source_articles+previous})
         fetched_at = NOW.isoformat()
         state = "fresh"
     except Exception as e:
@@ -74,7 +78,7 @@ def build():
         # The previously published snapshot is still authentic. Retain its
         # original fetch timestamp; never relabel it as current data.
         try:
-            prior = fetch_json(PUBLISHED+"?v="+str(int(time.time())))
+            prior = json.loads(DEST.read_text(encoding='utf-8')) if DEST.exists() else fetch_json(PUBLISHED+"?v="+str(int(time.time())))
             articles = valid_articles(prior)
             fetched_at = str(prior.get("fetchedAt") or "")
             original = datetime.fromisoformat(fetched_at.replace("Z", "+00:00"))

@@ -1,33 +1,59 @@
-name: Collect public market sentiment snapshots
+name: Collect and publish market radar snapshots
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/sentiment.yml
+      - scripts/build_radar_snapshot.mjs
+      - scripts/build_news_snapshot.py
+      - scripts/build_community_snapshot.py
+      - scripts/forum_sources.py
   schedule:
     - cron: '3,13,23,33,43,53 1-9 * * 1-5'
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: sentiment-snapshots
   cancel-in-progress: false
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: News snapshot
         run: python3 scripts/build_news_snapshot.py
+      - name: Market breadth, indices, sectors and events snapshot
+        run: node scripts/build_radar_snapshot.mjs
       - name: Community snapshot
         run: python3 scripts/build_community_snapshot.py
       - name: Publish only data files
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/fast-news.json data/community.json
+          git add data/fast-news.json data/community.json data/radar-market.json
           git diff --cached --quiet && exit 0
           git commit -m "data: update public sentiment snapshots"
           for attempt in 1 2 3; do
-            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            if git pull --rebase origin main && git push origin HEAD:main; then
+              echo 'changed=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             git rebase --abort 2>/dev/null || true
             sleep 3
           done
           exit 1
+      - name: Publish snapshots to GitHub Pages immediately
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main

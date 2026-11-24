@@ -17,7 +17,7 @@ const validCount=n=>Number.isInteger(n)&&n>=0&&n<=1e9?n:null;
 export function parseCommunity(payload,{now=Date.now()}={}){
  if(payload?.schema!==1||!Array.isArray(payload.posts)||!Array.isArray(payload.boards))throw Error('社区快照格式无效');
  const fetchedAt=Date.parse(payload.fetchedAt);
- if(!Number.isFinite(fetchedAt)||fetchedAt>now||now-fetchedAt>2*3600000)throw Error('社区快照过期');
+ if(!Number.isFinite(fetchedAt)||fetchedAt>now||now-fetchedAt>24*3600000)throw Error('社区快照过期');
  const seen=new Set(),rows=[];
  for(const x of payload.posts){
   const id=String(x?.id||''),code=String(x?.code||''),title=String(x?.title||'').trim().slice(0,160),t=Date.parse(x?.publishedAt);
@@ -32,9 +32,9 @@ export function parseCommunity(payload,{now=Date.now()}={}){
   rows.push({id,code,title,board:String(x.board||code).slice(0,30),time:t,timeKind,source,url,
    reads:validCount(x.reads),comments:validCount(x.comments),...classifyCommunity(title)});
  }
- const boards=payload.boards.slice(0,24).map(b=>({source:b?.source==='虎扑'||b?.source==='淘股吧'?b.source:'东方财富股吧',code:String(b?.code||''),board:String(b?.board||'').slice(0,30),status:['ok','blocked','unavailable'].includes(b?.status)?b.status:'unavailable',count:validCount(b?.count)}));
- if(!rows.length&&boards.every(b=>b.status!=='ok'))throw Error('社区源未取得可核验讨论（受限或接口变化）');
- return {rows:rows.sort((a,b)=>b.time-a.time),source:'股吧 / 虎扑 / 淘股吧 · 同域快照',receivedAt:fetchedAt,boards,warning:boards.some(b=>b.status!=='ok')?'部分讨论区不可用':''};
+ const boards=payload.boards.slice(0,24).map(b=>({source:b?.source==='虎扑'||b?.source==='淘股吧'?b.source:'东方财富股吧',code:String(b?.code||''),board:String(b?.board||'').slice(0,30),status:['ok','blocked','unavailable'].includes(b?.status)?b.status:'unavailable',count:validCount(b?.count),error:String(b?.error||'').slice(0,180)}));
+ const unavailable=!rows.length&&boards.every(b=>b.status!=='ok');
+ return {rows:rows.sort((a,b)=>b.time-a.time),source:'股吧 / 虎扑 / 淘股吧 · 同域快照',receivedAt:fetchedAt,boards,historical:payload.state!=='fresh'||now-fetchedAt>20*60000,warning:unavailable?'全部来源未取得可核验讨论，请查看采集状态':boards.some(b=>b.status!=='ok')?'部分讨论区不可用，保留近期真实标题':''};
 }
 export async function getCommunity(fetchImpl=fetch,{now=()=>Date.now()}={}){
  return parseCommunity(await fetchTimeout('./data/community.json?v='+Math.floor(now()/60000),'json',fetchImpl,8000),{now:now()});

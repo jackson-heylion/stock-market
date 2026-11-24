@@ -3,15 +3,21 @@ import {getLiveSectors,getLiveNews,getLiveChanges,getNewsTerms,treemapLayout,new
 import {getMarketBreadth,getMarketIndices} from './market-center.js';
 import {calculateFearGreed} from './fear-greed.js';
 import {getCommunity,communityReport} from './community.js';
+import {getRadarSnapshot,withRadarFallback,MARKET_KEYS} from './radar-snapshot.js';
+let serverFearGreed=null;
+const RADAR_CACHE='stock-market-radar-cache-v2';
+let cacheLoaded=false;
+function restoreRadarCache(){if(cacheLoaded)return;cacheLoaded=true;try{const x=JSON.parse(localStorage.getItem(RADAR_CACHE));for(const key of ['breadth','indices','sectors','news','changes','community']){const f=x?.[key];if(f&&Array.isArray(f.rows)&&Number.isFinite(f.updatedAt)&&f.updatedAt<=Date.now()&&Date.now()-f.updatedAt<96*3600000&&!radarState[key].updatedAt)Object.assign(radarState[key],f,{warning:'浏览器上次成功快照，正在核验',historical:true,checkedAt:0,loading:false,error:''});}}catch{}}
+function persistRadarCache(){try{const out={};for(const key of ['breadth','indices','sectors','news','changes','community']){const f=radarState[key];if(f.rows.length&&f.updatedAt)out[key]={rows:f.rows,boards:f.boards,source:f.source,updatedAt:f.updatedAt,marketDate:f.marketDate,warning:f.warning,historical:true};}localStorage.setItem(RADAR_CACHE,JSON.stringify(out));}catch{}}
 export const radarState={
  community:{rows:[],boards:[],updatedAt:0,checkedAt:0,source:'',warning:'',error:'',loading:false},
- communityHours:2,communityTone:'all',communityWord:'',communityBoard:'all',communitySource:'all',
+ communityHours:6,communityTone:'all',communityWord:'',communityBoard:'all',communitySource:'all',
  breadth:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  indices:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  sectors:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  news:{rows:[],updatedAt:0,checkedAt:0,source:'',warning:'',error:'',loading:false},
  changes:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
- filter:'all',selectedWord:'',newsHours:2,newsTone:'all'
+ filter:'all',selectedWord:'',newsHours:6,newsTone:'all'
 };
 export function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -31,7 +37,8 @@ export function radarSourceStatus(key){
  const s=radarState[key];
  if(s.loading)return '获取中…';
  if(s.error)return (s.updatedAt?'源异常 · 沿用'+radarClock(s.updatedAt)+'成功快照':'源异常 · 无有效快照')+' · '+h(s.error.slice(0,38));
- if(s.updatedAt)return (s.source?s.source+' · ':'')+(s.warning?'快照可能滞后 · ':'')+'源数据于 '+radarClock(s.updatedAt);
+ if(s.updatedAt)return h(s.source||'公开数据')+' · '+(s.marketDate?h(s.marketDate)+' · ':'')+(s.historical?'历史/同域快照 · ':'')+'采集 '+radarClock(s.updatedAt)+(s.warning?' · '+h(s.warning):'');
+ if(s.warning)return h(s.warning);
  return '尚未加载';
 }
 
@@ -120,7 +127,7 @@ export function fearGreedHtml(report){
 }
 
 export function communityHtml(){
- const s=radarState.community,now=Date.now(),fresh=s.updatedAt&&now-s.updatedAt<=2*3600000&&!s.error;
+ const s=radarState.community,now=Date.now(),fresh=s.updatedAt&&now-s.updatedAt<=24*3600000&&s.rows.length>0;
  const all=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours,source:radarState.communitySource});
  const report=communityReport(fresh?s.rows:[],{now,hours:radarState.communityHours,board:radarState.communityBoard,source:radarState.communitySource});
  const word=radarState.communityWord,tone=radarState.communityTone;
@@ -128,11 +135,12 @@ export function communityHtml(){
  const labels={positive:'偏多',negative:'偏空',mixed:'分歧',neutral:'中性'};
  const active=Object.keys(labels),counts=report.counts,score=report.score;
  const sourceCount=s.boards.filter(b=>b.status==='ok').length;
+ const health=['东方财富股吧','虎扑','淘股吧'].map(source=>{const boards=s.boards.filter(b=>b.source===source),ok=boards.filter(b=>b.status==='ok').length,why=[...new Set(boards.filter(b=>b.status!=='ok').map(b=>b.error||b.status))].slice(0,2).join('；');return '<div><b>'+h(source)+'</b> · '+(boards.length?ok+'/'+boards.length+' 采集成功':'未采集')+(why?' · '+h(why):'')+'</div>';}).join('');
  const max=Math.max(1,...report.terms.map(t=>t.count));
  return '<section class="panel radar-panel community-panel"><div class="panel-head"><div><h2>社区舆情 · 股吧 / 虎扑 / 淘股吧</h2><p>公开帖子标题样本 · 独立于财经新闻 · 不代表事实或全体投资者</p></div><div class="radar-panel-actions"><span class="radar-status">'+radarSourceStatus('community')+'</span><button class="btn mini subtle" data-action="radar-refresh" data-source="community">刷新讨论</button></div></div>'+
  '<div class="radar-filters">'+[2,6,24].map(n=>'<button data-action="radar-community-hours" data-value="'+n+'" class="'+(radarState.communityHours===n?'active':'')+'">近'+n+'小时</button>').join('')+'</div>'+
  '<div class="radar-filters">'+[['all','全部平台'],['东方财富股吧','东方财富股吧'],['虎扑','虎扑股票区'],['淘股吧','淘股吧']].map(([id,label])=>{const b=s.boards.filter(x=>x.source===id),n=b.filter(x=>x.status==='ok').length;return '<button data-action="radar-community-source" data-value="'+h(id)+'" class="'+(radarState.communitySource===id?'active':'')+'">'+h(label)+(id==='all'?'':' · '+n+'/'+b.length)+'</button>';}).join('')+'</div>'+
- '<div class="community-summary"><div><small>社区方向指数</small><strong class="tone-text-'+(score===null?'neutral':score>0?'positive':score<0?'negative':'mixed')+'">'+(score===null?'--':score)+'</strong><span>'+(score===null?'样本不足':score>20?'偏多':score<-20?'偏空':'分歧')+'</span></div><div><small>去重讨论样本</small><strong>'+report.total+'</strong><span>明确方向 '+report.coverage+'%</span></div><div><small>成功采集讨论区</small><strong>'+sourceCount+' / '+s.boards.length+'</strong><span>仅监控样本</span></div></div>'+
+ '<div class="hint">'+health+'</div><div class="community-summary"><div><small>社区方向指数</small><strong class="tone-text-'+(score===null?'neutral':score>0?'positive':score<0?'negative':'mixed')+'">'+(score===null?'--':score)+'</strong><span>'+(score===null?'样本不足':score>20?'偏多':score<-20?'偏空':'分歧')+'</span></div><div><small>去重讨论样本</small><strong>'+report.total+'</strong><span>明确方向 '+report.coverage+'%</span></div><div><small>成功采集讨论区</small><strong>'+sourceCount+' / '+s.boards.length+'</strong><span>仅监控样本</span></div></div>'+
  '<div class="radar-sentiment-bar">'+active.map(k=>'<span class="tone-'+k+'" style="width:'+(report.total?counts[k]/report.total*100:0)+'%"></span>').join('')+'</div>'+
  '<div class="radar-tone-filters">'+[['all','全部'],...active.map(k=>[k,labels[k]])].map(([k,l])=>'<button data-action="radar-community-tone" data-value="'+k+'" class="'+(tone===k?'active':'')+' tone-text-'+k+'">'+l+' '+(k==='all'?report.total:counts[k])+'</button>').join('')+'</div>'+
  '<div class="radar-news-head"><strong>讨论热度排行</strong><button class="btn mini subtle" data-action="radar-community-board" data-value="all">全部讨论区</button></div><div class="community-board-list">'+all.boards.map(b=>'<button data-action="radar-community-board" data-value="'+h(b.code)+'" class="'+(radarState.communityBoard===b.code?'active':'')+'"><strong>'+h(b.name)+'</strong><small>'+b.count+'帖 · 多'+b.positive+' / 空'+b.negative+' · 评论 '+(b.comments??'--')+'</small></button>').join('')+'</div>'+
@@ -143,7 +151,7 @@ export function communityHtml(){
 }
 
 const FG_KEY='stock-market-fg-last-v1';
-function displayedFearGreed(){const current=calculateFearGreed(radarState);if(current.score!==null){try{localStorage.setItem(FG_KEY,JSON.stringify(current));}catch{}return current;}try{const old=JSON.parse(localStorage.getItem(FG_KEY));if(old?.version===current.version&&Number.isInteger(old.score)&&old.score>=0&&old.score<=100&&Number.isFinite(old.asOf)&&old.asOf<=Date.now()&&Array.isArray(old.factors))return {...old,session:'历史有效快照 · '+new Date(old.asOf).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})+' · 非实时'};}catch{}return current;}
+function displayedFearGreed(){const current=calculateFearGreed(radarState);if(current.score!==null){try{localStorage.setItem(FG_KEY,JSON.stringify(current));}catch{}return current;}let old=null;try{old=JSON.parse(localStorage.getItem(FG_KEY));}catch{}const valid=[old,serverFearGreed].filter(x=>x?.version===current.version&&Number.isInteger(x.score)&&x.score>=0&&x.score<=100&&Number.isFinite(x.asOf)&&x.asOf<=Date.now()&&Date.now()-x.asOf<=96*3600000&&Array.isArray(x.factors)).sort((a,b)=>b.asOf-a.asOf)[0];return valid?{...valid,session:'历史有效快照 · '+new Date(valid.asOf).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})+' · 非实时'}:current;}
 export function renderRadar(){
  const sectors=radarState.sectors.rows,news=radarState.news.rows,changes=radarState.changes.rows;
  const positive=sectors.filter(x=>x.pct>0).length,negative=sectors.filter(x=>x.pct<0).length;
@@ -152,8 +160,8 @@ export function renderRadar(){
  const press=(key,label)=>`<button class="btn mini subtle" data-action="radar-refresh" data-source="${key}">${label}</button>`;
  const stats=`<div class="radar-summary">
   <div><span>板块样本</span><strong>${sectors.length||'--'}</strong><small>展示成交额前36</small></div>
-  <div><span>板块涨 / 跌</span><strong class="radar-dual"><span class="up">${positive}</span> / <span class="down">${negative}</span></strong><small>仅限图中样本</small></div>
-  <div><span>最新快讯</span><strong>${headline?radarClock(headline.time):'--'}</strong><small>${news.length}条真实标题</small></div>
+  <div><span>板块涨 / 跌</span><strong class="radar-dual"><span class="up">${sectors.length?positive:'--'}</span> / <span class="down">${sectors.length?negative:'--'}</span></strong><small>仅限图中样本</small></div>
+  <div><span>最新快讯</span><strong>${headline?radarClock(headline.time):'--'}</strong><small>${news.length}条真实标题 · 含近期留存</small></div>
   <div><span>异动记录</span><strong>${changes.length||'--'}</strong><small>接口最近一页 · 非全日合计</small></div>
  </div>`;
  return `<div class="radar-root">
@@ -166,7 +174,7 @@ export function renderRadar(){
   <section class="panel radar-panel">
    <div class="panel-head"><div><h2>行业板块热度图</h2><p>按成交额与涨跌幅呈现行业热度</p></div>
    <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('sectors')}</span>${press('sectors','刷新板块')}</div></div>
-   <div class="radar-legend"><span class="radar-legend-up">上涨板块 ${positive}</span><span class="radar-legend-down">下跌板块 ${negative}</span><span>东方财富行业板块 · 成交额排序</span></div>
+   <div class="radar-legend"><span class="radar-legend-up">上涨板块 ${sectors.length?positive:'--'}</span><span class="radar-legend-down">下跌板块 ${sectors.length?negative:'--'}</span><span>东方财富行业板块 · 成交额排序</span></div>
    ${heatmapHtml(sectors)}
   </section>
   <div class="radar-columns">
@@ -193,6 +201,7 @@ export function renderRadar(){
 }
 
 export async function refreshRadar({force=false,source='all',onUpdate=()=>{}}={}){
+ restoreRadarCache();
  const config=[
   {key:'breadth',ttl:45000,fn:async()=>{const b=await getMarketBreadth();if(!b)throw Error('涨跌家数不可用');return {rows:[b],source:b.source,receivedAt:Date.now()};}},
   {key:'indices',ttl:45000,fn:async()=>({rows:await getMarketIndices(),source:'腾讯财经主要指数',receivedAt:Date.now()})},
@@ -202,18 +211,21 @@ export async function refreshRadar({force=false,source='all',onUpdate=()=>{}}={}
   {key:'changes',ttl:15000,fn:getLiveChanges}
  ];
  const now=Date.now();
+ const snapshotTask=(source==='all'||source==='fear-greed')?getRadarSnapshot().then(x=>{serverFearGreed=x.lastFearGreed;}).catch(()=>{}):Promise.resolve();
  const tasks=config.filter(c=>source==='all'||source===c.key||source==='fear-greed'&&['breadth','indices','sectors','news'].includes(c.key)).filter(c=>{
   const target=radarState[c.key];return !target.loading&&(force||!(target.checkedAt||target.updatedAt)||now-(target.checkedAt||target.updatedAt)>=c.ttl);
  }).map(async c=>{
   const s=radarState[c.key];s.loading=true;
   try{
-   const result=await c.fn();
-   s.rows=result.rows;if(c.key==='community')s.boards=result.boards||[];s.source=result.source;s.updatedAt=result.receivedAt||Date.now();s.warning=result.warning||'';s.error='';
-  }catch(err){s.error=String(err.message||err);}
+   const result=await (MARKET_KEYS.includes(c.key)?withRadarFallback(c.key,c.fn):c.fn());
+   if(result.lastFearGreed)serverFearGreed=result.lastFearGreed;
+   if(result.rows.length||!s.rows.length){s.rows=result.rows;s.source=result.source;s.updatedAt=result.receivedAt||0;s.marketDate=result.marketDate||null;s.historical=Boolean(result.historical||result.via==='snapshot');}else{s.historical=true;}
+   if(c.key==='community')s.boards=result.boards||[];s.warning=result.warning||'';s.error='';
+  }catch(err){s.error=String(err.message||err);s.historical=Boolean(s.rows.length);}
   finally{s.checkedAt=Date.now();s.loading=false;}
  });
  if(!tasks.length)return;
- try{await Promise.allSettled(tasks);}finally{onUpdate();}
+ try{await Promise.allSettled([...tasks,snapshotTask]);}finally{persistRadarCache();onUpdate();}
 }
 
 export function handleRadarClick(btn,{onUpdate=()=>{},openStock=()=>{},openSector=()=>{}}={}){

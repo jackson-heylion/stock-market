@@ -133,7 +133,7 @@ export function parseNewsSnapshot(payload,{now=Date.now(),maxAgeMs=2*3600000}={}
  }))}});
  if(!rows.length)throw Error('同域快讯没有真实标题记录');
  return {rows,source:'东方财富7×24 · GitHub Pages同域快照',receivedAt:fetchedAt,
-  via:'snapshot',warning:now-fetchedAt>20*60000?'快照更新时间较早，可能滞后':''};
+  via:'snapshot',warning:payload.state==='stale'||now-fetchedAt>20*60000?'沿用真实历史快讯，非实时':''};
 }
 export async function getLiveNews(fetchImpl=fetch,{
  trace=()=>String(Date.now())+'-'+Math.random().toString(36).slice(2),
@@ -153,7 +153,7 @@ export async function getLiveNews(fetchImpl=fetch,{
   const cacheBust=Math.floor(now()/60000);
   const joiner=snapshotUrl.includes('?')?'&':'?';
   const snapshot=await fetchTimeout(snapshotUrl+joiner+'v='+cacheBust,'json',fetchImpl,6500);
-  return parseNewsSnapshot(snapshot,{now:now()});
+  return parseNewsSnapshot(snapshot,{now:now(),maxAgeMs:24*3600000});
  }catch(err){
   throw Error('新闻源直连失败：'+liveError+'；同域备份失败：'+String(err?.message||err));
  }
