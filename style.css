@@ -2172,3 +2172,5 @@ small {
 .minute-detail{min-height:25px;font-size:12px;font-variant-numeric:tabular-nums;color:var(--chart-label);padding:6px 8px}.minute-note{font-size:11px;color:var(--chart-label);padding:4px 8px}.minute-svg{width:100%;height:auto;touch-action:pan-y}.minute-hit{cursor:crosshair}
 
 .core-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 16px}.core-tabs .btn{white-space:nowrap}#release-info{display:block;font-size:11px;opacity:.75}.summary-grid{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+
+.strategy-slots{border-bottom:1px solid var(--border,rgba(128,128,128,.25));padding-bottom:12px}.strategy-archive{margin-top:14px}.strategy-archive>summary{cursor:pointer;font-weight:600;padding:10px 0}.strategy-archive[open]>summary{margin-bottom:12px}

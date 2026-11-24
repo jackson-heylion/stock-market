@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {strategyWindow,scoreStock,slotVersion} from '../afternoon-rules.js';
+import {decideAfternoon} from '../afternoon.js';
+import {applyManualAfternoon,manualKey} from '../manual-afternoon.js';
+import {initialState,executeTrade} from '../engine.js';
+const now=Date.parse('2026-11-25T09:36:10+08:00'),date='2026-11-25';
+const stock={code:'601133',name:'柏诚股份',sector:'测试行业',sectorPct:2,sectorTime:now-1000};
+const quote={code:stock.code,price:10.3,prevClose:10,time:now-1000,source:'测试行情'};
+const rank={code:stock.code,price:10.3,quoteTime:now-1000,volume:50,high:10.35,open:10.1};
+const daily=Array.from({length:20},(_,i)=>({date:'2026-11-'+String(i+5).padStart(2,'0'),close:10,volume:1000}));
+const minute={prevClose:10,bars:Array.from({length:5},(_,i)=>({date:date+' 09:'+String(i+31),price:10.2,open:10.1,volume:10}))};
+const snapshot=()=>({previousDate:'2026-11-24',stocks:[stock],quotes:{[stock.code]:quote},ranks:{[stock.code]:rank},daily:{[stock.code]:daily},minutes:{[stock.code]:minute},indices:['sh000001','sz399001','sz399006'].map(key=>({key,price:1000,pct:1,time:now-1000}))});
+const bot=()=>({schema:1,initialCash:1000000,cash:1000000,models:{M5:{enabled:true,maxPositions:3}},holdings:{},pending:[],trades:[],signals:[],history:[]});
+test('opening window uses completed first five minutes, not afternoon threshold',()=>{assert.equal(strategyWindow(now,'opening'),true);assert.equal(strategyWindow(now-70000,'opening'),false);assert.equal(strategyWindow(now,'afternoon'),false);const x={quote,rank,daily,previousDate:'2026-11-24',now,slot:'opening',minute};assert.equal(scoreStock(stock,x).passed,true);assert.equal(scoreStock(stock,{...x,minute:{...minute,bars:minute.bars.slice(0,4)}}).passed,false);assert.equal(scoreStock(stock,{...x,slot:'afternoon'}).passed,false);});
+test('robot opening result is distinct and duplicate execution is blocked',()=>{const r=decideAfternoon(bot(),snapshot(),now,'opening');assert.equal(r.changed,true);assert.equal(r.state.opening.version,slotVersion('opening'));assert.equal(r.state.afternoon,undefined);assert.equal(r.state.trades.length,1);assert.equal(decideAfternoon(r.state,snapshot(),now,'opening').changed,false);});
+test('manual opening uses own account, slot result and idempotency',()=>{const s=initialState();s.cash=s.initialCash;s.trades=[];const r=applyManualAfternoon(s,snapshot(),now,'opening');assert.ok(r.ok);assert.equal(r.state[manualKey('opening')].date,date);assert.equal(r.state.manualAfternoon,undefined);assert.equal(r.state.trades.length,1);assert.equal(applyManualAfternoon(r.state,snapshot(),now,'opening').ok,false);});

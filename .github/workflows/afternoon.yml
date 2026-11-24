@@ -1,6 +1,12 @@
-name: 14:30 daily conditional paper strategy
+name: 09:35 and 14:30 daily conditional paper strategy
 on:
   workflow_dispatch:
+    inputs:
+      slot:
+        description: 'Strategy window (Beijing)'
+        type: choice
+        options: [opening, afternoon]
+        default: afternoon
   push:
     branches: [main]
     paths:
@@ -8,6 +14,8 @@ on:
       - afternoon-rules.js
       - .github/workflows/afternoon.yml
   schedule:
+    # Beijing 09:35 signal, execute only after complete 09:35 bar; retry at 09:40.
+    - cron: '35,40 1 * * 1-5'
     # Beijing 14:30, with one retry at 14:40 if quotes were unavailable.
     - cron: '30,40 6 * * 1-5'
 permissions:
@@ -29,15 +37,22 @@ jobs:
         with:
           node-version: '22'
       - run: npm test && npm run check
-      - name: Wait for 14:30 on early same-day manual or initial push
+      - name: Select scheduled slot and respect its execution window
+        id: slot
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          REQUESTED: ${{ inputs.slot }}
         shell: bash
         run: |
           local_time=$(TZ=Asia/Shanghai date +%H%M)
-          if [[ "$local_time" > "1414" && "$local_time" < "1430" ]]; then
-            until [[ "$(TZ=Asia/Shanghai date +%H%M)" > "1429" ]]; do sleep 10; done
+          slot=afternoon
+          if [[ "$SCHEDULE" == '35,40 1 * * 1-5' || "$REQUESTED" == opening || ( -z "$SCHEDULE" && -z "$REQUESTED" && "$local_time" > '0934' && "$local_time" < '0945' ) ]]; then slot=opening; fi
+          if [[ "$slot" == opening && "$local_time" == '0935' ]]; then
+            until [[ "$(TZ=Asia/Shanghai date +%H%M)" > '0935' ]]; do sleep 5; done
           fi
+          if [[ "$slot" == opening ]]; then echo 'arg=--opening' >> "$GITHUB_OUTPUT"; else echo 'arg=' >> "$GITHUB_OUTPUT"; fi
       - name: Execute fresh-quote conditional paper strategy
-        run: node afternoon.js
+        run: node afternoon.js ${{ steps.slot.outputs.arg }}
       - name: Publish bot ledger without overwriting other decisions
         id: commit
         run: |
@@ -48,7 +63,7 @@ jobs:
           git config user.name "stock-market-paper-bot[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/bot.json
-          git commit -m "data(bot): record 14:30 verified paper decisions"
+          git commit -m "data(bot): record scheduled verified paper decisions"
           for attempt in 1 2 3; do
             if git pull --rebase origin main && git push origin HEAD:main; then
               echo "changed=true" >> "$GITHUB_OUTPUT"
