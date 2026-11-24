@@ -70,7 +70,7 @@ export function markPrice(state,code,price,date=shDate()){
   if(!stock||stock.halted)return {ok:false,error:'停牌或未知证券不能更新可交易报价'};
   if(!priceOK(price))return {ok:false,error:'请输入有效价格'};
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return {ok:false,error:'无效日期'};
-  state.prices[code]={price:round2(price),date,source:'用户手动维护（未经核验）'};
+  state.prices[code]={price:round2(price),date,source:'用户手动维护（未经核验）',markedAt:Date.now()};
   return {ok:true};
 }
 export function modelEvidence(state,code,modelId){

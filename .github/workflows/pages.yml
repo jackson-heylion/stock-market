@@ -30,12 +30,12 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Collect real 7x24 news for same-origin fallback
-        run: python3 scripts/build_news_snapshot.py
       - name: Validate community parser
         run: python3 scripts/test_community_snapshot.py
-      - name: Collect public community discussion snapshot
-        run: python3 scripts/build_community_snapshot.py
+      - name: Write release metadata
+        run: |
+          mkdir -p data
+          printf '{"sha":"%s"}\n' "$GITHUB_SHA" > data/version.json
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:

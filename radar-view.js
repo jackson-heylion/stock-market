@@ -142,6 +142,8 @@ export function communityHtml(){
  '<p class="radar-caveat">东方财富股吧覆盖观察及持仓相关股票，虎扑股票区、淘股吧社区总版覆盖公开讨论列表。虎扑默认最新回复列表，时间标为活动时间而非发帖时间；各来源样本不代表全站，不采集用户身份、正文或私人内容。指数至少10条去重标题和5条方向明确标题才计算。阅读及评论为来源累积计数，不代表独立用户。词典可能误判反讽；不作为真实交易信号，且不改动综合恐慌贪婪指数权重。</p></section>';
 }
 
+const FG_KEY='stock-market-fg-last-v1';
+function displayedFearGreed(){const current=calculateFearGreed(radarState);if(current.score!==null){try{localStorage.setItem(FG_KEY,JSON.stringify(current));}catch{}return current;}try{const old=JSON.parse(localStorage.getItem(FG_KEY));if(old?.version===current.version&&Number.isInteger(old.score)&&old.score>=0&&old.score<=100&&Number.isFinite(old.asOf)&&old.asOf<=Date.now()&&Array.isArray(old.factors))return {...old,session:'历史有效快照 · '+new Date(old.asOf).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})+' · 非实时'};}catch{}return current;}
 export function renderRadar(){
  const sectors=radarState.sectors.rows,news=radarState.news.rows,changes=radarState.changes.rows;
  const positive=sectors.filter(x=>x.pct>0).length,negative=sectors.filter(x=>x.pct<0).length;
@@ -160,7 +162,7 @@ export function renderRadar(){
     <div class="action-row"><button class="btn primary" data-action="radar-refresh" data-source="all">刷新所有数据</button><button class="btn subtle" data-page="quotes">行情中心 ↗</button></div>
   </div>
   ${stats}
-  ${fearGreedHtml(calculateFearGreed(radarState))}
+  ${fearGreedHtml(displayedFearGreed())}
   <section class="panel radar-panel">
    <div class="panel-head"><div><h2>行业板块热度图</h2><p>按成交额与涨跌幅呈现行业热度</p></div>
    <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('sectors')}</span>${press('sectors','刷新板块')}</div></div>

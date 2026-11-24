@@ -1,8 +1,9 @@
 import {shDate} from './engine.js';
+import {verifiedQuote} from './valuation.js';
 const round=n=>Math.round(n*100)/100;
 const valid=n=>Number.isFinite(n)&&n>0;
 const dateAt=t=>shDate(new Date(t));
-export function holdingReturns({holdings=[],trades=[],quotes={},cash,initialCash,date=shDate(),now=Date.now(),robot=false}){
+export function holdingReturns({holdings=[],trades=[],quotes={},cash,initialCash,date=shDate(),now=Date.now(),robot=false,realizedByCode={}}){
  const active=new Map(holdings.map(h=>[h.code,h])),by=new Map();
  for(const t of trades){
   if(!by.has(t.code))by.set(t.code,[]);
@@ -12,7 +13,7 @@ export function holdingReturns({holdings=[],trades=[],quotes={},cash,initialCash
  const rows=[];
  for(const code of codes){
   const h=active.get(code),list=by.get(code)||[],today=list.filter(t=>t.date===date),q=quotes[code],qty=h?.quantity||0;
-  const sameDay=q&&q.code===code&&valid(q.price)&&Number.isFinite(q.time)&&q.time<=now&&dateAt(q.time)===date;
+  const sameDay=q&&q.code===code&&verifiedQuote(q,now)&&dateAt(q.time)===date;
   const price=sameDay?q.price:(h?.quote??h?.lastPrice??null),cost=h?(h.totalCost??h.cost):0;
   const value=qty===0?0:valid(price)?round(qty*price):null;
   const delta=today.reduce((n,t)=>n+(t.side==='BUY'?t.quantity:-t.quantity),0),openingQty=qty-delta;
@@ -25,7 +26,7 @@ export function holdingReturns({holdings=[],trades=[],quotes={},cash,initialCash
   let realized=null;
   if(robot){
    const sells=list.filter(t=>t.side==='SELL');
-   if(sells.every(t=>Number.isFinite(t.pnl)))realized=round(sells.reduce((n,t)=>n+t.pnl,0));
+   if(sells.every(t=>Number.isFinite(t.pnl)))realized=round((realizedByCode[code]||0)+sells.reduce((n,t)=>n+t.pnl,0));
   }else{
    let held=0,basis=0,pnl=0;
    for(const t of list){

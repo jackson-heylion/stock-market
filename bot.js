@@ -193,6 +193,8 @@ export function stepBot(state,{date,previousMarketDate=null,universe=[],barsByCo
  next.history.push({date,...equity,positions:Object.keys(next.holdings).length});
  next.lastDate=date;next.updatedAt=new Date().toISOString();
  next.events=next.events.slice(-120);
+ next.archivedRealized={...(next.archivedRealized||{})};
+ for(const t of next.trades.slice(0,Math.max(0,next.trades.length-500)))if(t.side==='SELL'&&Number.isFinite(t.pnl))next.archivedRealized[t.code]=round((next.archivedRealized[t.code]||0)+t.pnl);
  next.trades=next.trades.slice(-500);
  next.history=next.history.slice(-360);
  return {state:next,changed:true,message:date+' 完成：候选 '+observed.length+

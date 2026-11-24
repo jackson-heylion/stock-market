@@ -6,7 +6,7 @@ export const MT_FOLLOW_KEY='stock-market-terminal-follows-v1';
 export const MT_RECENT_KEY='stock-market-terminal-recent-v1';
 const mt={view:'rank',scope:'all',sectorCode:null,sectorLabel:'',sortKey:'pct',descending:true,
  page:1,size:readPrefs().tablePageSize,rows:[],total:null,search:'',loading:false,error:'',updatedAt:0,
- seq:0,searchTimer:null,searchTruncated:false,followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
+ seq:0,knownRows:new Map(),searchTimer:null,searchTruncated:false,followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
 export function terminalFmt(value,digits=2){
  if(typeof value!=='number'||!Number.isFinite(value))return '--';
  return value.toFixed(digits);
@@ -187,7 +187,7 @@ export function refreshTerminal(force=false,rerender=()=>{}){
  mt.loading=true;
  const view=mt.view,scope=mt.scope,sectorCode=mt.sectorCode,sortKey=mt.sortKey,descending=mt.descending,page=mt.page,size=mt.size;
  const codes=view==='follow'?[...terminalFollowed()]:view==='recent'?terminalRecent().map(x=>x.code):view==='lookup'?mt.lookupCode?[mt.lookupCode]:[]:null;
- const request=view==='search'?searchStocks(mt.search):codes!==null?codes.length?getWatchQuotes(codes):Promise.resolve([]):
+ const request=view==='search'?searchStocks(mt.search).catch(err=>{const word=mt.search.toLowerCase(),rows=[...mt.knownRows.values()].filter(x=>x.code.includes(word)||x.name.toLowerCase().includes(word));return {rows,total:rows.length,truncated:false,warning:'全市场接口异常，仅本次已载入证券匹配：'+String(err.message||err)};}):codes!==null?codes.length?getWatchQuotes(codes):Promise.resolve([]):
  getRankings('gainers',scope,{page,size,sortKey,descending,sectorCode:view==='sector'?sectorCode:null});
  return Promise.resolve(request).then(result=>{
   if(seq!==mt.seq)return;
@@ -206,7 +206,8 @@ export function refreshTerminal(force=false,rerender=()=>{}){
    mt.rows=result.rows;
    mt.total=result.total;
   }
-  mt.error='';mt.updatedAt=Date.now();
+  for(const row of mt.rows)mt.knownRows.set(row.code,row);
+  mt.error=result.warning||'';mt.updatedAt=Date.now();
  }).catch(err=>{
   if(seq===mt.seq){mt.error=String(err.message);mt.updatedAt=Date.now();}
  }).finally(()=>{
@@ -289,5 +290,8 @@ export function handleTerminalClick(btn,{rerender=()=>{},openChart=()=>{},notify
 }
 
 export function setTerminalPageSize(size){
- if([30,60,90].includes(size)){mt.size=size;mt.page=1;mt.updatedAt=0;mt.rows=[];}
+ if([30,60,90].includes(size)&&mt.size!==size){mt.size=size;mt.page=1;mt.updatedAt=0;mt.rows=[];}
 }
+
+export function clearTerminalRecent(){mt.recent=[];terminalSave(MT_RECENT_KEY,[]);if(mt.view==='recent'){mt.rows=[];mt.total=0;mt.seq++;mt.loading=false;}}
+export function clearTerminalFollows(){mt.followed=new Set();terminalSave(MT_FOLLOW_KEY,[]);if(mt.view==='follow'){mt.rows=[];mt.total=0;mt.seq++;mt.loading=false;}}

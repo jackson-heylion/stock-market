@@ -111,4 +111,5 @@ def build():
     DEST.parent.mkdir(parents=True,exist_ok=True)
     DEST.write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
     print('community posts:',len(posts),'boards:',len(statuses))
+    print(json.dumps(statuses,ensure_ascii=False))
 if __name__=='__main__': build()

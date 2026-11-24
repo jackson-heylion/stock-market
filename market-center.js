@@ -176,8 +176,8 @@ export async function searchStocks(query,{fetchImpl=fetch,quoteLoader=getWatchQu
   throw Error('证券检索接口未返回有效结果');
  }
  const matches=parseStockSuggestions(raw,text),codes=matches.map(x=>x.code);
- const quotes=codes.length?await quoteLoader(codes,fetchImpl):[];
+ let quotes=[],warning='';try{if(codes.length)quotes=await quoteLoader(codes,fetchImpl);}catch{warning='证券匹配成功，报价接口暂不可用';}
  const byCode=new Map(quotes.map(q=>[q.code,q]));
  const rows=matches.map(s=>({...s,...(byCode.get(s.code)||{}),code:s.code,name:s.name,exchange:s.exchange}));
- return {rows,total:rows.length,truncated:raw.QuotationCodeTable.Data.length>=100};
+ return {rows,total:rows.length,truncated:raw.QuotationCodeTable.Data.length>=100,warning};
 }
