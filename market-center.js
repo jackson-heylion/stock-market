@@ -145,3 +145,39 @@ export async function getIndexHistory(key,period='minute',fetchImpl=fetch){
  if(!bars.length)throw Error('指数K线暂无有效数据');
  return {bars:bars.slice(-120),period,source:'东方财富',adjustment:'指数原始点位'};
 }
+
+// Provider-wide symbol suggestion; then independently request quote fields for matched A shares.
+export function parseStockSuggestions(payload,query){
+ const rows=payload?.QuotationCodeTable?.Data;
+ if(!Array.isArray(rows))return [];
+ const word=String(query).trim().toLowerCase(),seen=new Set(),out=[];
+ for(const row of rows){
+  const code=String(row?.Code||''),name=String(row?.Name||'').trim(),market=String(row?.MktNum??''),kind=String(row?.Classify||'');
+  if(!/^(?:60|68|00|30)\d{4}$/.test(code)||!name||kind.toLowerCase()!=='astock'||market!==(code.startsWith('6')?'1':'0')||seen.has(code))continue;
+  const alias=String(row?.PinYin||row?.Pinyin||'').toLowerCase();
+  if(![code,name.toLowerCase(),alias].some(x=>x.includes(word)))continue;
+  seen.add(code);out.push({code,name,exchange:market==='1'?'SH':'SZ',alias});
+ }
+ return out;
+}
+export async function searchStocks(query,{fetchImpl=fetch,quoteLoader=getWatchQuotes}={}){
+ const text=String(query||'').trim().replace(/^(?:sh|sz)(?=\d{6}$)/i,'');
+ if(!/^[\u3400-\u9fffA-Za-z0-9*· .-]{1,40}$/.test(text))return {rows:[],total:0,truncated:false};
+ if(/^\d{6}$/.test(text)){
+  if(!/^(?:60|68|00|30)\d{4}$/.test(text))return {rows:[],total:0,truncated:false};
+  const quotes=await quoteLoader([text],fetchImpl);
+  const rows=quotes.filter(q=>q.code===text);
+  return {rows,total:rows.length,truncated:false};
+ }
+ const url='https://searchapi.eastmoney.com/api/suggest/get?'+new URLSearchParams({input:text,type:'14',count:'100'});
+ const raw=await fetchTimeout(url,'json',fetchImpl,8000);
+ if(!Array.isArray(raw?.QuotationCodeTable?.Data)){
+  if(raw?.QuotationCodeTable?.Data===null)return {rows:[],total:0,truncated:false};
+  throw Error('证券检索接口未返回有效结果');
+ }
+ const matches=parseStockSuggestions(raw,text),codes=matches.map(x=>x.code);
+ const quotes=codes.length?await quoteLoader(codes,fetchImpl):[];
+ const byCode=new Map(quotes.map(q=>[q.code,q]));
+ const rows=matches.map(s=>({...s,...(byCode.get(s.code)||{}),code:s.code,name:s.name,exchange:s.exchange}));
+ return {rows,total:rows.length,truncated:raw.QuotationCodeTable.Data.length>=100};
+}

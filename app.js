@@ -1,7 +1,7 @@
 import {SECURITIES, MODEL_DEFINITIONS, SNAPSHOT_DATE, BUDGET_PER_STOCK} from './seed.js';
 import {STORAGE_KEY, initialState, cloneState, portfolio, positions, executeTrade, markPrice, budgetQuantity, fees, feeTotal, modelEvidence, validateState, shDate, migrateCapital} from './engine.js';
 import {getQuotes,getHistory,quoteState,session,POLL_MS} from './market.js';
-import {chartSvg} from './charts.js';
+import {chartSvg,showMinutePoint} from './charts.js';
 import {initTheme,applyTheme,THEME_KEY} from './theme.js';
 import {readPrefs,savePrefs,resetPrefs,DEFAULT_PREFS} from './preferences.js';
 import {renderRadar,refreshRadar,handleRadarClick} from './radar-view.js';
@@ -61,7 +61,9 @@ function render(){
  document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));
  $('#page-heading').textContent=titleMap[page];
  $('#main').classList.toggle('market-terminal-main',page==='quotes');
+ const searchFocused=document.activeElement?.id==='mt-search',selection=searchFocused?document.activeElement.selectionStart:null;
  $('#main').innerHTML=({overview:renderOverview,watchlist:renderWatchlist,models:renderModels,trades:renderTrades,charts:renderCharts,market:renderMarketDashboard,quotes:renderMarketTerminal,radar:renderRadar,settings:renderSettings}[page])();
+ if(searchFocused&&page==='quotes'){const field=$('#mt-search');if(field){field.focus();try{field.setSelectionRange(selection,selection);}catch{}}}
  const status=$('#market-status');if(status){
  const count=Object.values(liveQuotes).filter(q=>quoteState(q).fresh).length;
  status.textContent=(count?'行情接入 '+count+'只 · ':'')+quotePath+(quoteError?' · 部分源异常':'');
@@ -431,7 +433,7 @@ case'reset':if(confirm('恢复到11月19日的7笔初始模拟成交？当前所
  $('#trade-form').addEventListener('submit',evt=>{evt.preventDefault();if(uiPrefs.confirmTrades&&!confirm('确认记录这笔手动模拟成交？'))return;const code=$('#trade-code').value,side=$('input[name="side"]:checked')?.value,price=Number($('#trade-price').value),quantity=Number($('#trade-qty').value);if(transaction(next=>executeTrade(next,{code,side,price,quantity,date:shDate()})))$('#trade-dialog').close();});
  $('#quote-code').addEventListener('change',evt=>{$('#quote-price').value=state.prices[evt.target.value]?.price;});
  $('#quote-form').addEventListener('submit',evt=>{evt.preventDefault();if(transaction(next=>markPrice(next,$('#quote-code').value,Number($('#quote-price').value),$('#quote-date').value)))$('#quote-dialog').close();});
- document.addEventListener('input',evt=>{if(evt.target?.id==='mt-search'){terminalSearchInput(evt.target.value);return;}if(evt.target?.id==='rank-search'){ranked.search=evt.target.value.trim();const body=$('#rank-rows');if(body)body.innerHTML=renderRankingRows();const count=$('#rank-filter-count');if(count)count.textContent=ranked.search?'当前榜单内筛选':'已加载 '+ranked.rows.length+' 条';}});
+ document.addEventListener('input',evt=>{if(evt.target?.id==='mt-search'){terminalSearchInput(evt.target.value,()=>{if(page==='quotes')render();});return;}if(evt.target?.id==='rank-search'){ranked.search=evt.target.value.trim();const body=$('#rank-rows');if(body)body.innerHTML=renderRankingRows();const count=$('#rank-filter-count');if(count)count.textContent=ranked.search?'当前榜单内筛选':'已加载 '+ranked.rows.length+' 条';}});
  document.addEventListener('change',evt=>{
  if(evt.target?.dataset?.pref){
   const key=evt.target.dataset.pref;
@@ -448,6 +450,9 @@ case'reset':if(confirm('恢复到11月19日的7笔初始模拟成交？当前所
 const sel=evt.target;if(sel.dataset.action==='chart-select'){chartCode=sel.value;render();requestChart();return;}if(sel.dataset.action==='signal'){transaction(next=>{const code=sel.dataset.code,id=sel.dataset.model,index=Number(sel.dataset.index);if(!next.signals[code])next.signals[code]={};if(!next.signals[code][id])next.signals[code][id]=MODEL_DEFINITIONS.find(m=>m.id===id).checks.map(()=>0);next.signals[code][id][index]=Number(sel.value);return {message:'模型证据状态已更新'};});}});
  if(uiPrefs.autoQuotes)refreshQuotes();
  planPoll();
+ document.addEventListener('pointermove',evt=>showMinutePoint(evt.target));
+ document.addEventListener('pointerdown',evt=>showMinutePoint(evt.target));
+ document.addEventListener('keydown',evt=>{if(evt.target?.id==='mt-search'&&evt.key==='Enter'){evt.preventDefault();terminalSearchInput(evt.target.value,()=>{if(page==='quotes')render();},true);}});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&uiPrefs.autoQuotes)refreshQuotes();});
 }
 async function refreshQuotes(){
@@ -472,6 +477,8 @@ function planPoll(){
  if(!document.hidden){if(uiPrefs.autoQuotes)refreshQuotes();
   if(page==='market'&&Date.now()-marketBoard.updatedAt>35000)refreshMarket();
   if(page==='quotes')refreshTerminal(false,()=>{if(page==='quotes')render();});
+  if(page==='charts'&&chartPeriod==='minute')requestChart();
+  if(page==='market'&&indexPeriod==='minute')requestIndexChart();
   if(page==='radar')refreshRadar({onUpdate:()=>{if(page==='radar')render();}});
  }planPoll();},delay);
 }

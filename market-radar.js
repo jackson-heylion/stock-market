@@ -62,7 +62,7 @@ export const NEWS_CONCEPT_TERMS=Object.freeze([
  '机器人','算力','芯片','半导体','AI','PCB','光伏','储能','电力','电池','光刻胶',
  '商业航天','无人驾驶','脑机接口','量子','大模型','人工智能','数据中心',
  '并购','重组','涨停','跌停','减持','增持','融资','稀土','黄金','固态电池',
- '新能源','涨价','订单','业绩','出口','关税','英伟达','Anthropic'
+ '新能源','涨价','订单','业绩','出口','关税','英伟达','Anthropic','上涨','下跌','反弹','跳水','减持','增持','制裁','出口管制','光模块','存储','复职','超预期','裁员'
 ]);
 export function getNewsTerms(news,{now=Date.now(),maxAgeMs=2*3600000,limit=36}={}){
  const eligible=news.filter(n=>Number.isFinite(n?.time)&&n.time<=now+300000&&now-n.time<=maxAgeMs);
@@ -167,4 +167,42 @@ export async function getLiveChanges(fetchImpl=fetch){
  if(!rows.length)throw Error('盘口异动接口没有有效记录');
  return {rows,total:Number(raw?.data?.tc)||null,source:'东方财富盘口异动',
   receivedAt:Date.now()};
+}
+
+// Directional title wording, NOT investor/social sentiment or a price prediction.
+export const NEWS_TONES=Object.freeze({positive:['上涨','大涨','拉升','反弹','涨停','创新高','增持','回购','中标','超预期','扭亏为盈','获批','增长','上调','突破','复产','复职'],negative:['下跌','大跌','跳水','跌停','新低','减持','亏损','下调','裁员','处罚','立案','制裁','禁令','违约','砍单','终止','暴跌','下降','低于预期','撤回','辞职','出口管制']});
+export function classifyHeadline(title){
+ const text=String(title||''),positive=[],negative=[];
+ for(const [kind,words] of Object.entries(NEWS_TONES))for(const word of words){
+  let start=0,i;
+  while((i=text.indexOf(word,start))>=0){
+   start=i+word.length;
+   if(/(?:未见|没有|并未|否认|未|不|无)$/.test(text.slice(Math.max(0,i-3),i)))continue;
+   (kind==='positive'?positive:negative).push(word);break;
+  }
+ }
+ // "亏损收窄" is an explicitly mixed headline, not pure negative.
+ if(/亏损收窄|跌幅收窄/.test(text))positive.push('收窄');
+ return {tone:positive.length&&negative.length?'mixed':positive.length?'positive':negative.length?'negative':'neutral',positive,negative};
+}
+export function newsSentiment(news,{now=Date.now(),hours=2}={}){
+ const seen=new Set(),rows=[];
+ for(const n of [...news].sort((a,b)=>b.time-a.time)){
+  if(!Number.isFinite(n?.time)||n.time>now||now-n.time>hours*3600000||!n.title)continue;
+  const key=String(n.title).replace(/\s+/g,'').trim();
+  if(seen.has(key))continue;seen.add(key);rows.push({...n,...classifyHeadline(n.title)});
+ }
+ const counts={positive:0,negative:0,mixed:0,neutral:0};
+ for(const row of rows)counts[row.tone]++;
+ const directional=counts.positive+counts.negative;
+ return {rows,counts,total:rows.length,score:directional?Math.round((counts.positive-counts.negative)/directional*100):null,
+  coverage:rows.length?Math.round(directional/rows.length*100):0};
+}
+export function sentimentTerms(report,options={}){
+ return getNewsTerms(report.rows,{...options,now:options.now??Date.now(),maxAgeMs:(options.hours??2)*3600000}).map(term=>{
+  const matching=report.rows.filter(n=>n.title.toUpperCase().includes(term.word.toUpperCase()));
+  const c={positive:0,negative:0,mixed:0,neutral:0};for(const n of matching)c[n.tone]++;
+  const tone=c.positive>c.negative?'positive':c.negative>c.positive?'negative':c.mixed||c.positive?'mixed':'neutral';
+  return {...term,tone,counts:c};
+ });
 }

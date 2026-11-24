@@ -1,10 +1,10 @@
 
-import {getLiveSectors,getLiveNews,getLiveChanges,getNewsTerms,treemapLayout} from './market-radar.js';
+import {getLiveSectors,getLiveNews,getLiveChanges,getNewsTerms,treemapLayout,newsSentiment,sentimentTerms} from './market-radar.js';
 export const radarState={
  sectors:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
  news:{rows:[],updatedAt:0,checkedAt:0,source:'',warning:'',error:'',loading:false},
  changes:{rows:[],updatedAt:0,checkedAt:0,source:'',error:'',loading:false},
- filter:'all',selectedWord:''
+ filter:'all',selectedWord:'',newsHours:2,newsTone:'all'
 };
 export function h(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -54,27 +54,34 @@ export function heatmapHtml(rows){
  return grid+list;
 }
 
-export function wordCloudHtml(news){
- const terms=getNewsTerms(news,{now:Date.now(),maxAgeMs:2*3600000,limit:32});
- if(!terms.length)return '<div class="radar-empty">近2小时内没有足够的真实新闻标题，暂不生成词云。</div>';
- const max=Math.max(1,...terms.map(x=>x.count)),min=Math.min(...terms.map(x=>x.count));
- return '<div class="radar-cloud" aria-label="最近2小时东方财富7×24新闻标题词频">'+
-  terms.map((x,i)=>{
-   const scale=(x.count-min)/Math.max(1,max-min);
-   const size=(14+scale*20).toFixed(1),tone=i%3,active=radarState.selectedWord===x.word;
-   return `<button class="radar-word ${active?'active':''}" data-action="radar-word" data-word="${h(x.word)}"
-     style="font-size:${size}px;--word-weight:${scale.toFixed(3)}" title="标题提及 ${x.count} 次，点击查看相关新闻"><span>${h(x.word)}</span><small>${x.count}</small></button>`;
-  }).join('')+'</div>';
+const TONE_LABELS={positive:'偏正面',negative:'偏负面',mixed:'正负并存',neutral:'无明确方向'};
+export function sentimentHtml(report){
+ const keys=Object.keys(TONE_LABELS),n=report.total;
+ const direction=report.score===null?'方向不足':report.score>=25?'偏正面':report.score<=-25?'偏负面':'方向分歧';
+ return '<div class="radar-sentiment"><div class="radar-sentiment-title"><strong>标题情绪：'+direction+'</strong><span>方向指数 '+(report.score??'--')+' / ±100 · '+n+'条去重标题</span></div>'+
+ '<div class="radar-sentiment-bar" role="img" aria-label="正面、负面、混合、中性标题比例">'+keys.map(k=>'<span class="tone-'+k+'" style="width:'+(n?report.counts[k]/n*100:0)+'%"></span>').join('')+'</div>'+
+ '<div class="radar-tone-filters">'+[['all','全部'],...keys.map(k=>[k,TONE_LABELS[k]])].map(([k,label])=>'<button data-action="radar-news-tone" data-value="'+k+'" class="'+(radarState.newsTone===k?'active':'')+' tone-text-'+k+'">'+label+' '+(k==='all'?n:report.counts[k])+'</button>').join('')+'</div>'+
+ '<div class="radar-caveat">仅东方财富已获取标题的词典方向；明确方向覆盖 '+report.coverage+'%。不是全网投资者情绪或涨跌预测，混合/中性不计入方向指数。</div></div>';
 }
-
+export function wordCloudHtml(news){
+ const report=newsSentiment(news,{hours:radarState.newsHours});
+ const terms=sentimentTerms(report,{hours:radarState.newsHours,limit:32});
+ if(!terms.length)return '<div class="radar-empty">所选时段没有足够的真实新闻标题，暂不生成词云。</div>';
+ const max=Math.max(1,...terms.map(x=>x.count)),min=Math.min(...terms.map(x=>x.count));
+ return '<div class="radar-cloud" aria-label="新闻标题词频及方向">'+terms.map(x=>{
+   const scale=(x.count-min)/Math.max(1,max-min),size=(15+scale*22).toFixed(1),active=radarState.selectedWord===x.word;
+   const c=x.counts;
+   return '<button class="radar-word tone-word-'+x.tone+(active?' active':'')+'" data-action="radar-word" data-word="'+h(x.word)+'" style="font-size:'+size+'px" title="正面 '+c.positive+' · 负面 '+c.negative+' · 混合 '+c.mixed+' · 中性 '+c.neutral+'"><span>'+h(x.word)+'</span><small>'+x.count+'</small></button>';
+ }).join('')+'</div>';
+}
 export function newsListHtml(news){
- const word=radarState.selectedWord;
- const selected=word?news.filter(x=>x.title.includes(word)):news;
- const rows=selected.slice(0,9);
- if(!rows.length)return `<p class="radar-empty">${word?'当前新闻标题没有包含该词的记录':'暂无可用的真实快讯'}</p>`;
- return '<div class="radar-news-list">'+rows.map((x,i)=>
-  `<article class="radar-news-line"><time>${radarClock(x.time)}</time><span>${h(x.title)}</span></article>`
- ).join('')+'</div>';
+ const report=newsSentiment(news,{hours:radarState.newsHours}),word=radarState.selectedWord;
+ const selected=report.rows.filter(x=>(!word||x.title.toUpperCase().includes(word.toUpperCase()))&&(radarState.newsTone==='all'||x.tone===radarState.newsTone));
+ if(!selected.length)return '<p class="radar-empty">所选时段/情绪/词语没有匹配的真实新闻。</p>';
+ return '<div class="radar-news-list sentiment-news-list">'+selected.slice(0,60).map(x=>{
+  const evidence=[...x.positive,...x.negative].map(h).join('、');
+  return '<article class="radar-news-line"><time>'+h(x.timeLabel||radarClock(x.time))+'</time><div><span class="radar-tone-label tone-text-'+x.tone+'">'+TONE_LABELS[x.tone]+'</span> <span>'+h(x.title)+'</span>'+(evidence?'<small>识别词：'+evidence+'</small>':'')+'</div></article>';
+ }).join('')+'</div>';
 }
 
 export function anomaliesHtml(){
@@ -116,8 +123,10 @@ export function renderRadar(){
   </section>
   <div class="radar-columns">
     <section class="panel radar-panel">
-     <div class="panel-head"><div><h2>财经舆情词云</h2><p>近2小时快讯高频词</p></div>
+     <div class="panel-head"><div><h2>财经舆情与词云</h2><p>新闻标题方向、关键词及实际快讯</p></div>
      <div class="radar-panel-actions"><span class="radar-status">${radarSourceStatus('news')}</span>${press('news','刷新快讯')}</div></div>
+     <div class="radar-filters">${[2,6,24].map(h=>`<button data-action="radar-news-hours" data-value="${h}" class="${radarState.newsHours===h?'active':''}">近${h}小时</button>`).join('')}</div>
+     ${sentimentHtml(newsSentiment(news,{hours:radarState.newsHours}))}
      ${wordCloudHtml(news)}
      <div class="radar-news-head"><strong>最新财经快讯</strong><div>${selWord?`<button class="btn mini subtle" data-action="radar-clear-word">清除“${h(selWord)}”筛选</button>`:''}<a href="https://kuaixun.eastmoney.com/" target="_blank" rel="noopener noreferrer">查看来源 ↗</a></div></div>
      ${newsListHtml(news)}
@@ -161,6 +170,8 @@ export function handleRadarClick(btn,{onUpdate=()=>{},openStock=()=>{},openSecto
  if(action==='radar-filter'&&['all','up','down','flow'].includes(btn.dataset.value)){
   radarState.filter=btn.dataset.value;onUpdate();return true;
  }
+ if(action==='radar-news-hours'&&[2,6,24].includes(Number(btn.dataset.value))){radarState.newsHours=Number(btn.dataset.value);onUpdate();return true;}
+ if(action==='radar-news-tone'&&['all',...Object.keys(TONE_LABELS)].includes(btn.dataset.value)){radarState.newsTone=btn.dataset.value;onUpdate();return true;}
  if(action==='radar-word'){
   const word=String(btn.dataset.word||'');
   if(!word)return true;

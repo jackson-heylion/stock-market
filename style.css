@@ -2168,3 +2168,5 @@ small {
     font-size: 22px;
   }
 }
+
+.minute-detail{min-height:25px;font-size:12px;font-variant-numeric:tabular-nums;color:var(--chart-label);padding:6px 8px}.minute-note{font-size:11px;color:var(--chart-label);padding:4px 8px}.minute-svg{width:100%;height:auto;touch-action:pan-y}.minute-hit{cursor:crosshair}

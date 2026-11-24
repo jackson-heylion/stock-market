@@ -1,12 +1,12 @@
 
-import {SCOPES,SORT_COLUMNS,getRankings,getSectors,getWatchQuotes} from './market-center.js';
+import {SCOPES,SORT_COLUMNS,getRankings,getSectors,getWatchQuotes,searchStocks} from './market-center.js';
 import {SECURITIES} from './seed.js';
 import {readPrefs} from './preferences.js';
 export const MT_FOLLOW_KEY='stock-market-terminal-follows-v1';
 export const MT_RECENT_KEY='stock-market-terminal-recent-v1';
 const mt={view:'rank',scope:'all',sectorCode:null,sectorLabel:'',sortKey:'pct',descending:true,
  page:1,size:readPrefs().tablePageSize,rows:[],total:null,search:'',loading:false,error:'',updatedAt:0,
- seq:0,followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
+ seq:0,searchTimer:null,searchTruncated:false,followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
 export function terminalFmt(value,digits=2){
  if(typeof value!=='number'||!Number.isFinite(value))return '--';
  return value.toFixed(digits);
@@ -17,7 +17,7 @@ export function terminalSigned(value,digits=2){
  return (value>0?'+':'')+value.toFixed(digits);
 }
 
-export function terminalPercent(value){return terminalSigned(value)+'%';}
+export function terminalPercent(value){return typeof value==='number'&&Number.isFinite(value)?terminalSigned(value)+'%':'--';}
 
 export function terminalUnit(value){
  if(typeof value!=='number'||!Number.isFinite(value)||value<0)return '--';
@@ -58,13 +58,14 @@ export function terminalViewTitle(){
  if(mt.view==='follow')return '我的关注';
  if(mt.view==='recent')return '最近访问';
  if(mt.view==='lookup')return '代码查询';
+ if(mt.view==='search')return '全市场搜索';
  if(mt.view==='sector')return mt.sectorLabel||'行业板块';
  return mt.scope==='all'?'沪深一览':mt.scope==='sh'?'沪市一览':mt.scope==='sz'?'深市一览':SCOPES[mt.scope]?.label??'沪深一览';
 }
 
 export function terminalRowList(){
  const word=mt.search.trim().toLowerCase();
- return mt.rows.filter(x=>!word||x.code.includes(word)||x.name.toLowerCase().includes(word));
+ return mt.rows;
 }
 
 export function renderTerminalRows(){
@@ -85,7 +86,7 @@ export function renderTerminalRows(){
    <td class="${terminalColor(x.pct)} mt-number">${terminalPercent(x.pct)}</td>
    <td class="${terminalColor(x.speed)} mt-number">${terminalPercent(x.speed)}</td>
    <td class="${terminalColor(x.ytdPct)} mt-number">${terminalPercent(x.ytdPct)}</td>
-   <td class="mt-number">${terminalUnit(x.volume===null?null:x.volume*100)}</td>
+   <td class="mt-number">${terminalUnit(Number.isFinite(x.volume)?x.volume*100:null)}</td>
    <td class="mt-number">${terminalMoney(x.turnover)}</td>
    <td class="mt-number">${x.turnoverRate===null?'--':terminalPercent(x.turnoverRate)}</td>
    <td class="mt-number">${terminalPe(x.peTtm)}</td>
@@ -137,8 +138,8 @@ export function renderMarketTerminal(){
    <div class="mt-toolbar">
     <div class="mt-heading"><strong>${terminalEsc(viewTitle)}</strong><span> · ${mt.view==='rank'?terminalEsc(SORT_COLUMNS[mt.sortKey]?.label||'涨跌幅'):'证券报价'}</span></div>
     <div class="mt-utilities">
-     <label class="mt-search-label"><span>⌕</span><input id="mt-search" type="search" value="${terminalEsc(mt.search)}" placeholder="筛选本页 / 输入6位代码" autocomplete="off"/></label>
-     <button class="mt-lookup" data-action="mt-lookup">查代码</button>
+     <label class="mt-search-label"><span>⌕</span><input id="mt-search" type="search" value="${terminalEsc(mt.search)}" placeholder="全市场搜索：代码 / 名称 / 拼音" autocomplete="off"/></label>
+     <button class="mt-lookup" data-action="mt-lookup">搜索</button>
      <button class="mt-refresh" data-action="mt-refresh" ${mt.loading?'disabled':''}>${mt.loading?'更新中…':'刷新行情'}</button>
     </div>
    </div>
@@ -147,14 +148,14 @@ export function renderMarketTerminal(){
      <tbody id="mt-table-body">${renderTerminalRows()}</tbody>
    </table></div>
    <div class="mt-bottomline">
-    <div class="mt-source">${mt.error?'数据源异常：'+terminalEsc(mt.error)+'；':''}东方财富公开行情 · 接口取数 ${updated} · 已展示 ${shown} 条 / 榜单总量 ${pagingTotal} · 不保证实时性</div>
+    <div class="mt-source">${mt.error?'数据源异常：'+terminalEsc(mt.error)+'；':''}${mt.view==='search'?(mt.searchTruncated?'匹配结果可能截断，请缩小关键词；':'全市场证券检索；'):''}东方财富公开行情 · 接口取数 ${updated} · 已展示 ${shown} 条 / 榜单总量 ${pagingTotal} · 不保证实时性</div>
     <div class="mt-pagination">
       <button data-action="mt-page" data-value="prev" ${mt.page<=1?'disabled':''}>上一页</button>
       <span>第 ${mt.page} ${maxPage?' / '+maxPage:' '} 页</span>
       <button data-action="mt-page" data-value="next" ${(maxPage!==null&&mt.page>=maxPage)?'disabled':''}>下一页</button>
     </div>
    </div>
-   <div class="mt-note">成交量按股显示（每手100股），成交额与市值按元换算；排序由服务端完成，搜索筛选当前页。</div>
+   <div class="mt-note">成交量按股显示（每手100股），成交额与市值按元换算；排序由服务端完成，搜索独立检索全沪深 A 股，按匹配结果分页；数据源最多返回100项建议，非完整证券名录。</div>
   </div>
  </div>`;
 }
@@ -186,11 +187,14 @@ export function refreshTerminal(force=false,rerender=()=>{}){
  mt.loading=true;
  const view=mt.view,scope=mt.scope,sectorCode=mt.sectorCode,sortKey=mt.sortKey,descending=mt.descending,page=mt.page,size=mt.size;
  const codes=view==='follow'?[...terminalFollowed()]:view==='recent'?terminalRecent().map(x=>x.code):view==='lookup'?mt.lookupCode?[mt.lookupCode]:[]:null;
- const request=codes!==null?codes.length?getWatchQuotes(codes):Promise.resolve([]):
+ const request=view==='search'?searchStocks(mt.search):codes!==null?codes.length?getWatchQuotes(codes):Promise.resolve([]):
  getRankings('gainers',scope,{page,size,sortKey,descending,sectorCode:view==='sector'?sectorCode:null});
  return Promise.resolve(request).then(result=>{
   if(seq!==mt.seq)return;
-  if(codes!==null){
+  if(view==='search'){
+   const sorted=[...result.rows].sort((a,b)=>{const x=a[sortKey],y=b[sortKey];if(x==null)return y==null?0:1;if(y==null)return -1;return (typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y),'zh'))*(descending?-1:1);});
+   mt.total=sorted.length;mt.searchTruncated=result.truncated;mt.rows=sorted.slice((page-1)*size,page*size);
+  }else if(codes!==null){
    const byCode=new Map(result.map(x=>[x.code,x]));
    mt.lookupRows=result;
    mt.rows=codes.map(code=>byCode.get(code)).filter(Boolean).sort((a,b)=> {
@@ -219,10 +223,13 @@ export async function loadTerminalSectors(rerender=()=>{}){
  finally{mt.loadingSectors=false;rerender();}
 }
 
-export function terminalSearchInput(input){
- mt.search=String(input||'').trim().slice(0,80);
- const body=document.querySelector('#mt-table-body');
- if(body)body.innerHTML=renderTerminalRows();
+export function terminalSearchInput(input,rerender=()=>{},immediate=false){
+ const value=String(input||'').trim().slice(0,40);
+ clearTimeout(mt.searchTimer);mt.seq++;mt.loading=false;
+ mt.search=value;mt.page=1;mt.updatedAt=0;mt.rows=[];mt.total=null;mt.error='';
+ mt.view=value?'search':'rank';
+ const run=()=>{if(mt.search!==value)return;refreshTerminal(true,rerender);};
+ if(immediate||!value)run();else mt.searchTimer=setTimeout(run,300);
 }
 
 export function handleTerminalClick(btn,{rerender=()=>{},openChart=()=>{},notify=()=>{}}={}){
@@ -275,10 +282,8 @@ export function handleTerminalClick(btn,{rerender=()=>{},openChart=()=>{},notify
   openChart(code,row||s||{code,name:code});break;
  }
  case'mt-lookup':{
-  const query=mt.search.trim();
-  if(!/^\d{6}$/.test(query)){notify('请输入6位A股证券代码进行精确查询');return;}
-  mt.lookupCode=query;mt.view='lookup';mt.rows=[];mt.total=null;mt.page=1;mt.search='';mt.updatedAt=0;
-  rerender();refreshTerminal(true,rerender);break;
+  const query=mt.search.trim();if(!query){notify('请输入证券代码、名称或拼音');return;}
+  terminalSearchInput(query,rerender,true);break;
  }
  }
 }
