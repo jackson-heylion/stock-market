@@ -1,12 +1,13 @@
 
 import {SCOPES,SORT_COLUMNS,getRankings,getSectors,getWatchQuotes,searchStocks} from './market-center.js';
 import {SECURITIES} from './seed.js';
+import {searchDirectoryStocks} from './stock-directory.js';
 import {readPrefs} from './preferences.js';
 export const MT_FOLLOW_KEY='stock-market-terminal-follows-v1';
 export const MT_RECENT_KEY='stock-market-terminal-recent-v1';
 const mt={view:'rank',scope:'all',sectorCode:null,sectorLabel:'',sortKey:'pct',descending:true,
  page:1,size:readPrefs().tablePageSize,rows:[],total:null,search:'',loading:false,error:'',updatedAt:0,
- seq:0,knownRows:new Map(),searchTimer:null,searchTruncated:false,followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
+ seq:0,knownRows:new Map(),searchTimer:null,searchTruncated:false,searchSource:'',followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
 export function terminalFmt(value,digits=2){
  if(typeof value!=='number'||!Number.isFinite(value))return '--';
  return value.toFixed(digits);
@@ -71,7 +72,7 @@ export function terminalRowList(){
 export function renderTerminalRows(){
  const rows=terminalRowList();
  if(!rows.length){
-  const msg=mt.loading?'正在加载行情':'没有匹配的行情记录';
+  const msg=mt.loading?'正在检索证券目录':mt.error?'暂无匹配结果，请尝试代码或完整名称（数据源状态见下方）':'没有匹配的证券记录';
   return '<tr><td class="mt-empty" colspan="14">'+terminalEsc(msg)+'</td></tr>';
  }
  const followed=terminalFollowed();
@@ -80,7 +81,7 @@ export function renderTerminalRows(){
   const position=(mt.page-1)*mt.size+i+1;
   return `<tr class="mt-row">
    <td class="mt-code"><button data-action="mt-chart" data-code="${terminalEsc(x.code)}">${x.exchange==='SH'?'SH':'SZ'}${terminalEsc(x.code)}</button></td>
-   <td class="mt-name"><button data-action="mt-chart" data-code="${terminalEsc(x.code)}">${terminalEsc(x.name)}</button></td>
+   <td class="mt-name"><button data-action="mt-chart" data-code="${terminalEsc(x.code)}">${terminalEsc(x.name)}</button>${Number.isFinite(x.price)?'':'<small>暂无报价</small>'}</td>
    <td class="${terminalColor(x.pct)} mt-number">${terminalFmt(x.price)}</td>
    <td class="${terminalColor(x.change)} mt-number">${terminalSigned(x.change)}</td>
    <td class="${terminalColor(x.pct)} mt-number">${terminalPercent(x.pct)}</td>
@@ -148,14 +149,14 @@ export function renderMarketTerminal(){
      <tbody id="mt-table-body">${renderTerminalRows()}</tbody>
    </table></div>
    <div class="mt-bottomline">
-    <div class="mt-source">${mt.error?'数据源异常：'+terminalEsc(mt.error)+'；':''}${mt.view==='search'?(mt.searchTruncated?'匹配结果可能截断，请缩小关键词；':'全市场证券检索；'):''}东方财富公开行情 · 接口取数 ${updated} · 已展示 ${shown} 条 / 榜单总量 ${pagingTotal} · 不保证实时性</div>
+    <div class="mt-source">${mt.error?'数据源异常：'+terminalEsc(mt.error)+'；':''}${mt.view==='search'?(mt.searchTruncated?'匹配结果超过100项，请缩小关键词；':terminalEsc(mt.searchSource||'证券检索')+'；'):''}公开行情（东财/腾讯） · 接口取数 ${updated} · 已展示 ${shown} 条 / 榜单总量 ${pagingTotal} · 不保证实时性</div>
     <div class="mt-pagination">
       <button data-action="mt-page" data-value="prev" ${mt.page<=1?'disabled':''}>上一页</button>
       <span>第 ${mt.page} ${maxPage?' / '+maxPage:' '} 页</span>
       <button data-action="mt-page" data-value="next" ${(maxPage!==null&&mt.page>=maxPage)?'disabled':''}>下一页</button>
     </div>
    </div>
-   <div class="mt-note">成交量按股显示（每手100股），成交额与市值按元换算；排序由服务端完成，搜索独立检索全沪深 A 股，按匹配结果分页；数据源最多返回100项建议，非完整证券名录。</div>
+   <div class="mt-note">成交量按股显示（每手100股），成交额与市值按元换算；排序由服务端完成，搜索优先使用同域沪深证券目录，按名称、代码及已有拼音别名匹配；在线接口仅补充新股或别名。目录可能滞后；无法获取报价时保留证券名称、缺失指标显示--。每次最多100项匹配。</div>
   </div>
  </div>`;
 }
@@ -187,13 +188,13 @@ export function refreshTerminal(force=false,rerender=()=>{}){
  mt.loading=true;
  const view=mt.view,scope=mt.scope,sectorCode=mt.sectorCode,sortKey=mt.sortKey,descending=mt.descending,page=mt.page,size=mt.size;
  const codes=view==='follow'?[...terminalFollowed()]:view==='recent'?terminalRecent().map(x=>x.code):view==='lookup'?mt.lookupCode?[mt.lookupCode]:[]:null;
- const request=view==='search'?searchStocks(mt.search).catch(err=>{const word=mt.search.toLowerCase(),rows=[...mt.knownRows.values()].filter(x=>x.code.includes(word)||x.name.toLowerCase().includes(word));return {rows,total:rows.length,truncated:false,warning:'全市场接口异常，仅本次已载入证券匹配：'+String(err.message||err)};}):codes!==null?codes.length?getWatchQuotes(codes):Promise.resolve([]):
+ const request=view==='search'?searchDirectoryStocks(mt.search,{knownRows:[...mt.knownRows.values(),...terminalRecent()]}):codes!==null?codes.length?getWatchQuotes(codes):Promise.resolve([]):
  getRankings('gainers',scope,{page,size,sortKey,descending,sectorCode:view==='sector'?sectorCode:null});
  return Promise.resolve(request).then(result=>{
   if(seq!==mt.seq)return;
   if(view==='search'){
    const sorted=[...result.rows].sort((a,b)=>{const x=a[sortKey],y=b[sortKey];if(x==null)return y==null?0:1;if(y==null)return -1;return (typeof x==='number'&&typeof y==='number'?x-y:String(x).localeCompare(String(y),'zh'))*(descending?-1:1);});
-   mt.total=sorted.length;mt.searchTruncated=result.truncated;mt.rows=sorted.slice((page-1)*size,page*size);
+   mt.total=sorted.length;mt.searchTruncated=result.truncated;mt.searchSource=result.searchSource||'证券检索';mt.rows=sorted.slice((page-1)*size,page*size);
   }else if(codes!==null){
    const byCode=new Map(result.map(x=>[x.code,x]));
    mt.lookupRows=result;
