@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseDaily,dailyBars,m5,fillable,capPercent,stepBot,executeBot,botEquity,validateBot} from '../bot.js';
+import {parseDaily,dailyBars,m5,fillable,capPercent,stepBot,executeBot,getMarketData,botEquity,validateBot} from '../bot.js';
 const liveSeed=JSON.parse(readFileSync(new URL('../data/bot.json',import.meta.url),'utf8'));
 const seed={...structuredClone(liveSeed),cash:liveSeed.initialCash,lastDate:null,holdings:{},pending:[],trades:[],signals:[],history:[],events:[]};
 const sample=(date,close=10,volume=100)=>({date,open:close,close,high:close+0.05,low:close-0.05,volume});
@@ -128,4 +128,19 @@ test('dailyBars falls back to Tencent unadjusted kline when Eastmoney drops conn
  assert.equal(bars.length,2);
  assert.equal(bars[1].date,'2026-11-25');
  assert.equal(bars[1].close,20.5);
+});
+test('getMarketData falls back to Tencent Shenwan boards when Eastmoney BK constituents fail',async()=>{
+ const data=await getMarketData({
+  barLoader:async()=>[sample('2026-11-24',3480,100),sample('2026-11-25',3476,100)],
+  sectorLoader:async()=>({rows:[{code:'BK0428',name:'电力行业',pct:1.2,turnover:1e9}]}),
+  fallbackSectorLoader:async()=>({rows:[{code:'pt01801120',name:'食品饮料',pct:0.69,turnover:3e10}]}),
+  rankingLoader:async(_mode,_scope,{sectorCode})=>{
+   if(sectorCode.startsWith('BK'))throw Error('HTTP 502');
+   return {rows:[{code:'600519',name:'贵州茅台',pct:1.02}]};
+  }
+ });
+ assert.equal(data.date,'2026-11-25');
+ assert.equal(data.universe.length,1);
+ assert.equal(data.universe[0].code,'600519');
+ assert.equal(data.universe[0].sectorCode,'pt01801120');
 });

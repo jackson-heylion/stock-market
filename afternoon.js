@@ -2,7 +2,7 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {validateBot,dailyBars,capPercent} from './bot.js';
 import {getQuotes,getHistory} from './market.js';
-import {getMarketIndices,getSectors,getRankings,getWatchQuotes} from './market-center.js';
+import {getMarketIndices,getSectorLeaders,getWatchQuotes} from './market-center.js';
 import {fees,feeTotal} from './engine.js';
 import {SECURITIES} from './seed.js';
 import {AFTERNOON_VERSION,POLICY,round,clock,afternoonWindow,fresh,scoreStock,holdingDecision,slotVersion,strategyWindow} from './afternoon-rules.js';
@@ -59,12 +59,18 @@ export function decideAfternoon(account,snapshot,now=Date.now(),slot='afternoon'
  return {state:next,changed:true,message:next[key].message};
 }
 export async function collectAfternoon(account,slot='afternoon'){
- const [sectors,indices,bench]=await Promise.all([getSectors(),getMarketIndices(),dailyBars('sh000001')]);
+ const [groups,indices,bench]=await Promise.all([
+  getSectorLeaders({filter:s=>s.pct>=POLICY.sectorMin&&s.turnover>0,limit:3,size:30}).catch(()=>[]),
+  getMarketIndices(),dailyBars('sh000001')
+ ]);
  const today=clock(Date.now()).date,previousDate=bench.filter(x=>x.date<today).at(-1)?.date;
- const leaders=sectors.rows.filter(s=>s.pct>=POLICY.sectorMin&&s.turnover>0).slice(0,3);
- const parts=await Promise.allSettled(leaders.map(s=>getRankings('turnover','all',{sectorCode:s.code,size:30})));
  const selected=new Map();
- parts.forEach((p,i)=>{if(p.status!=='fulfilled')return;const sector=leaders[i];for(const st of p.value.rows.filter(s=>validCode(s.code)&&!/ST/i.test(s.name)&&s.pct>=.8&&s.pct<=5).slice(0,4)){const prev=selected.get(st.code);if(!prev||sector.pct>prev.sectorPct)selected.set(st.code,{code:st.code,name:st.name,sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime});}});
+ for(const {sector,rows} of groups){
+  for(const st of rows.filter(s=>validCode(s.code)&&!/ST/i.test(s.name)&&s.pct>=.8&&s.pct<=5).slice(0,4)){
+   const prev=selected.get(st.code);
+   if(!prev||sector.pct>prev.sectorPct)selected.set(st.code,{code:st.code,name:st.name,sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime});
+  }
+ }
  // Manual account research is limited to the curated observation pool, not assumed actual holdings.
  for(const s of [...SECURITIES.filter(s=>!s.halted),...Object.values(account.holdings)])if(!selected.has(s.code))selected.set(s.code,{code:s.code,name:s.name});
  const stocks=[...selected.values()],daily={},minutes={};

@@ -3,7 +3,7 @@
 // Public quote APIs are best effort; fail closed when today's data cannot be verified.
 import {readFileSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
-import {getSectors,getRankings} from './market-center.js';
+import {getSectors,getTencentSectors,getRankings,getSectorLeaders} from './market-center.js';
 import {parseDaily as parseRawDaily,getDailyBars} from './market.js';
 import {fees,feeTotal} from './engine.js';
 
@@ -173,19 +173,18 @@ export function stepBot(state,{date,previousMarketDate=null,universe=[],barsByCo
  return {state:next,changed:true,message:date+' 完成：候选 '+observed.length+
   '，待下交易日订单 '+next.pending.length+'，累计模拟成交 '+next.trades.length};
 }
-export async function getMarketData({fetchImpl=fetch,sectorLoader=getSectors,rankingLoader=getRankings,barLoader=dailyBars}={}){
+export async function getMarketData({fetchImpl=fetch,sectorLoader=getSectors,fallbackSectorLoader=getTencentSectors,rankingLoader=getRankings,barLoader=dailyBars}={}){
  // Fail closed if the exchange's actual daily benchmark is not dated today.
  const benchmark=await barLoader('sh000001',{fetchImpl});
  if(benchmark.length<2)throw Error('Missing exchange calendar bars');
  const marketDate=benchmark.at(-1).date;
- const sectors=(await sectorLoader(fetchImpl)).rows.filter(s=>s.pct>0&&s.turnover>0).slice(0,3);
- const parts=await Promise.all(sectors.map(s=>rankingLoader('turnover','all',{fetchImpl,sectorCode:s.code,size:30})));
+ const groups=await getSectorLeaders({fetchImpl,sectorLoader,fallbackSectorLoader,rankingLoader,filter:s=>s.pct>0&&s.turnover>0,limit:3,size:30,requireSuccess:true});
  const universe=new Map();
- for(let i=0;i<sectors.length;i++)for(const st of parts[i].rows.slice(0,18)){
+ for(const {sector,rows} of groups)for(const st of rows.slice(0,18)){
   if(!/^[036]\d{5}$/.test(st.code)||/\*?ST/i.test(st.name))continue;
   const prior=universe.get(st.code);
-  if(!prior||sectors[i].pct>prior.sectorPct)universe.set(st.code,{
-   code:st.code,name:st.name,sector:sectors[i].name,sectorCode:sectors[i].code,sectorPct:sectors[i].pct});
+  if(!prior||sector.pct>prior.sectorPct)universe.set(st.code,{
+   code:st.code,name:st.name,sector:sector.name,sectorCode:sector.code,sectorPct:sector.pct});
  }
  return {date:marketDate,previousMarketDate:benchmark.at(-2).date,universe:[...universe.values()],barLoader,fetchImpl};
 }

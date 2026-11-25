@@ -1,7 +1,7 @@
 import {SECURITIES} from './seed.js';
 import {positions,executeTrade,budgetQuantity,cloneState,validateState} from './engine.js';
 import {getQuotes,getHistory,getDailyBars} from './market.js';
-import {getMarketIndices,getSectors,getRankings,getWatchQuotes} from './market-center.js';
+import {getMarketIndices,getSectorLeaders,getWatchQuotes} from './market-center.js';
 import {AFTERNOON_VERSION,POLICY,round,clock,afternoonWindow,fresh,scoreStock,holdingDecision,slotVersion,strategyWindow,slotLabel} from './afternoon-rules.js';
 export const MANUAL_VERSION=AFTERNOON_VERSION+'-local';
 export const manualVersion=slot=>slotVersion(slot)+'-local';
@@ -15,15 +15,18 @@ async function rawDaily(code){
 }
 export async function collectManualAfternoon({proxy='',slot='afternoon'}={}){
  const codes=supported.map(s=>s.code),daily={},minutes={};
- const [bench,boards]=await Promise.allSettled([rawDaily('sh000001'),getSectors()]);
- const date=clock(Date.now()).date,previousDate=bench.status==='fulfilled'?bench.value.filter(b=>b.date<date).at(-1)?.date:null;
- const leaders=boards.status==='fulfilled'?boards.value.rows.filter(s=>s.pct>=POLICY.sectorMin&&s.turnover>0).slice(0,3):[];
- const parts=await Promise.allSettled([
-  ...codes.map(async code=>{daily[code]=await rawDaily(code);if(slot==='opening')minutes[code]=await getHistory(code,'minute');}),
-  ...leaders.map(s=>getRankings('turnover','all',{sectorCode:s.code,size:30}))
+ const [bench,groups]=await Promise.allSettled([
+  rawDaily('sh000001'),
+  getSectorLeaders({filter:s=>s.pct>=POLICY.sectorMin&&s.turnover>0,limit:3,size:30}),
+  ...codes.map(async code=>{daily[code]=await rawDaily(code);if(slot==='opening')minutes[code]=await getHistory(code,'minute');})
  ]);
+ const date=clock(Date.now()).date,previousDate=bench.status==='fulfilled'?bench.value.filter(b=>b.date<date).at(-1)?.date:null;
  const membership=new Map();
- leaders.forEach((sector,i)=>{const p=parts[codes.length+i];if(p.status!=='fulfilled')return;for(const s of p.value.rows)if(codeMap.has(s.code)&&(!membership.has(s.code)||sector.pct>membership.get(s.code).sectorPct))membership.set(s.code,{sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime});});
+ if(groups.status==='fulfilled'){
+  for(const {sector,rows} of groups.value){
+   for(const s of rows)if(codeMap.has(s.code)&&(!membership.has(s.code)||sector.pct>membership.get(s.code).sectorPct))membership.set(s.code,{sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime});
+  }
+ }
  const [quotes,ranks,indices]=await Promise.allSettled([getQuotes(codes,{proxy}),getWatchQuotes(codes),getMarketIndices()]);
  return {previousDate,daily,minutes,stocks:supported.map(s=>({...s,...membership.get(s.code)})),quotes:Object.fromEntries((quotes.status==='fulfilled'?quotes.value.quotes:[]).map(q=>[q.code,q])),ranks:Object.fromEntries((ranks.status==='fulfilled'?ranks.value:[]).map(q=>[q.code,q])),indices:indices.status==='fulfilled'?indices.value:[]};
 }

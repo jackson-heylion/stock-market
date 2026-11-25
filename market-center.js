@@ -210,6 +210,27 @@ async function getSinaRankings(mode,scope,{fetchImpl,page,size,sortKey,po,sector
  return {rows,total:null,mode,scope,receivedAt:Date.now(),source:'新浪财经',page,size,sortKey:sortKey||mode,descending:po===1};
 }
 
+/** Fetches top positive industry sectors and their leading stocks, falling back from Eastmoney BK to Tencent+Sina on failure. */
+export async function getSectorLeaders({
+ fetchImpl=fetch,
+ sectorLoader=getSectors,
+ fallbackSectorLoader=getTencentSectors,
+ rankingLoader=getRankings,
+ filter=s=>s.pct>0&&s.turnover>0,
+ limit=3,
+ size=30,
+ requireSuccess=false
+}={}){
+ let sectors=(await sectorLoader(fetchImpl)).rows.filter(filter).slice(0,limit);
+ let settled=await Promise.allSettled(sectors.map(s=>rankingLoader('turnover','all',{fetchImpl,sectorCode:s.code,size})));
+ if(sectors.length&&settled.every(r=>r.status==='rejected')&&sectors.some(s=>!/^pt\d{6,10}$/.test(s.code))&&fallbackSectorLoader){
+  sectors=(await fallbackSectorLoader(fetchImpl)).rows.filter(filter).slice(0,limit);
+  settled=await Promise.allSettled(sectors.map(s=>rankingLoader('turnover','all',{fetchImpl,sectorCode:s.code,size})));
+ }
+ if(requireSuccess&&sectors.length&&settled.every(r=>r.status==='rejected'))throw settled[0].reason;
+ return sectors.map((sector,i)=>settled[i]?.status==='fulfilled'?{sector,rows:settled[i].value.rows}:null).filter(Boolean);
+}
+
 export const TENCENT_INDUSTRY_BOARDS=Object.freeze([
  'pt01801120','pt01801110','pt01801150','pt01801730','pt01801210','pt01801080','pt01801050','pt01801880',
  'pt01801710','pt01801780','pt01801770','pt01801750','pt01801030','pt01801950','pt01801230','pt01801980',
