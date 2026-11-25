@@ -10,6 +10,7 @@ import {referencePrice,verifiedQuote} from './valuation.js';
 import {initTheme,applyTheme,THEME_KEY} from './theme.js';
 import {readPrefs,savePrefs,resetPrefs,DEFAULT_PREFS} from './preferences.js';
 import {renderRadar,refreshRadar,handleRadarClick} from './radar-view.js';
+import {getRadarSnapshot} from './radar-snapshot.js';
 import {proposeTailOrders,TAIL_POLICY} from './tail-strategy.js';
 import {HOLD_POLICY,holdWindow,applyLocalOpening} from './holding-opening.js';
 import {renderMarketTerminal,handleTerminalClick,terminalSearchInput,refreshTerminal,setTerminalPageSize,clearTerminalRecent,clearTerminalFollows} from './market-terminal.js';
@@ -436,8 +437,9 @@ async function bootstrap(){initTheme();state=load();const initialized=await edit
       chartCode=code;chartPeriod='minute';page='charts';render();requestChart();window.scrollTo(0,0);
     },
     openSector:(code,name)=>{
+      if(!/^(?:BK\d{3,6}|pt\d{6,10})$/.test(code)){toast('无效行业板块代码');return;}
       page='quotes';render();
-      handleTerminalClick({dataset:{action:'mt-sector',code,name}},{rerender:()=>{if(page==='quotes')render();}});
+      handleTerminalClick({dataset:{action:'mt-sector',code,name}},{rerender:()=>{if(page==='quotes')render();},notify:toast});
       window.scrollTo(0,0);
     }
   });return;
@@ -541,11 +543,12 @@ function renderCharts(){
  const key=chartCode+':'+chartPeriod,cached=chartCache.get(key);
  const expired=cached&&(Date.now()-cached.time>(chartPeriod==='minute'?45000:1800000));
  const data=cached?.data;
- const chart=data?chartSvg(data.bars,chartPeriod,data.prevClose):'<div class="chart-empty">暂无走势数据，点击“刷新图表”重试。</div>';
+ const chartPrev=data?.prevClose??(chartPeriod==='minute'?(priceInfo(chartCode)?.prevClose??externalStockLookup.get(chartCode)?.prevClose??null):null);
+ const chart=data?chartSvg(data.bars,chartPeriod,chartPrev):'<div class="chart-empty">暂无走势数据，点击“刷新图表”重试。</div>';
  const first=data?.bars[0],last=data?.bars.at(-1);
  const detail=last?(chartPeriod==='minute'?'采样 '+e(last.date)+' · 现价 ¥'+last.price.toFixed(2):'周期 '+e(last.date)+' · 开 ¥'+last.open.toFixed(2)+' · 高 ¥'+last.high.toFixed(2)+' · 低 ¥'+last.low.toFixed(2)+' · 收 ¥'+last.close.toFixed(2)):'无有效行情数据';
  return heading('CHARTS',e(s.name)+' · '+e(s.code),'分时与K线走势图表','<button class="btn subtle" data-action="quotes-refresh">刷新报价</button><button class="btn primary" data-action="chart-refresh">刷新图表</button>')+
- '<section class="panel chart-panel"><div class="chart-head"><div><div class="eyebrow">最新报价</div><strong class="chart-price">'+(Number.isFinite(price)?money(price):'--')+'</strong><div class="smallnote">'+e(stock(chartCode)?latestLabel(chartCode):'东方财富行情中心榜单报价')+'</div></div><select class="chart-symbol" data-action="chart-select" aria-label="切换股票">'+(stock(chartCode)?'':'<option value="'+e(chartCode)+'" selected>'+e(s.name)+' '+e(chartCode)+'</option>')+SECURITIES.map(x=>'<option value="'+x.code+'" '+(x.code===chartCode?'selected':'')+'>'+e(x.name)+' '+x.code+'</option>').join('')+'</select></div>'+
+ '<section class="panel chart-panel"><div class="chart-head"><div><div class="eyebrow">最新报价</div><strong class="chart-price">'+(Number.isFinite(price)?money(price):'--')+'</strong><div class="smallnote">'+e(stock(chartCode)?latestLabel(chartCode):(q?.source?q.source+'公开行情报价':'行情中心榜单报价'))+'</div></div><select class="chart-symbol" data-action="chart-select" aria-label="切换股票">'+(stock(chartCode)?'':'<option value="'+e(chartCode)+'" selected>'+e(s.name)+' '+e(chartCode)+'</option>')+SECURITIES.map(x=>'<option value="'+x.code+'" '+(x.code===chartCode?'selected':'')+'>'+e(x.name)+' '+x.code+'</option>').join('')+'</select></div>'+
  '<div class="chart-tabs">'+periods.map(([id,label])=>'<button class="btn mini '+(chartPeriod===id?'primary':'subtle')+'" data-action="chart-period" data-period="'+id+'">'+label+'</button>').join('')+'</div>'+
  '<div class="chart-legend"><span>'+e(data?.source||'东方财富图表接口')+'</span><span>'+e(detail)+'</span><span>'+e(data?.adjustment||'原始走势')+'</span></div>'+
  '<div class="chart-canvas">'+chart+'</div><div class="chart-keys">'+(chartPeriod==='minute'?'<span class="chart-accent-primary">● 成交价</span><span class="chart-accent-secondary">● 分时均价</span><span>虚线：昨收参考</span>':'<span class="chart-accent-ma5">● MA5</span><span class="chart-accent-ma10">● MA10</span><span class="chart-accent-ma20">● MA20</span>')+'</div>'+
@@ -579,7 +582,8 @@ function renderMarketDashboard(){
  const cached=indexChartCache.get(indexKey+':'+indexPeriod),data=cached?.data;
  const selected=INDEXES.find(x=>x.key===indexKey);
  const bars=data?.bars??[];
- const sub=b.updatedAt?'数据请求于 '+cnTime(b.updatedAt)+' · 东方财富公开接口':'数据接口待连接';
+ const indexPrev=data?.prevClose??(indexPeriod==='minute'?reference[indexKey]?.prevClose??null:null);
+ const sub=b.updatedAt?'数据请求于 '+cnTime(b.updatedAt)+' · 公开行情接口':'数据接口待连接';
  const indexCards=INDEXES.map(idx=>{
   const q=reference[idx.key],active=idx.key===indexKey;
   return `<button class="index-card ${active?'selected':''}" data-action="index-select" data-key="${idx.key}">
@@ -603,7 +607,7 @@ function renderMarketDashboard(){
     <div class="panel-head"><div><h2>${e(selected.name)} · 指数走势</h2><p>分时与K线走势图</p></div><span class="tag">${e(selected.key)}</span></div>
     <div class="chart-tabs">${[['minute','分时'],['day','日K'],['week','周K'],['month','月K']].map(([id,label])=>`<button class="btn mini ${id===indexPeriod?'primary':'subtle'}" data-action="index-period" data-period="${id}">${label}</button>`).join('')}</div>
     <div class="chart-legend">${data?`${e(data.source)} · ${bars.length}个真实数据点 · ${e(data.adjustment||'原始指数数据')}`:'正在获取指数图表'}</div>
-    <div class="chart-canvas">${data?chartSvg(bars,indexPeriod,data.prevClose):'<div class="chart-empty">指数图表暂无有效数据，点击“刷新市场”重试。</div>'}</div>
+    <div class="chart-canvas">${data?chartSvg(bars,indexPeriod,indexPrev):'<div class="chart-empty">指数图表暂无有效数据，点击“刷新市场”重试。</div>'}</div>
   </section>
   <section class="panel market-breadth-box">
     <div class="panel-head"><div><h2>市场温度</h2><p>全市场涨跌与覆盖</p></div></div>
@@ -656,11 +660,16 @@ function refreshMarket(force=false){
  if(marketBoard.loading)return;
  if(!force&&marketBoard.updatedAt&&Date.now()-marketBoard.updatedAt<35000)return;
  marketBoard.loading=true;
- const requests=[getMarketIndices(),getSectors(),getRankings('gainers','all',{size:12}),getMarketBreadth()];
- return Promise.allSettled(requests).then(results=>{
+ const requests=[getMarketIndices(),getSectors(),getRankings('gainers','all',{size:30}),getMarketBreadth()];
+ return Promise.allSettled(requests).then(async results=>{
   const errors=[];
   if(results[0].status==='fulfilled')marketBoard.indices=results[0].value;else errors.push('指数：'+results[0].reason.message);
-  if(results[1].status==='fulfilled')marketBoard.sectors=results[1].value.rows;else errors.push('行业：'+results[1].reason.message);
+  if(results[1].status==='fulfilled')marketBoard.sectors=results[1].value.rows;
+  else{
+   let rescued=false;
+   try{const snap=await getRadarSnapshot();const rows=snap?.feeds?.sectors?.rows;if(rows?.length){marketBoard.sectors=[...rows].sort((a,b)=>b.pct-a.pct);rescued=true;}}catch{}
+   if(!rescued)errors.push('行业：'+results[1].reason.message);
+  }
   if(results[2].status==='fulfilled'){
    marketBoard.leaders=results[2].value.rows;
    marketBoard.total=results[2].value.total;

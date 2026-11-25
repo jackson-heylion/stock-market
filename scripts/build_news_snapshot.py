@@ -18,12 +18,35 @@ ROOT = Path(__file__).resolve().parent.parent
 DEST = ROOT / "data" / "fast-news.json"
 PUBLISHED = "https://jackson-heylion.github.io/stock-market/data/fast-news.json"
 ORIGIN = "https://np-weblist.eastmoney.com/comm/web/getFastNewsList"
+ALT_ORIGIN = "https://np-listapi.eastmoney.com/comm/web/getFastNewsList"
+THS_ORIGIN = "https://news.10jqka.com.cn/tapp/news/push/stock/?page=1&tag=&track=website"
 NOW = datetime.now(timezone.utc)
 TZ_CN = timezone(timedelta(hours=8))
 def valid_articles(raw):
     if not isinstance(raw, dict):
         return []
-    rows = raw.get("articles") if isinstance(raw.get("articles"), list) else (raw.get("data") or {}).get("fastNewsList", [])
+    if isinstance(raw.get("articles"), list):
+        rows = raw["articles"]
+    elif isinstance((raw.get("data") or {}).get("fastNewsList"), list):
+        rows = raw["data"]["fastNewsList"]
+    elif isinstance((raw.get("data") or {}).get("list"), list):
+        rows = []
+        for x in raw["data"]["list"]:
+            if not isinstance(x, dict):
+                continue
+            try:
+                sec = int(x.get("ctime") or x.get("rtime") or 0)
+            except (TypeError, ValueError):
+                continue
+            if sec <= 1500000000:
+                continue
+            rows.append({
+                "id": str(x.get("id") or x.get("seq") or ""),
+                "title": x.get("title") or "",
+                "showTime": datetime.fromtimestamp(sec, TZ_CN).strftime("%Y-%m-%d %H:%M:%S")
+            })
+    else:
+        rows = []
     if not isinstance(rows, list):
         return []
     found = set()
@@ -63,9 +86,23 @@ def build():
     })
     source = "东方财富7×24快讯"
     try:
-        source_articles = valid_articles(fetch_json(ORIGIN + "?" + params))
+        source_articles = []
+        last_err = None
+        for endpoint, label in [
+            (ORIGIN + "?" + params, "东方财富7×24快讯"),
+            (ALT_ORIGIN + "?" + params, "东方财富7×24快讯"),
+            (THS_ORIGIN, "同花顺7×24快讯"),
+        ]:
+            try:
+                candidate = valid_articles(fetch_json(endpoint))
+                if candidate:
+                    source_articles = candidate
+                    source = label
+                    break
+            except Exception as err:
+                last_err = err
         if not source_articles:
-            raise RuntimeError("Upstream returned no validated news headlines")
+            raise RuntimeError(f"Upstream returned no validated news headlines: {last_err}")
         try:
             previous = valid_articles(json.loads(DEST.read_text(encoding='utf-8')))
         except Exception:

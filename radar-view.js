@@ -59,7 +59,7 @@ export function heatmapHtml(rows){
       <small class="radar-heat-turnover">${radarShort(x.turnover)}</small>
    </button>`;
   }).join('')+'</div>';
- const list='<div class="radar-sector-detail"><div class="radar-sector-detail-heading"><strong>板块完整榜单</strong><span>按成交额排序 · ${rows.length}个板块，全部可读、可点击</span></div><div class="radar-sector-grid">'+
+ const list='<div class="radar-sector-detail"><div class="radar-sector-detail-heading"><strong>板块完整榜单</strong><span>按成交额排序 · '+rows.length+'个板块，全部可读、可点击</span></div><div class="radar-sector-grid">'+
   rows.map((x,i)=>`<button class="radar-sector-item" data-action="radar-sector" data-code="${h(x.code)}" data-name="${h(x.name)}" title="查看${h(x.name)}成分股">
     <small>${String(i+1).padStart(2,'0')}</small><span class="radar-sector-item-name">${h(x.name)}</span>
     <strong class="${x.pct>=0?'radar-gain':'radar-loss'}">${x.pct>0?'+':''}${x.pct.toFixed(2)}%</strong>
@@ -250,7 +250,7 @@ export function handleRadarClick(btn,{onUpdate=()=>{},openStock=()=>{},openSecto
  if(action==='radar-stock'&&/^\d{6}$/.test(btn.dataset.code||'')){
   openStock(btn.dataset.code,btn.dataset.name);return true;
  }
- if(action==='radar-sector'&&/^BK\d{3,6}$/.test(btn.dataset.code||'')){
+ if(action==='radar-sector'&&/^(?:BK\d{3,6}|pt\d{6,10})$/.test(btn.dataset.code||'')){
   openSector(btn.dataset.code,btn.dataset.name);return true;
  }
  return false;

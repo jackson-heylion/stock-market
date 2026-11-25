@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseDaily,m5,fillable,capPercent,stepBot,executeBot,botEquity,validateBot} from '../bot.js';
-const seed=JSON.parse(readFileSync(new URL('../data/bot.json',import.meta.url),'utf8'));
+import {parseDaily,dailyBars,m5,fillable,capPercent,stepBot,executeBot,botEquity,validateBot} from '../bot.js';
+const liveSeed=JSON.parse(readFileSync(new URL('../data/bot.json',import.meta.url),'utf8'));
+const seed={...structuredClone(liveSeed),cash:liveSeed.initialCash,lastDate:null,holdings:{},pending:[],trades:[],signals:[],history:[],events:[]};
 const sample=(date,close=10,volume=100)=>({date,open:close,close,high:close+0.05,low:close-0.05,volume});
 const baseBars=()=>Array.from({length:23},(_,i)=>sample('2026-10-'+String(i+1).padStart(2,'0'),9.9+i*.004,100));
 const universe=[{code:'600520',name:'三佳科技',sector:'半导体',sectorPct:1.6}];
@@ -13,13 +14,14 @@ function m5Bars(day,close=10,vol=300){
 }
 const today='2026-11-20',next='2026-11-23';
 test('paper bot starts completely empty and M1-M4 require evidence, no seeded wins',()=>{
- validateBot(seed);
+ validateBot(liveSeed);
+ assert.equal(liveSeed.initialCash,1000000);
+ assert.equal(liveSeed.models.M5.enabled,true);
+ for(const k of ['M1','M2','M3','M4'])assert.equal(liveSeed.models[k].enabled,false);
  assert.equal(seed.cash,1000000);
  assert.equal(seed.trades.length,0);
  assert.equal(seed.signals.length,0);
  assert.equal(seed.history.length,0);
- assert.equal(seed.models.M5.enabled,true);
- for(const k of ['M1','M2','M3','M4'])assert.equal(seed.models[k].enabled,false);
 });
 test('daily OHLC parser drops bogus quotes, preserves source dates and volume',()=>{
  const input={data:{klines:['2026-11-19,10,10.1,10.2,9.9,140,140000',
@@ -117,4 +119,13 @@ test('missed workflow session expires pending order rather than pretending next-
  assert.equal(r.cash,1000000);
  assert.equal(r.events.some(e=>e.code==='600520'&&e.status==='过期'),true);
  assert.equal(r.pending.every(o=>o.signalDate===late),true);
+});
+test('dailyBars falls back to Tencent unadjusted kline when Eastmoney drops connection',async()=>{
+ const bars=await dailyBars('600520',{fetchImpl:async url=>{
+  if(String(url).includes('push2his.eastmoney.com'))throw Error('Remote end closed connection');
+  return {ok:true,json:async()=>({code:0,data:{sh600520:{day:[['2026-11-24','19.5','20.1','20.3','19.4','12000'],['2026-11-25','20.1','20.5','20.6','20.0','8000']]}}})};
+ }});
+ assert.equal(bars.length,2);
+ assert.equal(bars[1].date,'2026-11-25');
+ assert.equal(bars[1].close,20.5);
 });

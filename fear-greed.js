@@ -30,7 +30,7 @@ export function calculateFearGreed({breadth,indices,sectors,news}={},now=Date.no
  const liveMarket=open&&aligned&&available(indices,now,marketTTL);
  const b=breadth?.rows?.[0],bValid=liveMarket&&available(breadth,now,marketTTL)&&b&&[b.up,b.down,b.flat].every(v=>Number.isInteger(v)&&v>=0)&&b.up+b.down+b.flat>=500;
  const boardList=Array.isArray(sectors?.rows)?sectors.rows:[];
- const unique=[...new Map(boardList.filter(r=>r&&typeof r.code==='string'&&/^BK\d{3,6}$/.test(r.code)&&Number.isFinite(r.pct)&&Math.abs(r.pct)<=100).map(r=>[r.code,r])).values()];
+ const unique=[...new Map(boardList.filter(r=>r&&typeof r.code==='string'&&/^(?:BK\d{3,6}|pt\d{6,10})$/.test(r.code)&&Number.isFinite(r.pct)&&Math.abs(r.pct)<=100).map(r=>[r.code,r])).values()];
  const sValid=liveMarket&&available(sectors,now,marketTTL)&&unique.length>=20;
  const report=newsSentiment(Array.isArray(news?.rows)?news.rows:[],{now,hours:2});
  const direction=report.counts.positive+report.counts.negative;

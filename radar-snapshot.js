@@ -14,7 +14,7 @@ export function parseRadarSnapshot(payload,{now=Date.now()}={}){
    if(!r||typeof r!=='object')return false;
    if(key==='breadth')return [r.up,r.down,r.flat].every(v=>Number.isInteger(v)&&v>=0&&v<=10000)&&r.up+r.down+r.flat>=500;
    if(key==='indices')return /^(?:sh|sz)\d{6}$/.test(r.key)&&finite(r.pct)&&finite(r.time)&&r.time<=now&&finite(r.price)&&r.price>0;
-   if(key==='sectors')return /^BK\d{3,6}$/.test(r.code)&&typeof r.name==='string'&&finite(r.pct)&&Math.abs(r.pct)<=100&&finite(r.turnover)&&r.turnover>=0;
+   if(key==='sectors')return /^(?:BK\d{3,6}|pt\d{6,10})$/.test(r.code)&&typeof r.name==='string'&&finite(r.pct)&&Math.abs(r.pct)<=100&&finite(r.turnover)&&r.turnover>=0;
    return /^\d{6}$/.test(r.code)&&typeof r.name==='string'&&/^\d{2}:\d{2}:\d{2}$/.test(r.time)&&typeof r.info==='string';
   }).slice(0,key==='changes'?100:key==='sectors'?36:key==='indices'?5:1);
   const valid=finite(f.receivedAt)&&f.receivedAt<=now&&now-f.receivedAt<=TTL;

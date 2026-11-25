@@ -2,7 +2,7 @@
 """Bounded public Guba title snapshot; no logins, user identifiers, or full texts."""
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-import json, re, time, urllib.request, urllib.parse, urllib.robotparser, html
+import json, re, time, urllib.request, urllib.parse, urllib.error, urllib.robotparser, html
 from concurrent.futures import ThreadPoolExecutor
 from forum_sources import collect_forum
 ROOT = Path(__file__).resolve().parent.parent
@@ -85,7 +85,13 @@ def collect(code,board,robots):
 def build():
     robots=urllib.robotparser.RobotFileParser()
     try:
-        robots.parse(fetch(HOST+'/robots.txt',100_000).splitlines())
+        try:
+            robots.parse(fetch(HOST+'/robots.txt',100_000).splitlines())
+        except urllib.error.HTTPError as he:
+            if he.code == 404:
+                robots.parse([])
+            else:
+                raise
         # Respect declared crawl delay; bounded sequential requests, no circumvention.
         delay=max(2,robots.crawl_delay(UA) or robots.crawl_delay('*') or 0)
         boards=dict(BASE)

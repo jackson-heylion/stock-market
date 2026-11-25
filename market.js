@@ -3,6 +3,8 @@
 // A valid HTTP response does not guarantee real-time exchange data.
 
 export const POLL_MS=3000;
+export const EM_UT="fa5fd1943c7b386f172d6893dbfba10b";
+const PUSH2_HOSTS=["push2.eastmoney.com","68.push2.eastmoney.com","33.push2.eastmoney.com","82.push2.eastmoney.com","91.push2.eastmoney.com","18.push2.eastmoney.com"];
 
 export function marketPrefix(code){return String(code).startsWith("6")?"1.":"0."}
 
@@ -84,6 +86,33 @@ export async function fetchTimeout(url,kind,fetchImpl=fetch,timeoutMs=6500){
  }finally{clearTimeout(timer);}
 }
 
+function appendEmUt(url){
+ if(!/^https:\/\/(?:[\w.-]+\.)?push2(?:his)?\.eastmoney\.com\//.test(url)||/[?&]ut=/.test(url))return url;
+ return url+(url.includes("?")?"&":"?")+"ut="+EM_UT;
+}
+
+export async function fetchEastmoneyJson(url,fetchImpl=fetch,timeoutMs=6500,{retries=4}={}){
+ const baseUrl=appendEmUt(url);
+ const isPush2=/^https:\/\/push2\.eastmoney\.com\//.test(baseUrl);
+ const maxAttempts=isPush2?Math.max(1,retries+1):2;
+ const waitMs=fetchImpl===fetch?180:0;
+ const offset=fetchImpl===fetch&&isPush2?Math.floor(Math.random()*PUSH2_HOSTS.length):0;
+ let lastErr=null;
+ for(let i=0;i<maxAttempts;i++){
+  const host=PUSH2_HOSTS[(i+offset)%PUSH2_HOSTS.length];
+  const target=i===0&&offset===0||!isPush2?baseUrl:baseUrl.replace("https://push2.eastmoney.com/","https://"+host+"/");
+  try{
+   return await fetchTimeout(target,"json",fetchImpl,timeoutMs);
+  }catch(err){
+   lastErr=err;
+   const msg=String(err?.message||err);
+   if(/^HTTP 4\d\d$/.test(msg))throw err;
+   if(i+1<maxAttempts&&waitMs)await new Promise(r=>setTimeout(r,waitMs*(i+1)+Math.floor(Math.random()*120)));
+  }
+ }
+ throw lastErr;
+}
+
 export async function getQuotes(symbols,{fetchImpl=fetch,now=()=>Date.now(),proxy=''}={}){
  const symbolsOk=symbols.filter(x=>/^\d{6}$/.test(x)),known=new Set(symbolsOk);
  if(proxy){
@@ -110,7 +139,7 @@ export async function getQuotes(symbols,{fetchImpl=fetch,now=()=>Date.now(),prox
  try{
   const secids=missing.map(c=>marketPrefix(c)+c).join(",");
   const url="https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&secids="+secids+"&fields=f12,f14,f2,f3,f5,f6,f18,f124,f86";
-  const backup=parseEastmoney(await fetchTimeout(url,"json",fetchImpl),now()).filter(q=>known.has(q.code));
+  const backup=parseEastmoney(await fetchEastmoneyJson(url,fetchImpl,6500,{retries:2}),now()).filter(q=>known.has(q.code));
   // Eastmoney often returns f86=0: never mark its quote as fresh or use for automatic matching.
   main=[...main,...backup];missing=symbolsOk.filter(c=>!main.find(q=>q.code===c));
  }catch(err){errors.push("东方财富："+String(err.message));}
@@ -135,21 +164,125 @@ export function parseTrends(raw){
  }).filter(Boolean);
 }
 
+export function parseTencentMinute(raw,sym){
+ const node=raw?.data?.[sym];
+ const rawDate=String(node?.data?.date||"").trim(),dm=rawDate.match(/^(\d{4})(\d{2})(\d{2})$/);
+ const lines=node?.data?.data;
+ if(!dm||!Array.isArray(lines))return {bars:[],prevClose:null};
+ const day=dm[1]+"-"+dm[2]+"-"+dm[3];
+ const qt=node?.qt?.[sym];
+ const prevClose=validPrice(Number(qt?.[4]))?Number(qt[4]):null;
+ const dayOpen=validPrice(Number(qt?.[5]))?Number(qt[5]):null;
+ const bare=String(sym).replace(/^(?:sh|sz)/,"");
+ const isIndex=/^(?:sh000|sz399)/.test(sym);
+ const isStar=!isIndex&&/^(?:688|689)/.test(bare);
+ const bars=[];
+ let prevCumVol=null,prevCumAmt=null,prevPrice=null;
+ for(const line of lines){
+  const parts=String(line).trim().split(/\s+/);
+  const hhmm=parts[0],price=Number(parts[1]),cumVol=Number(parts[2]),cumAmt=Number(parts[3]);
+  if(!/^\d{4}$/.test(hhmm)||!validPrice(price))continue;
+  const hh=Number(hhmm.slice(0,2)),mm=Number(hhmm.slice(2,4));
+  if(hh>23||mm>59)continue;
+  const diffVol=Number.isFinite(cumVol)&&cumVol>=0?(prevCumVol===null?cumVol:Math.max(0,cumVol-prevCumVol)):0;
+  const diffAmt=Number.isFinite(cumAmt)&&cumAmt>=0?(prevCumAmt===null?cumAmt:Math.max(0,cumAmt-prevCumAmt)):0;
+  let avg=null;
+  if(!isIndex&&Number.isFinite(cumVol)&&cumVol>0&&Number.isFinite(cumAmt)&&cumAmt>0){
+   const c100=cumAmt/(cumVol*100),c1=cumAmt/cumVol;
+   const pick=Math.abs(c1/price-1)<Math.abs(c100/price-1)?c1:c100;
+   if(validPrice(pick)&&Math.abs(pick/price-1)<=0.35)avg=pick;
+  }
+  bars.push({
+   date:day+" "+hhmm.slice(0,2)+":"+hhmm.slice(2,4),
+   open:bars.length===0&&dayOpen?dayOpen:(prevPrice??price),
+   price,high:price,low:price,
+   volume:isStar?diffVol/100:diffVol,
+   amount:diffAmt,
+   avg
+  });
+  if(Number.isFinite(cumVol)&&cumVol>=0)prevCumVol=cumVol;
+  if(Number.isFinite(cumAmt)&&cumAmt>=0)prevCumAmt=cumAmt;
+  prevPrice=price;
+ }
+ return {bars,prevClose};
+}
+
+export function parseTencentKline(raw,sym,period="day"){
+ const node=raw?.data?.[sym];
+ const lines=node?.["qfq"+period]||node?.[period];
+ if(!Array.isArray(lines))return [];
+ const isIndex=/^(?:sh000|sz399)/.test(sym);
+ const isStar=!isIndex&&/^(?:688|689)/.test(String(sym).replace(/^(?:sh|sz)/,""));
+ return lines.map(row=>{
+  if(!Array.isArray(row)||row.length<5)return null;
+  const [date,o,c,h,l,v]=row;
+  const bar={date:String(date||""),open:Number(o),close:Number(c),high:Number(h),low:Number(l),
+   volume:Number.isFinite(Number(v))&&Number(v)>=0?(isStar?Number(v)/100:Number(v)):0,amount:NaN};
+  return (/^\d{4}-\d{2}-\d{2}$/.test(bar.date)&&[bar.open,bar.close,bar.high,bar.low].every(validPrice))?bar:null;
+ }).filter(Boolean);
+}
+
 export async function getHistory(code,period="day",fetchImpl=fetch){
  if(!/^\d{6}$/.test(code))throw Error("无效股票代码");
+ const sym=exchangePrefix(code)+code;
  const secid=marketPrefix(code)+code, fields1="f1,f2,f3,f4,f5,f6",fields2="f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61";
  if(period==="minute"){
   const url="https://push2.eastmoney.com/api/qt/stock/trends2/get?secid="+secid+"&fields1="+fields1+"&fields2=f51,f52,f53,f54,f55,f56,f57,f58&ndays=1&iscr=0";
-  const raw=await fetchTimeout(url,"json",fetchImpl,9000);
-  const bars=parseTrends(raw);
-  if(!bars.length)throw Error("分时接口未返回有效数据");
-  return {bars,prevClose:Number(raw?.data?.prePrice)||null,source:"东方财富",period};
+  try{
+   const raw=await fetchEastmoneyJson(url,fetchImpl,7500,{retries:2});
+   const bars=parseTrends(raw);
+   if(bars.length)return {bars,prevClose:validPrice(Number(raw?.data?.prePrice))?Number(raw.data.prePrice):null,source:"东方财富",period};
+  }catch{/* fallback to Tencent minute query */}
+  const qq=await fetchTimeout("https://web.ifzq.gtimg.cn/appstock/app/minute/query?code="+sym,"json",fetchImpl,8500);
+  const parsed=parseTencentMinute(qq,sym);
+  if(!parsed.bars.length)throw Error("分时接口未返回有效数据");
+  return {bars:parsed.bars,prevClose:parsed.prevClose,source:"腾讯财经",period};
  }
  const klt={day:101,week:102,month:103}[period];
  if(!klt)throw Error("不支持的K线周期");
  const url="https://push2his.eastmoney.com/api/qt/stock/kline/get?secid="+secid+"&fields1="+fields1+"&fields2="+fields2+"&klt="+klt+"&fqt=1&beg=20200101&end=20500101&lmt=140";
- const raw=await fetchTimeout(url,"json",fetchImpl,9000);
- const bars=parseKline(raw);
+ try{
+  const raw=await fetchEastmoneyJson(url,fetchImpl,7500,{retries:1});
+  const bars=parseKline(raw);
+  if(bars.length)return {bars:bars.slice(-120),source:"东方财富",period,adjustment:"前复权"};
+ }catch{/* fallback to Tencent fqkline */}
+ const qq=await fetchTimeout("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param="+sym+","+period+",,,"+"140,qfq","json",fetchImpl,8500);
+ const bars=parseTencentKline(qq,sym,period);
  if(!bars.length)throw Error("K线接口未返回有效数据");
- return {bars:bars.slice(-120),source:"东方财富",period,adjustment:"前复权"};
+ return {bars:bars.slice(-120),source:"腾讯财经",period,adjustment:"前复权"};
+}
+
+/** Parses unadjusted daily OHLCV bars returned by Eastmoney kline API. */
+export function parseDaily(payload){
+ const lines=payload?.data?.klines;
+ if(!Array.isArray(lines))throw Error("Daily OHLCV data absent");
+ return lines.map(line=>{
+  const [date,open,close,high,low,volume]=String(line).split(",");
+  const q={date,open:Number(open),close:Number(close),high:Number(high),low:Number(low),volume:Number(volume)};
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(q.date)||![q.open,q.close,q.high,q.low].every(n=>Number.isFinite(n)&&n>0)||
+     !Number.isFinite(q.volume)||q.volume<0||q.high+0.01<Math.max(q.open,q.close,q.low)||
+     q.low-0.01>Math.min(q.open,q.close))return null;
+  return q;
+ }).filter(Boolean).sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+/** Fetches unadjusted daily OHLCV bars for an A-share or sh000001 with Tencent fallback. */
+export async function getDailyBars(code,{fetchImpl=fetch,timeoutMs=9000}={}){
+ const sym=code==="sh000001"?"sh000001":
+  /^(?:6\d{5}|0\d{5}|3\d{5})$/.test(code)?
+   (code.startsWith("6")?"sh":"sz")+code:null;
+ const secid=code==="sh000001"?"1.000001":
+  sym?(code.startsWith("6")?"1.":"0.")+code:null;
+ if(!secid)throw Error("Unsupported A-share "+code);
+ const query=new URLSearchParams({secid,fields1:"f1,f2,f3,f4,f5,f6",
+  fields2:"f51,f52,f53,f54,f55,f56,f57",klt:"101",fqt:"0",
+  beg:"20250101",end:"20500101",lmt:"35"});
+ try{
+  const result=parseDaily(await fetchEastmoneyJson("https://push2his.eastmoney.com/api/qt/stock/kline/get?"+query,fetchImpl,timeoutMs,{retries:1}));
+  if(result.length)return result;
+ }catch{/* fallback to Tencent unadjusted daily bars */}
+ const qq=await fetchTimeout("https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param="+sym+",day,,,35","json",fetchImpl,timeoutMs);
+ const rows=parseTencentKline(qq,sym,"day").filter(q=>q.high+0.01>=Math.max(q.open,q.close,q.low)&&q.low-0.01<=Math.min(q.open,q.close)).sort((a,b)=>a.date.localeCompare(b.date));
+ if(!rows.length)throw Error("No valid daily bars "+code);
+ return rows;
 }

@@ -22,6 +22,16 @@ class TestForum(unittest.TestCase):
         self.assertEqual(len(rows),2);self.assertEqual(rows[0]['timeKind'],'activity')
         t='<div><a href="/a/2wXTmYDlbQe">观察龙头</a><span>0 / 2</span><span>11-23 21:48</span></div>'
         row=parse_list(t,'tgb',now)[0];self.assertEqual(row['source'],'淘股吧');self.assertEqual(row['timeKind'],'published')
+        t_real='''<div class="Nbbs-tiezi-lists">
+          <div class="left middle-list-tittle"><a href="/a/2x0plT628UN">看多主线</a></div>
+          <div class="left middle-list-talk">2 / 15</div>
+          <div class="left middle-list-reply">11-24 08:59</div>
+          <div class="left middle-list-user"><a href="/blog/12440336">user</a></div>
+          <div class="left middle-list-post">11-24 08:30</div>
+        </div>'''
+        real_row=parse_list(t_real,'tgb',now)[0]
+        self.assertEqual(real_row['id'],'2x0plT628UN');self.assertEqual(real_row['comments'],2);self.assertEqual(real_row['reads'],15)
+        self.assertIn('08:30:00',real_row['publishedAt'])
     def test_untrusted_link_and_missing_time(self):
         now=datetime(2026,11,24,1,tzinfo=timezone.utc)
         self.assertEqual(parse_list('<div><a href="https://other.com/123456.html">看多</a> 1 / 2 11-24 08:59</div>','hupu',now),[])

@@ -65,6 +65,10 @@ def parse_list(raw,key,now):
    text=' '.join(n.text().split())
    if len(text)>1200:break
    dates=re.findall(r'(?<!\d)(?:\d{4}-)?\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?(?!\d)',text)
+   if key=='tgb' and len(dates)>1:
+    post_texts=[' '.join(p.text().split()) for p in n.walk() if 'middle-list-post' in p.attrs.get('class','').split()]
+    post_dates=[d for pt in post_texts for d in re.findall(r'(?<!\d)(?:\d{4}-)?\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?(?!\d)',pt)]
+    if len(post_dates)==1: dates=post_dates
    counts=re.findall(r'(?<![\d.])(\d{1,10})\s*/\s*(\d{1,10})(?!\d)',text)
    ids={l[0] for p in n.walk() if p.tag=='a' and (l:=safe_link(p.attrs.get('href',''),spec))}
    if len(dates)==1 and len(counts)==1 and ids=={pid}:

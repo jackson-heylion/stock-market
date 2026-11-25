@@ -4,10 +4,10 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {getSectors,getRankings} from './market-center.js';
+import {parseDaily as parseRawDaily,getDailyBars} from './market.js';
 import {fees,feeTotal} from './engine.js';
 
 const ACCOUNT_PATH=fileURLToPath(new URL('./data/bot.json',import.meta.url));
-const BASE='https://push2his.eastmoney.com/api/qt/stock/kline/get';
 const round=n=>Math.round((n+Number.EPSILON)*100)/100;
 const fmtDate=(instant=new Date())=>new Intl.DateTimeFormat('en-CA',{
  timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'
@@ -23,35 +23,8 @@ export function validateBot(state){
  !Array.isArray(state.pending)||!state.holdings||!Array.isArray(state.history))throw Error('Invalid bot account');
  return state;
 }
-export function parseDaily(payload){
- const lines=payload?.data?.klines;
- if(!Array.isArray(lines))throw Error('Daily OHLCV data absent');
- return lines.map(line=>{
-  const [date,open,close,high,low,volume]=String(line).split(',');
-  const q={date,open:Number(open),close:Number(close),high:Number(high),low:Number(low),volume:Number(volume)};
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(q.date)||![q.open,q.close,q.high,q.low].every(n=>Number.isFinite(n)&&n>0)||
-     !Number.isFinite(q.volume)||q.volume<0||q.high+0.01<Math.max(q.open,q.close,q.low)||
-     q.low-0.01>Math.min(q.open,q.close))return null;
-  return q;
- }).filter(Boolean).sort((a,b)=>a.date.localeCompare(b.date));
-}
-export async function dailyBars(code,{fetchImpl=fetch,timeoutMs=9000}={}){
- const secid=code==='sh000001'?'1.000001':
-  /^(?:6\d{5}|0\d{5}|3\d{5})$/.test(code)?
-   (code.startsWith('6')?'1.':'0.')+code:null;
- if(!secid)throw Error('Unsupported A-share '+code);
- const query=new URLSearchParams({secid,fields1:'f1,f2,f3,f4,f5,f6',
-  fields2:'f51,f52,f53,f54,f55,f56,f57',klt:'101',fqt:'0',
-  beg:'20250101',end:'20500101',lmt:'35'});
- const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),timeoutMs);
- try{
-  const response=await fetchImpl(BASE+'?'+query,{signal:ctrl.signal,headers:{Accept:'application/json'}});
-  if(!response.ok)throw Error('OHLCV HTTP '+response.status+' '+code);
-  const result=parseDaily(await response.json());
-  if(!result.length)throw Error('No valid daily bars '+code); // New listings may have <22, and M5 must simply score 0.
-  return result;
- }finally{clearTimeout(timer);}
-}
+export const parseDaily=parseRawDaily;
+export const dailyBars=(code,opts)=>getDailyBars(code,opts);
 export function m5(stock,bars,settings){
  if(!Array.isArray(bars)||bars.length<22)return {score:0,passed:false,reasons:['缺少22根有效日K'],volumeRatio:null,ma20:null};
  const today=bars.at(-1),previous=bars.slice(-6,-1),last20=bars.slice(-20);

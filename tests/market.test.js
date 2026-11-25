@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseTencent,parseSina,parseEastmoney,parseKline,parseTrends,chinaTimestamp,quoteState,session,getQuotes,getHistory} from '../market.js';
+import {parseTencent,parseSina,parseEastmoney,parseKline,parseTrends,parseTencentMinute,parseTencentKline,chinaTimestamp,quoteState,session,getQuotes,getHistory} from '../market.js';
 import {chartSvg,movingAverage} from '../charts.js';
 const BASE=Date.parse('2026-11-20T09:35:02+08:00');
 const textFetch=body=>async ()=>({ok:true,arrayBuffer:async()=>new TextEncoder().encode(body).buffer});
@@ -59,4 +59,28 @@ test('Sina anonymous provider is parseable without invoking remote JavaScript',(
  assert.equal(result[0].price,17.4);
  assert.equal(result[0].time,BASE-2000);
  assert.equal(parseSina('var hq_str_sh601133="";').length,0);
+});
+test('getHistory falls back to Tencent minute and qfq kline when Eastmoney fails',async()=>{
+ const minPayload={code:0,data:{sh601133:{data:{date:'20261125',data:['0930 16.54 913 1510102.38','0931 16.00 8218 13430695.00']},qt:{sh601133:['1','柏诚股份','601133','16.00','16.80','16.54']}}}};
+ const dayPayload={code:0,data:{sh601133:{qfqday:[['2026-11-24','17.50','16.80','17.75','16.70','244541'],['2026-11-25','16.54','16.58','16.61','15.78','63387']]}}};
+ const starMin={code:0,data:{sh688981:{data:{date:'20261125',data:['0930 123.92 518484 64250537.00']},qt:{sh688981:['1','中芯国际','688981','123.92','126.51','123.92']}}}};
+ const minute=await getHistory('601133','minute',async url=>{
+  if(String(url).includes('eastmoney.com'))throw Error('ERR_EMPTY_RESPONSE');
+  return {ok:true,json:async()=>minPayload};
+ });
+ assert.equal(minute.source,'腾讯财经');
+ assert.equal(minute.prevClose,16.8);
+ assert.equal(minute.bars[1].volume,8218-913);
+ assert.ok(Math.abs(minute.bars[1].avg-13430695/(8218*100))<0.01);
+ const starParsed=parseTencentMinute(starMin,'sh688981');
+ assert.ok(Math.abs(starParsed.bars[0].avg-123.92)<0.05);
+ assert.equal(starParsed.bars[0].volume,5184.84);
+ const day=await getHistory('601133','day',async url=>{
+  if(String(url).includes('eastmoney.com'))throw Error('ERR_EMPTY_RESPONSE');
+  return {ok:true,json:async()=>dayPayload};
+ });
+ assert.equal(day.source,'腾讯财经');
+ assert.equal(day.bars.length,2);
+ assert.equal(day.bars[1].close,16.58);
+ assert.equal(parseTencentKline({code:0,data:{sh688981:{qfqday:[['2026-11-24','121.1','126.51','127.85','121.1','67570920']]}}},'sh688981','day')[0].volume,675709.2);
 });

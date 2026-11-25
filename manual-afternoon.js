@@ -1,6 +1,6 @@
 import {SECURITIES} from './seed.js';
 import {positions,executeTrade,budgetQuantity,cloneState,validateState} from './engine.js';
-import {getQuotes,fetchTimeout,parseKline,getHistory} from './market.js';
+import {getQuotes,getHistory,getDailyBars} from './market.js';
 import {getMarketIndices,getSectors,getRankings,getWatchQuotes} from './market-center.js';
 import {AFTERNOON_VERSION,POLICY,round,clock,afternoonWindow,fresh,scoreStock,holdingDecision,slotVersion,strategyWindow,slotLabel} from './afternoon-rules.js';
 export const MANUAL_VERSION=AFTERNOON_VERSION+'-local';
@@ -11,11 +11,7 @@ const codeMap=new Map(supported.map(s=>[s.code,s]));
 const cap=s=>/ST/i.test(s.name)?.05:/^(300|301|688|689)/.test(s.code)?.20:.10;
 const indexKeys=['sh000001','sz399001','sz399006'];
 async function rawDaily(code){
- const secid=code==='sh000001'?'1.000001':(code.startsWith('6')?'1.':'0.')+code;
- const q=new URLSearchParams({secid,fields1:'f1,f2,f3,f4,f5,f6',fields2:'f51,f52,f53,f54,f55,f56,f57',klt:'101',fqt:'0',beg:'20250101',end:'20500101',lmt:'35'});
- const bars=parseKline(await fetchTimeout('https://push2his.eastmoney.com/api/qt/stock/kline/get?'+q,'json',fetch,9000));
- if(!bars.length)throw Error('缺少未复权日K '+code);
- return bars;
+ return getDailyBars(code);
 }
 export async function collectManualAfternoon({proxy='',slot='afternoon'}={}){
  const codes=supported.map(s=>s.code),daily={},minutes={};

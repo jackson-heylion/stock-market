@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {getRankings,parseRanking} from '../market-center.js';
-import {CHANGE_LABELS,CHANGE_TYPES,parseChangeEvents,parseFastNews,getNewsTerms,treemapLayout,
+import {CHANGE_LABELS,CHANGE_TYPES,parseChangeEvents,parseFastNews,parse10jqkaNews,getNewsTerms,treemapLayout,
  getLiveSectors,getLiveNews,getLiveChanges,parseNewsSnapshot} from '../market-radar.js';
 import {radarState,renderRadar,heatmapHtml,handleRadarClick,radarSourceStatus} from '../radar-view.js';
 
@@ -141,8 +141,8 @@ test('direct news failure uses authentic same-origin GitHub Pages snapshot with 
  const urls=[];
  const fetchImpl=async url=>{
   urls.push(String(url));
-  if(String(url).includes('np-weblist.eastmoney.com'))throw new TypeError('Failed to fetch');
   if(String(url).includes('data/fast-news.json'))return fake(snapshot);
+  if(String(url).includes('eastmoney.com')||String(url).includes('10jqka.com.cn'))throw new TypeError('Failed to fetch');
   throw Error('unexpected fetch target: '+url);
  };
  const result=await getLiveNews(fetchImpl,{trace:()=> 'testTrace',now:()=>now});
@@ -150,8 +150,22 @@ test('direct news failure uses authentic same-origin GitHub Pages snapshot with 
  assert.equal(result.rows.length,2);
  assert.equal(result.receivedAt,now-5*60000);
  assert.match(result.source,/GitHub Pages/);
- assert.match(urls[1],/data\/fast-news.json\?v=/);
+ assert.ok(urls.some(u=>u.includes('np-weblist.eastmoney.com')));
+ assert.ok(urls.some(u=>u.includes('news.10jqka.com.cn')));
+ assert.match(urls.at(-1),/data\/fast-news.json\?v=/);
  assert.throws(()=>parseNewsSnapshot({schema:1,articles:[],fetchedAt:'2026-11-20T10:45:00+08:00'},{now}),/没有真实标题/);
+});
+test('live news falls back to 10jqka 7x24 CORS feed when Eastmoney news hosts fail',async()=>{
+ const ctime=Math.floor(Date.parse('2026-11-25T10:11:55+08:00')/1000);
+ const result=await getLiveNews(async url=>{
+  if(String(url).includes('eastmoney.com'))throw Error('CORS blocked');
+  return fake({code:'200',data:{list:[{id:'5753077',title:'医药商业板块持续走高',ctime:String(ctime)}]}});
+ },{trace:()=>'t1',now:()=>Date.parse('2026-11-25T10:12:00+08:00')});
+ assert.equal(result.via,'live');
+ assert.match(result.source,/同花顺/);
+ assert.equal(result.rows[0].title,'医药商业板块持续走高');
+ assert.equal(result.rows[0].time,ctime*1000);
+ assert.equal(parse10jqkaNews({data:{list:[{id:'1',title:'bad',ctime:'0'}]}}).length,0);
 });
 test('same-origin backup does not treat old or fabricated headlines as realtime',async()=>{
  const now=Date.parse('2026-11-20T10:50:00+08:00');
@@ -159,7 +173,7 @@ test('same-origin backup does not treat old or fabricated headlines as realtime'
   schema:1,fetchedAt:'2026-11-19T07:00:00+08:00',articles:[{id:'1',title:'真实旧新闻标题',showTime:'2026-11-19 07:00:00'}]
  },{now}),/过期/);
  const fetchImpl=async url=>{
-  if(String(url).includes('np-weblist'))throw Error('DNS failure');
+  if(String(url).includes('np-weblist')||String(url).includes('np-listapi')||String(url).includes('10jqka'))throw Error('DNS failure');
   return fake({schema:1,fetchedAt:'2026-11-19T10:00:00+08:00',articles:[]});
  };
  await assert.rejects(getLiveNews(fetchImpl,{now:()=>now}),/同域备份失败/);

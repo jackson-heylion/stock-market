@@ -5,7 +5,7 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {getMarketData,dailyBars,capPercent} from './bot.js';
-import {getHistory,fetchTimeout,parseTrends} from './market.js';
+import {getHistory,fetchTimeout,fetchEastmoneyJson,parseTrends,parseTencentMinute} from './market.js';
 import {fees,feeTotal} from './engine.js';
 
 const OUTPUT=fileURLToPath(new URL('./data/morning.json',import.meta.url));
@@ -68,10 +68,17 @@ export function proposedOrder(stock,score,account){
   note:'下午参考委托，不是实际订单；执行前必须重新核验最新价、可成交性和风控'};
 }
 async function boardMorningPct(boardCode,date,fetchImpl=fetch){
+ if(/^pt\d{6,10}$/.test(boardCode)){
+  const qq=await fetchTimeout('https://web.ifzq.gtimg.cn/appstock/app/minute/query?code='+boardCode,'json',fetchImpl,8500);
+  const parsed=parseTencentMinute(qq,boardCode);
+  const minute=atMorningClose(parsed.bars,date),prev=Number(parsed.prevClose);
+  if(!Number.isFinite(prev)||prev<=0)return null;
+  return round((minute.price/prev-1)*100);
+ }
  if(!/^BK\d{3,6}$/.test(boardCode))return null;
  const q=new URLSearchParams({secid:'90.'+boardCode,fields1:'f1,f2,f3,f4,f5,f6',
   fields2:'f51,f52,f53,f54,f55,f56,f57,f58',ndays:'1',iscr:'0'});
- const data=await fetchTimeout('https://push2.eastmoney.com/api/qt/stock/trends2/get?'+q,'json',fetchImpl,8500);
+ const data=await fetchEastmoneyJson('https://push2.eastmoney.com/api/qt/stock/trends2/get?'+q,fetchImpl,8500,{retries:1});
  const minute=atMorningClose(parseTrends(data),date),prev=Number(data?.data?.prePrice);
  if(!Number.isFinite(prev)||prev<=0)return null;
  return round((minute.price/prev-1)*100);

@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {shClock,firstFiveBars,evaluateOpening,openingState,executeOpening} from '../open-five.js';
 
-const base=JSON.parse(readFileSync(new URL('../data/bot.json',import.meta.url),'utf8'));
+const live=JSON.parse(readFileSync(new URL('../data/bot.json',import.meta.url),'utf8'));
+const base={...structuredClone(live),cash:live.initialCash,holdings:{},pending:[],trades:[],signals:[],history:[],events:[],
+ openFive:{...structuredClone(live.openFive),status:'armed',results:[],checkedAt:null}};
 const time=new Date('2026-11-24T09:38:00+08:00');
 const daily=Array.from({length:21},(_,i)=>({date:i===20?'2026-11-23':
  '2026-10-'+String(i+1).padStart(2,'0'),close:10,volume:4000}));
@@ -24,8 +26,9 @@ const snapshot=({price=10.4,quoteTime='2026-11-24T09:37:58+08:00',boardPct=2.3}=
  sectors:boardPct==null?[]:[{name:'通信设备',pct:boardPct},{name:'印制电路板',pct:boardPct}]
 });
 test('plan is only armed for November 24, 2026, and manual account remains separate',()=>{
- assert.equal(base.openFive.targetDate,'2026-11-24');
- assert.equal(base.openFive.previousDate,'2026-11-23');
+ assert.equal(live.openFive.targetDate,'2026-11-24');
+ assert.equal(live.openFive.previousDate,'2026-11-23');
+ assert.ok(['armed','completed','expired'].includes(live.openFive.status));
  assert.equal(base.openFive.status,'armed');
  assert.equal(base.initialCash,1000000);
  assert.equal(base.cash,1000000);

@@ -1,5 +1,5 @@
-import {fetchTimeout} from './market.js';
-import {parseRanking} from './market-center.js';
+import {fetchTimeout,fetchEastmoneyJson} from './market.js';
+import {parseRanking,getTencentSectors} from './market-center.js';
 
 export const CHANGE_LABELS=Object.freeze({
   8201:'火箭发射',8202:'快速反弹',8193:'大笔买入',4:'封涨停板',32:'打开跌停板',
@@ -115,13 +115,36 @@ export function treemapLayout(items,width=100,height=100){
 }
 const SECTOR_URL='https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=80&po=1&np=1&fltt=2&invt=2&fid=f6&fs=m:90+t:2&fields=f2,f3,f6,f8,f12,f13,f14,f22,f124';
 const NEWS_URL='https://np-weblist.eastmoney.com/comm/web/getFastNewsList';
+const NEWS_ALT_URL='https://np-listapi.eastmoney.com/comm/web/getFastNewsList';
+const THS_NEWS_URL='https://news.10jqka.com.cn/tapp/news/push/stock/?page=1&tag=&track=website';
 const CHANGE_URL='https://push2ex.eastmoney.com/getAllStockChanges';
+export function parse10jqkaNews(payload){
+ const list=payload?.data?.list;
+ if(!Array.isArray(list))return [];
+ const seen=new Set();
+ return list.map(x=>{
+  const title=String(x?.title||'').replace(/<[^>]*>/g,'').trim().slice(0,120);
+  const id=String(x?.id||x?.seq||'');
+  const sec=Number(x?.ctime??x?.rtime);
+  const date=Number.isFinite(sec)&&sec>1500000000&&sec<3500000000?sec*1000:NaN;
+  if(title.length<4||!Number.isFinite(date)||seen.has(id+title))return null;
+  seen.add(id+title);
+  const timeLabel=new Date(date).toLocaleString('sv-SE',{timeZone:'Asia/Shanghai'}).replace('T',' ');
+  return {id:id||title,title,time:date,timeLabel,source:'同花顺7×24'};
+ }).filter(Boolean).sort((a,b)=>b.time-a.time);
+}
 export async function getLiveSectors(fetchImpl=fetch){
- const raw=await fetchTimeout(SECTOR_URL,'json',fetchImpl,10000);
- const sectors=parseRanking(raw,{board:true}).rows;
- if(!sectors.length)throw Error('板块接口未返回有效行情');
- return {rows:sectors.sort((a,b)=>(b.turnover||0)-(a.turnover||0)).slice(0,36),total:raw?.data?.total??null,
-  receivedAt:Date.now(),source:'东方财富行业板块'};
+ try{
+  const raw=await fetchEastmoneyJson(SECTOR_URL,fetchImpl,6500,{retries:2});
+  const sectors=parseRanking(raw,{board:true}).rows;
+  if(sectors.length){
+   return {rows:sectors.sort((a,b)=>(b.turnover||0)-(a.turnover||0)).slice(0,36),total:raw?.data?.total??null,
+    receivedAt:Date.now(),source:'东方财富行业板块'};
+  }
+ }catch{/* fallback to Tencent Shenwan industry boards */}
+ const fallback=await getTencentSectors(fetchImpl);
+ return {rows:[...fallback.rows].sort((a,b)=>(b.turnover||0)-(a.turnover||0)).slice(0,36),
+  total:fallback.total,receivedAt:fallback.receivedAt,source:fallback.source};
 }
 export function parseNewsSnapshot(payload,{now=Date.now(),maxAgeMs=2*3600000}={}){
  if(!payload||payload.schema!==1||!Array.isArray(payload.articles))throw Error('同域快讯格式无效');
@@ -142,12 +165,20 @@ export async function getLiveNews(fetchImpl=fetch,{
 }={}){
  const q=new URLSearchParams({client:'web',biz:'web_724',fastColumn:'102',sortEnd:'',pageSize:'60',req_trace:trace()});
  let liveError='';
+ for(const [endpoint,label] of [[NEWS_URL,'东方财富7×24快讯（直连）'],[NEWS_ALT_URL,'东方财富7×24快讯（备用域）']]){
+  try{
+   const raw=await fetchTimeout(endpoint+'?'+q,'json',fetchImpl,4200);
+   const rows=parseFastNews(raw);
+   if(!rows.length)throw Error('新闻接口无有效标题');
+   return {rows,source:label,receivedAt:now(),via:'live',warning:''};
+  }catch(err){liveError=String(err?.message||err);}
+ }
  try{
-  const raw=await fetchTimeout(NEWS_URL+'?'+q,'json',fetchImpl,4200);
-  const rows=parseFastNews(raw);
-  if(!rows.length)throw Error('新闻接口无有效标题');
-  return {rows,source:'东方财富7×24快讯（直连）',receivedAt:now(),via:'live',warning:''};
- }catch(err){liveError=String(err?.message||err);}
+  const raw=await fetchTimeout(THS_NEWS_URL,'json',fetchImpl,4500);
+  const rows=parse10jqkaNews(raw);
+  if(!rows.length)throw Error('同花顺快讯无有效标题');
+  return {rows,source:'同花顺7×24快讯（直连）',receivedAt:now(),via:'live',warning:''};
+ }catch(err){liveError=(liveError?liveError+'；':'')+String(err?.message||err);}
  try{
   // Same-origin Pages file bypasses the user's cross-origin news-host restrictions.
   const cacheBust=Math.floor(now()/60000);
@@ -162,7 +193,7 @@ export async function getLiveNews(fetchImpl=fetch,{
 export async function getLiveChanges(fetchImpl=fetch){
  const q=new URLSearchParams({type:CHANGE_TYPES,ut:'7eea3edcaed734bea9cbfc24409ed989',
   pageindex:'0',pagesize:'100',dpt:'wzchanges'});
- const raw=await fetchTimeout(CHANGE_URL+'?'+q,'json',fetchImpl,10000);
+ const raw=await fetchEastmoneyJson(CHANGE_URL+'?'+q,fetchImpl,7500,{retries:2});
  const rows=parseChangeEvents(raw);
  if(!rows.length)throw Error('盘口异动接口没有有效记录');
  return {rows,total:Number(raw?.data?.tc)||null,source:'东方财富盘口异动',

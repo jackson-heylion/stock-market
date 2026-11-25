@@ -6,7 +6,7 @@ import {readPrefs} from './preferences.js';
 export const MT_FOLLOW_KEY='stock-market-terminal-follows-v1';
 export const MT_RECENT_KEY='stock-market-terminal-recent-v1';
 const mt={view:'rank',scope:'all',sectorCode:null,sectorLabel:'',sortKey:'pct',descending:true,
- page:1,size:readPrefs().tablePageSize,rows:[],total:null,search:'',loading:false,error:'',updatedAt:0,
+ page:1,size:readPrefs().tablePageSize,rows:[],total:null,search:'',loading:false,error:'',updatedAt:0,sourceLabel:'东财/新浪/腾讯',
  seq:0,knownRows:new Map(),searchTimer:null,searchTruncated:false,searchSource:'',followed:null,recent:null,sectors:[],sectorError:'',loadingSectors:false,lookupCode:null,lookupRows:[]};
 export function terminalFmt(value,digits=2){
  if(typeof value!=='number'||!Number.isFinite(value))return '--';
@@ -149,7 +149,7 @@ export function renderMarketTerminal(){
      <tbody id="mt-table-body">${renderTerminalRows()}</tbody>
    </table></div>
    <div class="mt-bottomline">
-    <div class="mt-source">${mt.error?'数据源异常：'+terminalEsc(mt.error)+'；':''}${mt.view==='search'?(mt.searchTruncated?'匹配结果超过100项，请缩小关键词；':terminalEsc(mt.searchSource||'证券检索')+'；'):''}公开行情（东财/腾讯） · 接口取数 ${updated} · 已展示 ${shown} 条 / 榜单总量 ${pagingTotal} · 不保证实时性</div>
+    <div class="mt-source">${mt.error?'数据源异常：'+terminalEsc(mt.error)+'；':''}${mt.view==='search'?(mt.searchTruncated?'匹配结果超过100项，请缩小关键词；':terminalEsc(mt.searchSource||'证券检索')+'；'):''}公开行情（${terminalEsc(mt.sourceLabel||'东财/新浪/腾讯')}） · 接口取数 ${updated} · 已展示 ${shown} 条 / 榜单总量 ${pagingTotal} · 不保证实时性</div>
     <div class="mt-pagination">
       <button data-action="mt-page" data-value="prev" ${mt.page<=1?'disabled':''}>上一页</button>
       <span>第 ${mt.page} ${maxPage?' / '+maxPage:' '} 页</span>
@@ -208,6 +208,7 @@ export function refreshTerminal(force=false,rerender=()=>{}){
    mt.total=result.total;
   }
   for(const row of mt.rows)mt.knownRows.set(row.code,row);
+  mt.sourceLabel=result.source||(view==='search'?(mt.searchSource||'东财/腾讯'):mt.rows[0]?.source||'东财/新浪/腾讯');
   mt.error=result.warning||'';mt.updatedAt=Date.now();
  }).catch(err=>{
   if(seq===mt.seq){mt.error=String(err.message);mt.updatedAt=Date.now();}
@@ -272,7 +273,7 @@ export function handleTerminalClick(btn,{rerender=()=>{},openChart=()=>{},notify
  case'mt-clear-recent':mt.recent=[];terminalSave(MT_RECENT_KEY,[]);rerender();break;
  case'mt-load-sectors':loadTerminalSectors(rerender);break;
  case'mt-sector':{
-  if(!/^BK\d{3,6}$/.test(code))return;
+  if(!/^(?:BK\d{3,6}|pt\d{6,10})$/.test(code)){notify('无效行业板块代码');return;}
   mt.view='sector';mt.sectorCode=code;mt.sectorLabel=btn.dataset.name||code;mt.page=1;
   mt.rows=[];mt.total=null;mt.updatedAt=0;mt.search='';
   rerender();refreshTerminal(true,rerender);break;
