@@ -3,8 +3,8 @@
   "description": "与浏览器手动模拟盘完全独立的 GitHub Actions 自动模拟账户；初始100万元，不预置虚假成交。",
   "initialCash": 1000000,
   "cash": 1000000,
-  "lastDate": null,
-  "updatedAt": "2026-11-24T06:30:13.419Z",
+  "lastDate": "2026-11-25",
+  "updatedAt": "2026-11-25T08:09:29.485Z",
   "models": {
     "M1": {
       "enabled": false,
@@ -39,11 +39,550 @@
     }
   },
   "holdings": {},
-  "pending": [],
+  "pending": [
+    {
+      "code": "600600",
+      "name": "青岛啤酒",
+      "side": "BUY",
+      "signalDate": "2026-11-25",
+      "modelId": "M5",
+      "reason": "板块上涨 0.69%；放量 2.23倍；收盘价高于MA20",
+      "sector": "食品饮料"
+    },
+    {
+      "code": "600809",
+      "name": "山西汾酒",
+      "side": "BUY",
+      "signalDate": "2026-11-25",
+      "modelId": "M5",
+      "reason": "板块上涨 0.69%；放量 1.51倍；收盘价高于MA20",
+      "sector": "食品饮料"
+    }
+  ],
   "trades": [],
   "events": [],
-  "signals": [],
-  "history": [],
+  "signals": [
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600600",
+      "name": "青岛啤酒",
+      "sector": "食品饮料",
+      "score": 3,
+      "passed": true,
+      "volumeRatio": 2.23,
+      "ma20": 52.9,
+      "close": 55.42,
+      "reasons": [
+        "板块上涨 0.69%",
+        "放量 2.23倍",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600809",
+      "name": "山西汾酒",
+      "sector": "食品饮料",
+      "score": 3,
+      "passed": true,
+      "volumeRatio": 1.51,
+      "ma20": 129.02,
+      "close": 133,
+      "reasons": [
+        "板块上涨 0.69%",
+        "放量 1.51倍",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "300997",
+      "name": "欢乐家",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 2.95,
+      "ma20": 15.71,
+      "close": 14.88,
+      "reasons": [
+        "板块上涨 0.69%",
+        "放量 2.95倍",
+        "价格未突破MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600189",
+      "name": "泉阳泉",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.49,
+      "ma20": 8.59,
+      "close": 8.71,
+      "reasons": [
+        "板块上涨 0.69%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601939",
+      "name": "建设银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.38,
+      "ma20": 12.14,
+      "close": 12.59,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600926",
+      "name": "杭州银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.35,
+      "ma20": 17.38,
+      "close": 17.7,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "603345",
+      "name": "安井食品",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.32,
+      "ma20": 87.68,
+      "close": 93.8,
+      "reasons": [
+        "板块上涨 0.69%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601988",
+      "name": "中国银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.24,
+      "ma20": 7.16,
+      "close": 7.5,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601398",
+      "name": "工商银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.17,
+      "ma20": 8.83,
+      "close": 9.2,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601658",
+      "name": "邮储银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.17,
+      "ma20": 5.72,
+      "close": 5.97,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601166",
+      "name": "兴业银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.15,
+      "ma20": 19.87,
+      "close": 20.48,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601818",
+      "name": "光大银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.14,
+      "ma20": 3.2,
+      "close": 3.28,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "000568",
+      "name": "泸州老窖",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.07,
+      "ma20": 79.31,
+      "close": 79.84,
+      "reasons": [
+        "板块上涨 0.69%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601288",
+      "name": "农业银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.05,
+      "ma20": 7.52,
+      "close": 7.96,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "002142",
+      "name": "宁波银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.04,
+      "ma20": 34.64,
+      "close": 35.2,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600919",
+      "name": "江苏银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.02,
+      "ma20": 13.09,
+      "close": 13.51,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600016",
+      "name": "民生银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.02,
+      "ma20": 3.46,
+      "close": 3.51,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601328",
+      "name": "交通银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 1.01,
+      "ma20": 8.61,
+      "close": 9.14,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601169",
+      "name": "北京银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.99,
+      "ma20": 6.04,
+      "close": 6.25,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601088",
+      "name": "中国神华",
+      "sector": "煤炭",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.98,
+      "ma20": 50.48,
+      "close": 51.82,
+      "reasons": [
+        "板块上涨 0.07%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600519",
+      "name": "贵州茅台",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.97,
+      "ma20": 1441.12,
+      "close": 1474.84,
+      "reasons": [
+        "板块上涨 0.69%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601225",
+      "name": "陕西煤业",
+      "sector": "煤炭",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.97,
+      "ma20": 27.08,
+      "close": 27.15,
+      "reasons": [
+        "板块上涨 0.07%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "601009",
+      "name": "XD南京银",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.96,
+      "ma20": 12.73,
+      "close": 13.04,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600887",
+      "name": "伊利股份",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.93,
+      "ma20": 31.66,
+      "close": 33.58,
+      "reasons": [
+        "板块上涨 0.69%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600000",
+      "name": "浦发银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.93,
+      "ma20": 10.36,
+      "close": 10.67,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600408",
+      "name": "安泰集团",
+      "sector": "煤炭",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.92,
+      "ma20": 3.47,
+      "close": 3.74,
+      "reasons": [
+        "板块上涨 0.07%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "600036",
+      "name": "招商银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.92,
+      "ma20": 43.09,
+      "close": 43.2,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "603288",
+      "name": "海天味业",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.91,
+      "ma20": 35.56,
+      "close": 36.2,
+      "reasons": [
+        "板块上涨 0.69%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "000001",
+      "name": "平安银行",
+      "sector": "银行",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.91,
+      "ma20": 11.95,
+      "close": 12.4,
+      "reasons": [
+        "板块上涨 0.05%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    },
+    {
+      "date": "2026-11-25",
+      "modelId": "M5",
+      "code": "000596",
+      "name": "古井贡酒",
+      "sector": "食品饮料",
+      "score": 2,
+      "passed": false,
+      "volumeRatio": 0.89,
+      "ma20": 104.99,
+      "close": 105.45,
+      "reasons": [
+        "板块上涨 0.69%",
+        "成交量未达到阈值",
+        "收盘价高于MA20"
+      ]
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-11-25",
+      "cash": 1000000,
+      "marketValue": 0,
+      "total": 1000000,
+      "missingQuotes": 0,
+      "positions": 0
+    }
+  ],
   "openFive": {
     "targetDate": "2026-11-24",
     "previousDate": "2026-11-23",
@@ -451,5 +990,6 @@
     ],
     "results": [],
     "message": "模拟买入 0 笔、卖出 0 笔；未触发则不交易"
-  }
+  },
+  "archivedRealized": {}
 }
