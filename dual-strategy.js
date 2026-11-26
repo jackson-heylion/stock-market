@@ -40,14 +40,15 @@ export function analyzeSymbol(s,snapshot,type,now){
  const draw=rankFresh?pct(q.price,rank.high):!open&&!auction&&last?pct(last.close,last.high):null,streak=aligned?limitStreak(bars,s.code,s.name):null;
  const sectorFresh=Number.isFinite(s.sectorTime)&&s.sectorTime<=now&&dt(s.sectorTime)===(open||auction?today:cut)&&(open||auction?now-s.sectorTime<=120000:true);
  const sectorOk=sectorFresh&&Number.isFinite(s.sectorPct)?s.sectorPct>=1:null,peer=Number.isInteger(s.peerRank)&&s.peerCount>=4?s.peerRank<=3:null,up=Number.isFinite(day)?day>=0.8&&day<=8:null;
- const vol=Number.isFinite(ratio)?ratio>=((open||auction)?0.8:1.3):null;
+ const hhmm=clock(now).clock.split(':').map(Number),minutes=hhmm[0]*60+hhmm[1],elapsed=minutes<690?Math.max(1,minutes-570):Math.max(1,120+minutes-780),volumeFloor=open?Math.max(.06,1.3*Math.min(240,elapsed)/240):1.3;
+ const vol=Number.isFinite(ratio)&&!auction?ratio>=volumeFloor:null;
  const support=rankFresh?q.price>=rank.open&&draw>=-3:!open&&!auction&&last?last.close>=last.open&&draw>=-3:null;
  const priceUp=valid(price)&&valid(high20)?price>high20:null,priorStrong=aligned&&prior.length>=6?pct(prior.at(-1).close,prior.at(-6).close)>=8:null;
  const pull=valid(price)&&valid(m5)&&valid(m10)?price>=m10&&price<=m5*1.04:null;
  const evidence=evidenceFor(snapshot.evidence?.[s.code],now);
  const strength=test('行业强势',sectorOk,Number.isFinite(s.sectorPct)?s.sectorPct.toFixed(2)+'%（'+(sectorFresh?'时点匹配':'时点待核')+'）':'行业待核');
  const leader=test('行业成交额前3（样本）',peer,s.peerRank?'第'+s.peerRank+'/'+s.peerCount:'行业成分样本不足');
- const liquidity=test('量能',vol,ratio===null?'待核':ratio.toFixed(2)+'倍（累计量/完整日均量）');
+ const liquidity=test('量能',vol,ratio===null?'待核':ratio.toFixed(2)+'倍（累计量/完整日均量，门槛 '+volumeFloor.toFixed(2)+'；盘中按交易时间比例代理）');
  const accept=test('承接',support,draw===null?'待核':'高点回撤 '+draw.toFixed(2)+'%');
  const dailyEvidence=test('日K连续证据',aligned,aligned?bars.length+'根，截至 '+cut:'未与基准交易日对齐');
  let modes;
@@ -93,6 +94,7 @@ function holdingAction(h,a,type,now,account){
   if(['cycle','growth','leader'].some(k=>a.evidence[k]?.pass===false))return ['CLEAR','产业景气／成长／龙头证据转坏',1];
   if(fall<=-10&&pnl>0)return ['CLEAR','持仓区间高点回撤10%',1];
   if(valid(a.m60)&&price<a.m60)return ['REDUCE','跌破MA60，波段趋势减仓',.5];
+  if(days>=40)return ['REDUCE','40个完整交易日后重新评估，分批退出',.25];
   for(const threshold of [40,20])if(pnl>=threshold&&!list.some(t=>t.side==='SELL'&&t.date>=first&&t.reason?.includes('止盈'+threshold+'%')))return ['REDUCE','分批止盈'+threshold+'%',.25];
  }
  if(a.passed.length&&pnl>0&&pnl<(type==='short'?8:20))return ['ADD','盈利仓且'+a.passed.join('/')+'再次满足',p.add];
@@ -112,6 +114,7 @@ export function planStrategy(account,snapshot,type='short',now=Date.now()){
   if(session(now)!=='open')gates.push('非连续交易时段，仅建议／待核验');
   if(!indexOk)gates.push('交易日指数未核验');
   if(!q||!a.rankFresh||!valid(q.prevClose))gates.push('缺少有效盘中报价及成交量');
+  if(buy&&(!snapshot.completedDate||snapshot.completedDate>=dt(now)))gates.push('前一完整交易日未核验');
   if(buy&&(!marketOk||!a.aligned||!tradableName(s)||!q||!q.name||q.name!==s.name||!valid(a.bars.at(-1)?.close)||Math.abs(a.bars.at(-1).close/q.prevClose-1)>.005))gates.push('买入身份、昨收或市场风控未通过');
   if(buy&&action==='OPEN'&&holds.length>=p.maxPositions)gates.push('持仓数量上限');
   if(buy&&dailyBuys>=p.buys)gates.push('每日策略买入上限');
@@ -130,10 +133,11 @@ export function planStrategy(account,snapshot,type='short',now=Date.now()){
 }
 export async function collectStrategy(account,type,{proxy='',evidence={},extraCodes=[],now=()=>Date.now(),dailyLoader=getDailyBars,sectorLoader=getSectorLeaders,rankingLoader=getRankings,quoteLoader=getQuotes,rankLoader=getWatchQuotes,indexLoader=getMarketIndices}={}){
  const holds=holdRows(account,type),size=type==='wave'?150:35;
- const [benchmarkResult,groupsResult,rankingResult]=await Promise.allSettled([dailyLoader('sh000001',{limit:size}),sectorLoader({filter:s=>s.pct>0&&s.turnover>0,limit:3,size:30}),rankingLoader('turnover','all',{size:30})]);
+ const [benchmarkResult,groupsResult,rankingResult,gainersResult]=await Promise.allSettled([dailyLoader('sh000001',{limit:size}),sectorLoader({filter:s=>s.pct>0&&s.turnover>0,limit:3,size:30}),rankingLoader('turnover','all',{size:30}),type==='short'?rankingLoader('gainers','all',{size:30}):Promise.resolve({rows:[]})]);
  const benchmark=benchmarkResult.status==='fulfilled'?benchmarkResult.value:[],groups=groupsResult.status==='fulfilled'?groupsResult.value:[],ranking=rankingResult.status==='fulfilled'?rankingResult.value.rows:[];
  const stocks=new Map();
  for(const {sector,rows} of groups){const sorted=[...rows].filter(tradableName).sort((a,b)=>(b.turnover||0)-(a.turnover||0));for(const [i,s] of sorted.slice(0,4).entries())stocks.set(s.code,{code:s.code,name:s.name,sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime,peerRank:i+1,peerCount:sorted.length});for(const h of holds){const i=sorted.findIndex(s=>s.code===h.code);if(i>=0&&!stocks.has(h.code))stocks.set(h.code,{code:h.code,name:h.name,sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime,peerRank:i+1,peerCount:sorted.length});}}
+ for(const s of (gainersResult.status==='fulfilled'?gainersResult.value.rows:[]).filter(tradableName).slice(0,8))if(!stocks.has(s.code))stocks.set(s.code,{code:s.code,name:s.name});
  for(const s of ranking.filter(tradableName).slice(0,8))if(!stocks.has(s.code))stocks.set(s.code,{code:s.code,name:s.name});
  for(const s of [...SECURITIES.filter(s=>!s.halted),...holds,...extraCodes.map(c=>({code:c,name:registeredStock(account,c)?.name||c}))])if(validSymbol(s.code)&&!stocks.has(s.code))stocks.set(s.code,{code:s.code,name:s.name});
  if(type==='wave')for(const [code,e] of Object.entries(evidence).slice(0,20))if(validSymbol(code)&&typeof e?.name==='string'&&!stocks.has(code))stocks.set(code,{code,name:e.name});
@@ -143,7 +147,7 @@ export async function collectStrategy(account,type,{proxy='',evidence={},extraCo
  const completedDate=benchmark.filter(b=>b.date<today||closed&&b.date===today).at(-1)?.date||null;
  const quotes=Object.fromEntries((qr.status==='fulfilled'?qr.value.quotes:[]).map(q=>[q.code,q])),ranks=Object.fromEntries((rr.status==='fulfilled'?rr.value:[]).map(q=>[q.code,q]));
  for(const s of stocks.values())if(quotes[s.code]?.name&&s.name===s.code)s.name=quotes[s.code].name;
- return {stocks:[...stocks.values()],daily,benchmark,completedDate,quotes,ranks,indices:ir.status==='fulfilled'?ir.value:[],evidence,warning:(!groups.length?'行业成分源缺失；':'')+(!ranking.length?'成交额榜缺失；':'')+(!completedDate?'基准日K缺失；':'')+'候选为有限行业及成交额样本，不是全市场遍历'};
+ return {stocks:[...stocks.values()],daily,benchmark,completedDate,quotes,ranks,indices:ir.status==='fulfilled'?ir.value:[],evidence,warning:(!groups.length?'行业成分源缺失；':'')+(!ranking.length?'成交额榜缺失；':'')+(!completedDate?'基准日K缺失；':'')+'候选为有限行业、涨幅及成交额样本，不是全市场遍历'};
 }
 export function selectedActions(plan,selected){const keys=new Set(selected);return plan.rows.filter(r=>keys.has(r.code+':'+r.action)&&r.action!=='HOLD');}
 export function applyShort(account,snapshot,selected,now=Date.now()){

@@ -15,7 +15,7 @@ const pending=state.waveIntent;if(pending&&Date.now()-Date.parse(pending.created
 const snapshot=await collectStrategy(state,'wave',{evidence,extraCodes:(state.waveIntent?.selected||[]).map(x=>x.split(':')[0])});
 const now=Date.now(),plan=planStrategy(state,snapshot,'wave',now);
 if(session(now)==='open'&&['scheduled','selected'].includes(mode)){
- const keys=state.waveIntent?.selected||plan.rows.filter(r=>r.executable).map(r=>r.code+':'+r.action);
+ const keys=state.waveIntent?.selected||plan.rows.filter(r=>r.executable&&(mode!=='scheduled'||plan.phase==='连续交易')).map(r=>r.code+':'+r.action);
  const result=applyWave(state,snapshot,keys,now);state=result.state;
  if(state.waveIntent&&keys.length){const retry=keys.filter(k=>{const row=plan.rows.find(r=>r.code+':'+r.action===k);return row&&row.action!=='HOLD'&&!row.executable;});if(retry.length)state.waveIntent.selected=retry;else delete state.waveIntent;}
 }else state.wavePlan={...plan,results:[]};
