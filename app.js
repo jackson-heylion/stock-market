@@ -440,9 +440,10 @@ async function runDual(execute=false){
  if(execute&&!selected.length){toast('请先勾选处理建议');return;}
  if(execute&&type==='wave'){
   const instruction=selected.join(',');
+  window.open('https://github.com/jackson-heylion/stock-market/actions/workflows/afternoon.yml','_blank','noopener');
   try{await navigator.clipboard.writeText(instruction);}catch{}
   dualError.wave='选中指令：'+instruction+'。已尝试复制，请在GitHub Run workflow 的 selection 输入框粘贴，选择 selected。休市提交只保存待核验指令。';
-  render();window.open('https://github.com/jackson-heylion/stock-market/actions/workflows/afternoon.yml','_blank','noopener');return;
+  render();return;
  }
  if(execute&&!confirm('确认对选中短线建议重新核验？仅在连续交易有效行情下模拟成交；其他时段保存待核验选择。'))return;
  if(execute&&session()!=='open'){

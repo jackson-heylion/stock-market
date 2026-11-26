@@ -1,7 +1,7 @@
 import {readFileSync,writeFileSync} from 'node:fs';
-import {validateBot} from './bot.js';
-import {collectStrategy,planStrategy,applyWave} from './dual-strategy.js';
-import {session} from './market.js';
+import {validateBot} from '../bot.js';
+import {collectStrategy,planStrategy,applyWave} from '../dual-strategy.js';
+import {session} from '../market.js';
 const file='data/bot.json',account=validateBot(JSON.parse(readFileSync(file,'utf8'))),mode=process.env.WAVE_MODE||'review';
 const chosen=(process.env.WAVE_SELECTION||'').split(',').map(s=>s.trim()).filter(Boolean);
 if(chosen.length>30||chosen.some(s=>!/^(?:60|68|00|30)\d{4}:(?:OPEN|ADD|REDUCE|CLEAR)$/.test(s)))throw Error('无效指令，拒绝写入');
