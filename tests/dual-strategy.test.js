@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initialState,validateState} from '../engine.js';
+import {limitStreak,evidenceFor,planStrategy,applyShort,applyWave} from '../dual-strategy.js';
+const now=Date.parse('2026-11-26T14:31:00+08:00'),code='300502',name='新易盛',s={code,name,sector:'通信设备',sectorPct:2,sectorTime:now-1000,peerRank:1,peerCount:20};
+const bars=Array.from({length:130},(_,i)=>{const date=new Date(Date.UTC(2026,6,19+i)).toISOString().slice(0,10);return {date,open:10,close:10,high:10.1,low:9.9,volume:1000};});
+const cut=bars.at(-1).date;
+const q={code,name,price:10.8,prevClose:10,time:now-1000,source:'fixture'};
+const snap={stocks:[s],completedDate:cut,benchmark:bars,daily:{[code]:bars},quotes:{[code]:q},ranks:{[code]:{code,price:10.8,quoteTime:now-1000,volume:1500,high:10.85,open:10.1}},indices:['sh000001','sz399001','sz399006'].map(key=>({key,price:1000,pct:1,time:now-1000})),evidence:{}};
+const empty=()=>{const a=initialState();a.trades=[];a.cash=a.initialCash;return a;};
+test('short candidate passes breakouts and selected execution admits new symbol with replay integrity',()=>{const a=empty(),p=planStrategy(a,snap,'short',now);assert.ok(p.rows[0].passed.includes('S1'));assert.equal(p.rows[0].executable,true);const r=applyShort(a,snap,[code+':OPEN'],now);assert.ok(r.ok);assert.equal(r.state.trades.length,1);assert.ok(validateState(r.state));assert.equal(a.trades.length,0);assert.equal(applyShort(r.state,snap,[code+':OPEN'],now).state.trades.length,1);});
+test('auction and closed refresh plans cannot fabricate fills',()=>{for(const t of ['2026-11-26T09:20:00+08:00','2026-11-26T16:00:00+08:00']){const n=Date.parse(t),p=planStrategy(empty(),snap,'short',n);assert.equal(p.rows[0].executable,false);assert.equal(applyShort(empty(),snap,[code+':OPEN'],n).state.trades.length,0);}});
+test('wave requires dated evidence and 120-day data for cycle leader',()=>{const a={initialCash:1e6,cash:1e6,holdings:{},trades:[]};assert.equal(planStrategy(a,snap,'wave',now).rows[0].passed.length,0);assert.equal(applyWave(a,snap,[code+':OPEN'],now).state.trades.length,0);assert.equal(evidenceFor({cycle:{pass:true,source:'https://example.com',note:'fixture',asOf:'2025-01-01'}},now).cycle.pass,null);});
+test('limit streak uses completed bars not intraday price',()=>{const b=bars.slice(-25).map(x=>({...x}));b.at(-2).close=12;b.at(-1).close=14.4;assert.equal(limitStreak(b,code,name),2);assert.equal(limitStreak(b,code,'ST测试'),null);});
+test('unselected symbols and stale quote do not trade',()=>{const a=empty();assert.equal(applyShort(a,snap,[],now).state.trades.length,0);assert.equal(applyShort(a,{...snap,quotes:{[code]:{...q,time:now-16000}}},[code+':OPEN'],now).state.trades.length,0);});

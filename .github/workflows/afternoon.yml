@@ -1,23 +1,27 @@
-name: 09:35 and 14:30 daily conditional paper strategy
+name: 波段策略 · 核验与选择执行
 on:
   workflow_dispatch:
     inputs:
-      slot:
-        description: 'Strategy window (Beijing)'
+      mode:
+        description: 'review 刷新 / selected 选择执行 / cancel 取消待核验'
         type: choice
-        options: [opening, afternoon]
-        default: afternoon
+        options: [review, selected, cancel]
+        default: review
+      selection:
+        description: '选择指令，例如 300502:OPEN,600519:REDUCE'
+        type: string
+        required: false
   push:
     branches: [main]
     paths:
-      - afternoon.js
-      - afternoon-rules.js
+      - dual-strategy.js
+      - scripts/run-wave.mjs
       - .github/workflows/afternoon.yml
+      - data/wave-evidence.json
   schedule:
-    # Beijing 09:35 signal, execute only after complete 09:35 bar; retry at 09:40.
-    - cron: '35,40 1 * * 1-5'
-    # Beijing 14:30, with one retry at 14:40 if quotes were unavailable.
-    - cron: '30,40 6 * * 1-5'
+    - cron: '35 1 * * 1-5'
+    - cron: '30 6 * * 1-5'
+    - cron: '30 7 * * 1-5'
 permissions:
   contents: write
   actions: write
@@ -25,9 +29,9 @@ concurrency:
   group: stock-market-robot-account
   cancel-in-progress: false
 jobs:
-  paper:
+  wave:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,44 +41,20 @@ jobs:
         with:
           node-version: '22'
       - run: npm test && npm run check
-      - name: Select scheduled slot and respect its execution window
-        id: slot
+      - name: Revalidate selected or scheduled strategy
         env:
-          SCHEDULE: ${{ github.event.schedule }}
-          REQUESTED: ${{ inputs.slot }}
-        shell: bash
+          WAVE_MODE: ${{ github.event_name == 'schedule' && (github.event.schedule == '30 7 * * 1-5' && 'review' || 'scheduled') || inputs.mode || 'review' }}
+          WAVE_SELECTION: ${{ inputs.selection }}
+        run: node scripts/run-wave.mjs
+      - name: Commit and publish wave ledger
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          local_time=$(TZ=Asia/Shanghai date +%H%M)
-          slot=afternoon
-          if [[ "$SCHEDULE" == '35,40 1 * * 1-5' || "$REQUESTED" == opening || ( -z "$SCHEDULE" && -z "$REQUESTED" && "$local_time" > '0934' && "$local_time" < '0945' ) ]]; then slot=opening; fi
-          if [[ "$slot" == opening && "$local_time" == '0935' ]]; then
-            until [[ "$(TZ=Asia/Shanghai date +%H%M)" > '0935' ]]; do sleep 5; done
-          fi
-          if [[ "$slot" == opening ]]; then echo 'arg=--opening' >> "$GITHUB_OUTPUT"; else echo 'arg=' >> "$GITHUB_OUTPUT"; fi
-      - name: Execute fresh-quote conditional paper strategy
-        run: node afternoon.js ${{ steps.slot.outputs.arg }}
-      - name: Publish bot ledger without overwriting other decisions
-        id: commit
-        run: |
-          if git diff --quiet -- data/bot.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           git config user.name "stock-market-paper-bot[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/bot.json
-          git commit -m "data(bot): record scheduled verified paper decisions"
-          for attempt in 1 2 3; do
-            if git pull --rebase origin main && git push origin HEAD:main; then
-              echo "changed=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            git rebase --abort 2>/dev/null || true
-            sleep 2
-          done
-          exit 1
-      - name: Publish updated ledger to Pages
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main
+          git diff --cached --quiet && exit 0
+          git commit -m "data: wave strategy review and selected execution"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh workflow run pages.yml --ref main

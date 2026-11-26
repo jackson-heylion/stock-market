@@ -267,7 +267,7 @@ export function parseDaily(payload){
 }
 
 /** Fetches unadjusted daily OHLCV bars for an A-share or sh000001 with Tencent fallback. */
-export async function getDailyBars(code,{fetchImpl=fetch,timeoutMs=9000}={}){
+export async function getDailyBars(code,{fetchImpl=fetch,timeoutMs=9000,limit=35}={}){
  const sym=code==="sh000001"?"sh000001":
   /^(?:6\d{5}|0\d{5}|3\d{5})$/.test(code)?
    (code.startsWith("6")?"sh":"sz")+code:null;
@@ -276,12 +276,12 @@ export async function getDailyBars(code,{fetchImpl=fetch,timeoutMs=9000}={}){
  if(!secid)throw Error("Unsupported A-share "+code);
  const query=new URLSearchParams({secid,fields1:"f1,f2,f3,f4,f5,f6",
   fields2:"f51,f52,f53,f54,f55,f56,f57",klt:"101",fqt:"0",
-  beg:"20250101",end:"20500101",lmt:"35"});
+  beg:"20240101",end:"20500101",lmt:String(Math.min(250,Math.max(35,Number(limit)||35)))});
  try{
   const result=parseDaily(await fetchEastmoneyJson("https://push2his.eastmoney.com/api/qt/stock/kline/get?"+query,fetchImpl,timeoutMs,{retries:1}));
   if(result.length)return result;
  }catch{/* fallback to Tencent unadjusted daily bars */}
- const qq=await fetchTimeout("https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param="+sym+",day,,,35","json",fetchImpl,timeoutMs);
+ const qq=await fetchTimeout("https://web.ifzq.gtimg.cn/appstock/app/kline/kline?param="+sym+",day,,,"+Math.min(250,Math.max(35,Number(limit)||35)),"json",fetchImpl,timeoutMs);
  const rows=parseTencentKline(qq,sym,"day").filter(q=>q.high+0.01>=Math.max(q.open,q.close,q.low)&&q.low-0.01<=Math.min(q.open,q.close)).sort((a,b)=>a.date.localeCompare(b.date));
  if(!rows.length)throw Error("No valid daily bars "+code);
  return rows;

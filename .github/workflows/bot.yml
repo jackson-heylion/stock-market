@@ -1,66 +1,15 @@
-name: Daily paper-trading bot
+name: Legacy M5 scanner (historical research only)
 on:
   workflow_dispatch:
-  # Trigger an integration smoke run when the bot itself changes; paper data commits do not retrigger this.
-  push:
-    branches: [main]
-    paths:
-      - bot.js
-      - .github/workflows/bot.yml
-  schedule:
-    # Beijing 16:40, Monday-Friday. Holidays/data delays are checked by bot.js.
-    - cron: '40 8 * * 1-5'
 permissions:
-  contents: write
-  actions: write
-concurrency:
-  group: stock-market-robot-account
-  cancel-in-progress: false
+  contents: read
 jobs:
-  paper:
+  review:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verify trading rules
-        run: npm test && npm run check
-      - name: Probe actual public universe on bot code changes
-        if: github.event_name == 'push'
-        run: |
-          node --input-type=module -e '
-          import {getMarketData} from "./bot.js";
-          const data=await getMarketData();
-          console.log(JSON.stringify({barDate:data.date,scannedStocks:data.universe.length,
-            sample:data.universe.slice(0,3)},null,2));
-          if(!data.universe.length)throw new Error("Public sector constituent universe is empty");
-          const bars=await data.barLoader(data.universe[0].code,{fetchImpl:data.fetchImpl});
-          console.log(JSON.stringify({stock:data.universe[0].code,barCount:bars.length,
-            latestBarDate:bars.at(-1).date,lastClose:bars.at(-1).close},null,2));
-          '
-      - name: Run after-close scanner and next-session paper fills
-        run: node bot.js
-      - name: Commit account only when valid source data changed it
-        id: commit
-        run: |
-          if git diff --quiet -- data/bot.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No new verified trading-session data; account unchanged."
-            exit 0
-          fi
-          git config user.name "stock-market-paper-bot[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/bot.json
-          git commit -m "data(bot): record verified daily M5 paper simulation"
-          git pull --rebase origin main
-          git push origin HEAD:main
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-      - name: Refresh GitHub Pages with the new account
-        if: steps.commit.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages.yml --ref main
+      - run: npm test && npm run check
+      - run: echo "Legacy M5 execution retired. Use afternoon.yml for wave strategy."

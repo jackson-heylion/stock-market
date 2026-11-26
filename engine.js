@@ -7,6 +7,10 @@ export function fees(side, gross, rules=FEE_RULES){
 }
 export function feeTotal(f){return round2(f.commission+f.transfer+f.stamp);}
 export function shDate(date=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(date).replace(/\//g,'-');}
+export const validSymbol=c=>typeof c==='string'&&/^(?:60|68|00|30)\d{4}$/.test(c);
+export function registeredStock(state,code){return SECURITIES.find(s=>s.code===code)||(state?.securities&&Object.hasOwn(state.securities,code)?state.securities[code]:null);}
+function validRegistered(code,s){return validSymbol(code)&&s?.code===code&&typeof s.name==='string'&&s.name.trim().length>0&&s.name.length<=40&&!/[<>\x00-\x1f]/.test(s.name)&&s.market===(code.startsWith('6')?'SH':'SZ')&&s.halted===false&&typeof s.admittedAt==='string'&&Number.isFinite(Date.parse(s.admittedAt))&&!SECURITIES.some(x=>x.code===code);}
+export function registerSecurity(state,{code,name,quoteTime}){if(registeredStock(state,code))return {ok:true};if(!validSymbol(code)||!Number.isFinite(quoteTime))return {ok:false,error:'证券身份未核验'};const s={code,name,market:code.startsWith('6')?'SH':'SZ',halted:false,admittedAt:new Date(quoteTime).toISOString(),models:[],tags:[]};if(!validRegistered(code,s)||/ST|退市|退$|^N|^C/i.test(name))return {ok:false,error:'新标证券身份不合格'};state.securities??={};state.securities[code]=s;return {ok:true};}
 export function initialState(){
   const state={version:1,createdAt:'2026-11-19T15:00:00+08:00',initialCash:INITIAL_CASH,cash:INITIAL_CASH,watchlist:SECURITIES.map(s=>s.code),prices:Object.fromEntries(SECURITIES.filter(s=>s.close).map(s=>[s.code,{price:s.close,date:SNAPSHOT_DATE,source:'历史收盘快照'}])),trades:[],signals:structuredClone(SEED_SIGNALS)};
   for(const s of SECURITIES){
@@ -36,11 +40,12 @@ export function positions(state){
   return Object.values(p).filter(p=>p.quantity>0);
 }
 export function executeTrade(state,{code,side,quantity,price,date=shDate(),seed=false}){
-  const s=SECURITIES.find(x=>x.code===code);
+  const s=registeredStock(state,code);
   if(!s) return {ok:false,error:'未知证券代码'};
   if(s.halted) return {ok:false,error:'停牌股票禁止模拟成交'};
   if(!['BUY','SELL'].includes(side))return {ok:false,error:'无效交易方向'};
   if(!Number.isInteger(quantity)||quantity<=0||quantity%100!==0)return {ok:false,error:'数量须为100股的正整数倍'};
+  if(side==='BUY'&&!seed&&/^(688|689)/.test(code)&&quantity<200)return {ok:false,error:'科创板买入至少200股'};
   if(!priceOK(price))return {ok:false,error:'无效价格'};
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(Date.parse(date)))return {ok:false,error:'无效日期'};
   const gross=round2(quantity*price),fee=feeTotal(fees(side,gross));
@@ -58,7 +63,7 @@ export function executeTrade(state,{code,side,quantity,price,date=shDate(),seed=
 }
 export function portfolio(state){
   const holds=positions(state).map(p=>{
-    const stock=SECURITIES.find(s=>s.code===p.code),quote=state.prices[p.code]?.price??stock.referencePrice??0;
+    const stock=registeredStock(state,p.code),quote=state.prices[p.code]?.price??stock?.referencePrice??p.totalCost/p.quantity;
     const value=round2(p.quantity*quote),unrealized=round2(value-p.totalCost);
     return {...p,name:stock.name,quote,value,unrealized,avgCost:p.totalCost/p.quantity,priceDate:state.prices[p.code]?.date??null};
   });
@@ -66,7 +71,7 @@ export function portfolio(state){
   return {holds,marketValue,cash:state.cash,total,profit:round2(total-state.initialCash),profitRate:(total-state.initialCash)/state.initialCash*100};
 }
 export function markPrice(state,code,price,date=shDate()){
-  const stock=SECURITIES.find(s=>s.code===code);
+  const stock=registeredStock(state,code);
   if(!stock||stock.halted)return {ok:false,error:'停牌或未知证券不能更新可交易报价'};
   if(!priceOK(price))return {ok:false,error:'请输入有效价格'};
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return {ok:false,error:'无效日期'};
@@ -82,6 +87,7 @@ export function modelEvidence(state,code,modelId){
 export function validateState(state,startingCash=INITIAL_CASH){
   if(!state||state.version!==1||!Number.isFinite(state.cash)||state.cash<0||state.initialCash!==startingCash||!Array.isArray(state.trades)||state.trades.length>20000||!Array.isArray(state.watchlist)||!state.prices||!state.signals)return false;
   const seen=new Set(),validCodes=new Set(SECURITIES.map(s=>s.code));
+  if(state.securities!==undefined){if(!state.securities||Array.isArray(state.securities)||typeof state.securities!=='object'||Object.keys(state.securities).length>5000)return false;for(const [code,s] of Object.entries(state.securities)){if(!validRegistered(code,s))return false;validCodes.add(code);}}
   for(const t of state.trades){
     if(!t||!validCodes.has(t.code)||!['BUY','SELL'].includes(t.side)||!priceOK(t.price)||!Number.isInteger(t.quantity)||t.quantity<=0||t.quantity%100!==0||!Number.isFinite(t.gross)||!Number.isFinite(t.fee)||typeof t.date!=='string')return false;
     if(!t.id||seen.has(t.id))return false;
@@ -91,7 +97,7 @@ export function validateState(state,startingCash=INITIAL_CASH){
   for(const [c,p] of Object.entries(state.prices))if(!validCodes.has(c)||!priceOK(p?.price)||typeof p.date!=='string')return false;
   for(const [c,ms] of Object.entries(state.signals)){if(!validCodes.has(c))return false;for(const [m,flags] of Object.entries(ms)){const model=MODEL_DEFINITIONS.find(x=>x.id===m);if(!model||!Array.isArray(flags)||flags.length!==model.checks.length||flags.some(x=>![1,0,-1].includes(x)))return false;}}
   // Replay transactions to prevent impossible cash/holdings in imported files.
-  const clean={cash:startingCash,trades:[]};
+  const clean={cash:startingCash,trades:[],securities:state.securities};
   for(const t of state.trades){const r=executeTrade(clean,{...t,seed:t.seed});if(!r.ok)return false;const out=r.trade;if(Math.abs(out.gross-t.gross)>0.01||Math.abs(out.fee-t.fee)>0.01)return false;}
   return Math.abs(clean.cash-state.cash)<0.02;
 }

@@ -1,0 +1,5 @@
+{
+  "schema": 1,
+  "description": "仅维护人工核验的公告/财报/产业/估值证据；字段 ai growth cycle valuation leader: {pass,asOf,source,note}。缺失拒绝波段买入。",
+  "securities": {}
+}
