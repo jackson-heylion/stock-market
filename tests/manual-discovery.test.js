@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {initialState} from '../engine.js';
+import {discoverStocks,candidateChecks} from '../manual-discovery.js';
+import {planManualAfternoon,applyManualAfternoon,collectManualAfternoon} from '../manual-afternoon.js';
+const now=Date.parse('2026-11-26T14:31:00+08:00'),s={code:'300502',name:'新易盛',price:10.3,turnover:100000000};
+const sector={name:'通信设备',pct:2,quoteTime:now-1000};
+const discovered=discoverStocks([{sector,rows:[s,{...s,code:'600520',name:'三佳科技'},{...s,code:'300503',name:'*ST风险'}]}]);
+const daily=Array.from({length:20},(_,i)=>({date:'2026-11-'+String(i+6).padStart(2,'0'),close:10,volume:1000}));
+const q={code:s.code,price:10.3,prevClose:10,time:now-1000,source:'测试报价'};
+const snap=()=>({previousDate:'2026-11-25',stocks:[],discovered,quotes:{[s.code]:q},ranks:{[s.code]:{code:s.code,price:10.3,quoteTime:now-1000,volume:1500,high:10.35,open:10.1}},daily:{[s.code]:daily},indices:['sh000001','sz399001','sz399006'].map(key=>({key,price:1000,pct:1,time:now-1000}))});
+const empty=()=>{const a=initialState();a.trades=[];a.cash=a.initialCash;return a;};
+test('discover non-curated candidates; exclude held/ST and bound scope',()=>{assert.deepEqual(discovered.map(x=>x.code),['300502']);assert.equal(discoverStocks([{sector,rows:[s]}],[],[s.code]).length,0);const many=Array.from({length:20},(_,i)=>({...s,code:'300'+String(100+i),name:'样本'+i,turnover:i+1}));assert.equal(discoverStocks([{sector,rows:many}]).length,4);assert.equal(discoverStocks([],many).length,12);});
+test('new candidate displays verified entry gates but stays research-only',()=>{const r=candidateChecks(discovered[0],snap(),empty(),now);assert.equal(r.modelOk,true);assert.equal(r.checks.length,7);assert.ok(r.checks.every(x=>x.status==='通过'));assert.match(r.gates.join(''),/白名单/);assert.deepEqual(r.priceBand,{min:10.08,max:10.5});assert.equal(r.ma20,10);assert.ok(r.quantity>0);});
+test('stale quote and unknown industry cannot produce a passing signal',()=>{const x=snap();x.quotes[s.code]={...q,time:now-16000};assert.equal(candidateChecks(discovered[0],x,empty(),now).modelOk,false);const r=candidateChecks(discoverStocks([],[s])[0],snap(),empty(),now);assert.equal(r.modelOk,false);assert.equal(r.checks.find(x=>x.name==='行业强度').status,'待核');});
+test('new discovery cannot create a ledger trade even with passing signal',()=>{const a=empty(),before=JSON.stringify(a),x=snap();const p=planManualAfternoon(a,x,now);assert.equal(p.candidates[0].code,s.code);assert.ok(!p.rows.some(r=>r.code===s.code));assert.equal(applyManualAfternoon(a,x,now).ok,false);assert.equal(JSON.stringify(a),before);});
+test('collector requests evidence for new symbols even with industry feed offline',async()=>{let asked=[];const x=await collectManualAfternoon({sectorLoader:async()=>{throw Error('offline')},rankingLoader:async()=>({rows:[s]}),dailyLoader:async c=>{asked.push(c);return []},quoteLoader:async c=>{assert.ok(c.includes(s.code));return {quotes:[]}},rankLoader:async()=>[],indexLoader:async()=>[]});assert.ok(asked.includes(s.code));assert.equal(x.discovered[0].code,s.code);assert.equal(x.discovered[0].sector,undefined);assert.match(x.discoveryWarning,/行业待核/);});

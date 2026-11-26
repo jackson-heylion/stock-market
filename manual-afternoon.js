@@ -1,8 +1,9 @@
 import {SECURITIES} from './seed.js';
 import {positions,executeTrade,budgetQuantity,cloneState,validateState} from './engine.js';
 import {getQuotes,getHistory,getDailyBars} from './market.js';
-import {getMarketIndices,getSectorLeaders,getWatchQuotes} from './market-center.js';
+import {getMarketIndices,getSectorLeaders,getWatchQuotes,getRankings} from './market-center.js';
 import {AFTERNOON_VERSION,POLICY,round,clock,afternoonWindow,fresh,scoreStock,holdingDecision,slotVersion,strategyWindow,slotLabel} from './afternoon-rules.js';
+import {discoverStocks,buildDiscoveryPlan} from './manual-discovery.js';
 export const MANUAL_VERSION=AFTERNOON_VERSION+'-local';
 export const manualVersion=slot=>slotVersion(slot)+'-local';
 export const manualKey=slot=>slot==='opening'?'manualOpening':'manualAfternoon';
@@ -13,22 +14,18 @@ const indexKeys=['sh000001','sz399001','sz399006'];
 async function rawDaily(code){
  return getDailyBars(code);
 }
-export async function collectManualAfternoon({proxy='',slot='afternoon'}={}){
- const codes=supported.map(s=>s.code),daily={},minutes={};
- const [bench,groups]=await Promise.allSettled([
-  rawDaily('sh000001'),
-  getSectorLeaders({filter:s=>s.pct>=POLICY.sectorMin&&s.turnover>0,limit:3,size:30}),
-  ...codes.map(async code=>{daily[code]=await rawDaily(code);if(slot==='opening')minutes[code]=await getHistory(code,'minute');})
- ]);
- const date=clock(Date.now()).date,previousDate=bench.status==='fulfilled'?bench.value.filter(b=>b.date<date).at(-1)?.date:null;
- const membership=new Map();
- if(groups.status==='fulfilled'){
-  for(const {sector,rows} of groups.value){
-   for(const s of rows)if(codeMap.has(s.code)&&(!membership.has(s.code)||sector.pct>membership.get(s.code).sectorPct))membership.set(s.code,{sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime});
-  }
- }
- const [quotes,ranks,indices]=await Promise.allSettled([getQuotes(codes,{proxy}),getWatchQuotes(codes),getMarketIndices()]);
- return {previousDate,daily,minutes,stocks:supported.map(s=>({...s,...membership.get(s.code)})),quotes:Object.fromEntries((quotes.status==='fulfilled'?quotes.value.quotes:[]).map(q=>[q.code,q])),ranks:Object.fromEntries((ranks.status==='fulfilled'?ranks.value:[]).map(q=>[q.code,q])),indices:indices.status==='fulfilled'?indices.value:[]};
+export async function collectManualAfternoon({proxy='',slot='afternoon',heldCodes=[],sectorLoader=getSectorLeaders,rankingLoader=getRankings,dailyLoader=rawDaily,minuteLoader=getHistory,quoteLoader=getQuotes,rankLoader=getWatchQuotes,indexLoader=getMarketIndices}={}){
+ const daily={},minutes={};
+ const [bench,groups]=await Promise.allSettled([dailyLoader('sh000001'),sectorLoader({filter:s=>s.pct>=POLICY.sectorMin&&s.turnover>0,limit:3,size:30,requireSuccess:true})]);
+ const date=clock(Date.now()).date,previousDate=bench.status==='fulfilled'?bench.value.filter(b=>b.date<date).at(-1)?.date:null,boards=groups.status==='fulfilled'?groups.value:[];
+ let fallback=[],discoveryWarning=groups.status==='rejected'?'行业成分股获取失败：'+String(groups.reason?.message||groups.reason):boards.length?'':'未取得强势行业样本';
+ if(!boards.length){try{fallback=(await rankingLoader('turnover','all',{size:30})).rows||[];discoveryWarning+='；降级为全市场成交额榜样本，行业待核';}catch(err){discoveryWarning+='；成交额榜不可用：'+String(err.message||err);}}
+ const discovered=discoverStocks(boards,fallback,heldCodes),membership=new Map();
+ for(const {sector,rows} of boards)for(const s of rows)if(codeMap.has(s.code)&&(!membership.has(s.code)||sector.pct>membership.get(s.code).sectorPct))membership.set(s.code,{sector:sector.name,sectorPct:sector.pct,sectorTime:sector.quoteTime});
+ const stocks=supported.map(s=>({...s,...membership.get(s.code)})),codes=[...new Set([...stocks,...discovered].map(s=>s.code))];
+ for(let i=0;i<codes.length;i+=6)await Promise.allSettled(codes.slice(i,i+6).map(async code=>{const tasks=[dailyLoader(code).then(b=>{daily[code]=b;})];if(slot==='opening')tasks.push(minuteLoader(code,'minute').then(b=>{minutes[code]=b;}));await Promise.allSettled(tasks);}));
+ const [quotes,ranks,indices]=await Promise.allSettled([quoteLoader(codes,{proxy}),rankLoader(codes),indexLoader()]);
+ return {previousDate,daily,minutes,stocks,discovered,discoveryWarning,discoveryCoverage:boards.length?'最多3个强势行业，各取成交额前4个新标':'全市场成交额前30样本（非全市场遍历）',quotes:Object.fromEntries((quotes.status==='fulfilled'?quotes.value.quotes:[]).map(q=>[q.code,q])),ranks:Object.fromEntries((ranks.status==='fulfilled'?ranks.value:[]).map(q=>[q.code,q])),indices:indices.status==='fulfilled'?indices.value:[]};
 }
 export function planManualAfternoon(state,snapshot,now=Date.now(),slot='afternoon'){
  const date=clock(now).date,holds=positions(state),by=new Map(holds.map(h=>[h.code,h]));
@@ -58,7 +55,7 @@ export function planManualAfternoon(state,snapshot,now=Date.now(),slot='afternoo
  // Prioritize clear/defensive sells, then existing-position additions, then new entries.
  const priority={CLEAR:0,REDUCE:1,ADD:2,OPEN:3,HOLD:4};
  rows.sort((a,b)=>priority[a.action]-priority[b.action]||(a.pnl??0)-(b.pnl??0)||a.code.localeCompare(b.code));
- return {slot,date,checkedAt:new Date(now).toISOString(),marketOk,indexOk,rows};
+ return {slot,date,checkedAt:new Date(now).toISOString(),marketOk,indexOk,rows,candidates:buildDiscoveryPlan(state,snapshot,now,slot),discoveryWarning:snapshot.discoveryWarning||'',discoveryCoverage:snapshot.discoveryCoverage||''};
 }
 export function applyManualAfternoon(state,snapshot,now=Date.now(),slot='afternoon'){
  if(!validateState(state))return {ok:false,error:'账本未通过校验'};
