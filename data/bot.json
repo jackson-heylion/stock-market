@@ -4,7 +4,7 @@
   "initialCash": 1000000,
   "cash": 1000000,
   "lastDate": "2026-11-25",
-  "updatedAt": "2026-11-26T07:13:40.347Z",
+  "updatedAt": "2026-11-26T17:50:44.632Z",
   "models": {
     "M1": {
       "enabled": false,
@@ -997,9 +997,9 @@
   "wavePlan": {
     "version": "WAVE-v2",
     "type": "wave",
-    "date": "2026-11-26",
+    "date": "2026-11-27",
     "phase": "休市",
-    "checkedAt": "2026-11-26T07:13:40.326Z",
+    "checkedAt": "2026-11-26T17:50:44.610Z",
     "completedDate": "2026-11-26",
     "warning": "候选为有限行业、涨幅及成交额样本，不是全市场遍历",
     "rows": [
@@ -1009,7 +1009,7 @@
         "sector": "白银",
         "price": 18.61,
         "day": 4.727068092290376,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 18.656,
@@ -1177,7 +1177,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -1185,10 +1185,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 18.59,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -1197,7 +1200,7 @@
         "sector": "白银",
         "price": 23.86,
         "day": 10.004610419548165,
-        "quoteTime": 1795677213000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 23.11,
@@ -1365,7 +1368,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -1373,10 +1376,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 23.84,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -1385,7 +1391,7 @@
         "sector": "渔业",
         "price": 3.67,
         "day": 3.672316384180796,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 3.35,
@@ -1553,7 +1559,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -1561,10 +1567,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 3.67,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -1573,7 +1582,7 @@
         "sector": "待核",
         "price": 72.52,
         "day": 3.8968481375358133,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 70.818,
@@ -1741,7 +1750,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -1749,10 +1758,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 72.45,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -1761,7 +1773,7 @@
         "sector": "待核",
         "price": 19.23,
         "day": 7.912457912457915,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 16.274,
@@ -1929,7 +1941,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -1937,10 +1949,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 19.21,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -1949,7 +1964,7 @@
         "sector": "白银",
         "price": 6.56,
         "day": 5.466237942122176,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 6.4719999999999995,
@@ -2117,7 +2132,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -2125,10 +2140,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 6.55,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -2314,6 +2332,7 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
           "缺少有效盘中报价及成交量",
           "价格或涨跌停可成交性未核验"
         ],
@@ -2327,7 +2346,7 @@
         "sector": "待核",
         "price": 430.18,
         "day": 5.178484107579462,
-        "quoteTime": 1795677213000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 413.316,
@@ -2495,7 +2514,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -2503,10 +2522,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 429.75,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -2515,7 +2537,7 @@
         "sector": "待核",
         "price": 133.99,
         "day": 2.3840452357301256,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 120.98200000000001,
@@ -2683,7 +2705,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -2691,10 +2713,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 133.86,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -2703,7 +2728,7 @@
         "sector": "待核",
         "price": 189.03,
         "day": 4.263651406508551,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 179.34,
@@ -2871,7 +2896,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -2879,10 +2904,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 188.84,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -2891,7 +2919,7 @@
         "sector": "待核",
         "price": 204.22,
         "day": -2.015161692735812,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 219.03599999999997,
@@ -3059,7 +3087,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -3067,10 +3095,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 204.02,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -3079,7 +3110,7 @@
         "sector": "待核",
         "price": 32.4,
         "day": 11.18737131091283,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 30.338,
@@ -3247,7 +3278,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -3255,10 +3286,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 32.37,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -3267,7 +3301,7 @@
         "sector": "待核",
         "price": 20,
         "day": 5.374077976817704,
-        "quoteTime": 1795677210000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 20.592000000000002,
@@ -3435,7 +3469,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -3443,10 +3477,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 19.98,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -3455,7 +3492,7 @@
         "sector": "待核",
         "price": 9.66,
         "day": 3.648068669527893,
-        "quoteTime": 1795677215000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 8.876,
@@ -3623,7 +3660,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -3631,10 +3668,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 9.65,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -3643,7 +3683,7 @@
         "sector": "渔业",
         "price": 4.62,
         "day": 4.288939051918739,
-        "quoteTime": 1795677207000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 4.474,
@@ -3811,7 +3851,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -3819,10 +3859,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 4.62,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -3831,7 +3874,7 @@
         "sector": "待核",
         "price": 19,
         "day": 6.026785714285698,
-        "quoteTime": 1795677215000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 17.612000000000002,
@@ -3999,7 +4042,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -4007,10 +4050,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 18.98,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -4019,7 +4065,7 @@
         "sector": "渔业",
         "price": 3.96,
         "day": 9.999999999999986,
-        "quoteTime": 1795677217000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 3.368,
@@ -4187,7 +4233,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -4196,10 +4242,12 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
           "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 3.96,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -4208,7 +4256,7 @@
         "sector": "待核",
         "price": 20.06,
         "day": 9.978070175438592,
-        "quoteTime": 1795677213000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 19.913999999999998,
@@ -4376,7 +4424,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -4384,10 +4432,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 20.04,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -4396,7 +4447,7 @@
         "sector": "待核",
         "price": 15.17,
         "day": 0.3306878306878369,
-        "quoteTime": 1795677217000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 16.080000000000002,
@@ -4564,7 +4615,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -4572,10 +4623,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 15.15,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -4584,7 +4638,7 @@
         "sector": "待核",
         "price": 27.69,
         "day": -0.036101083032480386,
-        "quoteTime": 1795677215000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 28.786,
@@ -4752,7 +4806,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -4760,10 +4814,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 27.66,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -4772,7 +4829,7 @@
         "sector": "待核",
         "price": 942.85,
         "day": 3.8495429012005866,
-        "quoteTime": 1795677218000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 931.11,
@@ -4940,7 +4997,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -4948,10 +5005,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 941.91,
+        "fillPrice": null,
         "executable": false
       },
       {
@@ -4960,7 +5020,7 @@
         "sector": "待核",
         "price": 32.69,
         "day": -2.708333333333346,
-        "quoteTime": 1795677217000,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
         "referenceDate": "2026-11-26",
         "m5": 34.721999999999994,
@@ -5128,7 +5188,7 @@
           }
         ],
         "passed": [],
-        "rankFresh": true,
+        "rankFresh": false,
         "aligned": true,
         "held": 0,
         "pnl": null,
@@ -5136,10 +5196,13 @@
         "reason": "等待开仓条件",
         "gates": [
           "未触发交易",
-          "非连续交易时段，仅建议／待核验"
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 32.66,
+        "fillPrice": null,
         "executable": false
       }
     ],
