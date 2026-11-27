@@ -19,7 +19,7 @@ export const MODEL_BENCHMARKS = {
       "name": "万丰奥威",
       "period": "2024-04-11 至 2024-04-24",
       "fact": "低空经济强势阶段出现明显调整，4月24日板块再度走强；适合复查回踩与修复是否成立。",
-      "verify": "前5日涨幅≥8%、价格处于MA10至MA5×1.04、量比≤0.8及承接；4月11日跌停不是合格低吸点。",
+      "verify": "前5日涨幅≥涨停幅度的80%、价格处于MA10至MA5×1.04、时段量能代理≤0.8及承接；4月11日跌停不是合格低吸点。",
       "sources": [
         "https://www.stcn.com/article/detail/1173019.html",
         "https://www.stcn.com/article/detail/1186689.html"
@@ -32,7 +32,7 @@ export const MODEL_BENCHMARKS = {
       "name": "天风证券",
       "period": "2024-09-24",
       "fact": "金融政策催化下券商板块扩散，当日天风证券首板。",
-      "verify": "前一完整日非连板、盘中涨幅0.8%–8%、行业成交额前3、量能和承接；封板后不可按本规则追买。",
+      "verify": "前一完整日非连板、盘中涨幅为涨停幅度的8%–80%、行业成交额前3、量能和承接；封板后不可按本规则追买。",
       "sources": [
         "https://stock.cngold.org/c/2024-09-24/c9507765.html",
         "https://stcn.com/article/detail/1330168.html"
@@ -57,7 +57,7 @@ export const MODEL_BENCHMARKS = {
       "name": "艾艾精工",
       "period": "2024-03-05 至 2024-03-21",
       "fact": "连续13个交易日涨停，期间存在较高换手；次日大幅跳水，亦是接力失效的风险样本。",
-      "verify": "至少2个已完成交易日连板、行业成交额前3、盘中涨幅0.8%–8%、承接；非封板且可成交才可考虑。",
+      "verify": "2–5个已完成交易日连板、行业成交额前3、盘中涨幅为涨停幅度的8%–80%、承接；非封板且可成交才可考虑。",
       "sources": [
         "https://stcn.com/article/detail/1154398.html",
         "https://www.stcn.com/article/detail/1150247.html"
@@ -72,7 +72,7 @@ export const MODEL_BENCHMARKS = {
       "name": "中际旭创",
       "period": "2024-04-22",
       "fact": "2023年归母净利润同比增长77.58%，高端光模块受AI需求拉动。",
-      "verify": "AI业务、成长、当时估值，价格>MA20且MA20≥MA60；财报公布前不得使用该财报。",
+      "verify": "当时业绩是否超出公告前可获得的一致预期、成长、估值，价格>MA20且MA20≥MA60；仅同比增长不能证明超预期。",
       "sources": [
         "https://epaper.stcn.com/con/202404/22/content_2619424.html",
         "https://paper.cnstock.com/html/2024-04/22/content_1902056.htm"
@@ -109,7 +109,7 @@ export const MODEL_BENCHMARKS = {
       "name": "宁德时代",
       "period": "2024-03-11",
       "fact": "经历较长调整后单日上涨14.46%，可研究成长股的趋势修复，而非追逐单日涨幅。",
-      "verify": "核对当时成长及估值，价格>MA20且≤MA60×1.10；涨幅过大可能已超出模型区间。",
+      "verify": "核对当时成长及估值，此前收于MA20下方，价格收复MA20且≤MA60×1.10，MA60≥MA120；涨幅过大可能已超出模型区间。",
       "sources": [
         "https://www.yicai.com/news/102023685.html",
         "https://m.21jingji.com/article/20240312/6450d47a7c70226af32322274b0a4c3f_zaker.html"
