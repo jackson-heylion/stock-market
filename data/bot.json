@@ -4,7 +4,7 @@
   "initialCash": 1000000,
   "cash": 1000000,
   "lastDate": "2026-11-25",
-  "updatedAt": "2026-11-27T01:14:06.798Z",
+  "updatedAt": "2026-11-27T10:06:06.723Z",
   "models": {
     "M1": {
       "enabled": false,
@@ -998,32 +998,32 @@
     "version": "WAVE-v3",
     "type": "wave",
     "regime": {
-      "state": "中期趋势偏弱",
-      "cap": 0.2,
-      "verified": true,
-      "source": "沪指完整日K + 三大指数"
+      "state": "待核验",
+      "cap": 0,
+      "verified": false,
+      "source": "三大指数代理"
     },
     "date": "2026-11-27",
     "phase": "休市",
-    "checkedAt": "2026-11-27T01:14:06.792Z",
-    "completedDate": "2026-11-26",
-    "warning": "行业成分源缺失；成交额榜缺失；候选为有限行业、涨幅及成交额样本，不是全市场遍历",
+    "checkedAt": "2026-11-27T10:06:06.706Z",
+    "completedDate": "2026-11-27",
+    "warning": "候选为有限行业、涨幅及成交额样本，不是全市场遍历",
     "rows": [
       {
         "code": "300829",
         "name": "金丹科技",
         "sector": "待核",
-        "price": 32.4,
-        "day": 11.18737131091283,
+        "price": 35.36,
+        "day": 9.135802469135811,
         "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
-        "referenceDate": "2026-11-26",
-        "m5": 30.338,
-        "m10": 29.605999999999995,
-        "m20": 27.4935,
-        "m60": 23.26266666666667,
-        "m120": 18.999749999999995,
-        "ratio": 1.0930840834320692,
+        "referenceDate": "2026-11-27",
+        "m5": 32.17,
+        "m10": 30.279999999999994,
+        "m20": 28.0445,
+        "m60": 23.604333333333336,
+        "m120": 19.150166666666664,
+        "ratio": 1.15606985707951,
         "streak": 0,
         "modes": [
           {
@@ -1032,7 +1032,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "surprise",
@@ -1052,7 +1052,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": true,
-                "detail": "MA20 27.4935 / MA60 23.26266666666667"
+                "detail": "MA20 28.0445 / MA60 23.604333333333336"
               }
             ],
             "pass": false,
@@ -1065,7 +1065,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "cycle",
@@ -1080,7 +1080,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": true,
-                "detail": "MA20 27.4935 / MA60 23.26266666666667"
+                "detail": "MA20 28.0445 / MA60 23.604333333333336"
               }
             ],
             "pass": false,
@@ -1093,7 +1093,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1113,12 +1113,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": true,
-                "detail": "MA60 23.26266666666667 / MA120 18.999749999999995"
+                "detail": "MA60 23.604333333333336 / MA120 19.150166666666664"
               },
               {
                 "name": "60日相对沪指强度为正",
                 "pass": true,
-                "detail": "129.91pp"
+                "detail": "146.80pp"
               }
             ],
             "pass": false,
@@ -1131,7 +1131,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1146,7 +1146,7 @@
               {
                 "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
                 "pass": false,
-                "detail": "27.4935"
+                "detail": "28.0445"
               }
             ],
             "pass": false,
@@ -1159,7 +1159,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "leader",
@@ -1184,12 +1184,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": true,
-                "detail": "MA60 23.26266666666667 / MA120 18.999749999999995"
+                "detail": "MA60 23.604333333333336 / MA120 19.150166666666664"
               },
               {
                 "name": "60日相对沪指强度≥10个百分点",
                 "pass": true,
-                "detail": "129.91pp"
+                "detail": "146.80pp"
               }
             ],
             "pass": false,
@@ -1212,6 +1212,429 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "600410",
+        "name": "华胜天成",
+        "sector": "计算机",
+        "price": 20.9,
+        "day": 9.999999999999986,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 18.328000000000003,
+        "m10": 17.167,
+        "m20": 14.764499999999998,
+        "m60": 14.275499999999996,
+        "m120": 14.843250000000006,
+        "ratio": 0.8045499272067481,
+        "streak": 1,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": true,
+                "detail": "MA20 14.764499999999998 / MA60 14.275499999999996"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 2
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": true,
+                "detail": "MA20 14.764499999999998 / MA60 14.275499999999996"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 2
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 14.275499999999996 / MA120 14.843250000000006"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": true,
+                "detail": "61.74pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 2
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "14.764499999999998"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 14.275499999999996 / MA120 14.843250000000006"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": true,
+                "detail": "61.74pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 2
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 50,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "688981",
+        "name": "中芯国际",
+        "sector": "电子",
+        "price": 134.42,
+        "day": 15.381974248927023,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 124.20599999999999,
+        "m10": 120.373,
+        "m20": 114.35149999999999,
+        "m60": 113.44700000000002,
+        "m120": 125.65058333333334,
+        "ratio": 1.565371831276432,
+        "streak": 0,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "697根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": true,
+                "detail": "MA20 114.35149999999999 / MA60 113.44700000000002"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 2
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "697根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": true,
+                "detail": "MA20 114.35149999999999 / MA60 113.44700000000002"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 2
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "697根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 113.44700000000002 / MA120 125.65058333333334"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": true,
+                "detail": "15.25pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 2
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "697根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "114.35149999999999"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "697根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 113.44700000000002 / MA120 125.65058333333334"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": true,
+                "detail": "15.25pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 2
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 50,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
           "缺少有效盘中报价及成交量",
           "价格或涨跌停可成交性未核验"
         ],
@@ -1223,17 +1646,17 @@
         "code": "002579",
         "name": "中京电子",
         "sector": "待核",
-        "price": 19.23,
-        "day": 7.912457912457915,
-        "quoteTime": 1795742037000,
+        "price": 21.1,
+        "day": 9.724388975559028,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
-        "referenceDate": "2026-11-26",
-        "m5": 16.274,
-        "m10": 13.809000000000001,
-        "m20": 12.963499999999996,
-        "m60": 15.06066666666666,
-        "m120": 15.439833333333336,
-        "ratio": 1.8577106481676304,
+        "referenceDate": "2026-11-27",
+        "m5": 17.816000000000003,
+        "m10": 14.755,
+        "m20": 13.4355,
+        "m60": 15.170333333333328,
+        "m120": 15.453583333333338,
+        "ratio": 1.408949978357231,
         "streak": 0,
         "modes": [
           {
@@ -1242,7 +1665,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "surprise",
@@ -1262,7 +1685,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 12.963499999999996 / MA60 15.06066666666666"
+                "detail": "MA20 13.4355 / MA60 15.170333333333328"
               }
             ],
             "pass": false,
@@ -1275,7 +1698,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "cycle",
@@ -1290,7 +1713,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 12.963499999999996 / MA60 15.06066666666666"
+                "detail": "MA20 13.4355 / MA60 15.170333333333328"
               }
             ],
             "pass": false,
@@ -1303,7 +1726,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1323,12 +1746,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 15.06066666666666 / MA120 15.439833333333336"
+                "detail": "MA60 15.170333333333328 / MA120 15.453583333333338"
               },
               {
                 "name": "60日相对沪指强度为正",
                 "pass": true,
-                "detail": "52.01pp"
+                "detail": "54.16pp"
               }
             ],
             "pass": false,
@@ -1341,7 +1764,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1356,7 +1779,7 @@
               {
                 "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
                 "pass": false,
-                "detail": "12.963499999999996"
+                "detail": "13.4355"
               }
             ],
             "pass": false,
@@ -1369,7 +1792,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "leader",
@@ -1394,12 +1817,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 15.06066666666666 / MA120 15.439833333333336"
+                "detail": "MA60 15.170333333333328 / MA120 15.453583333333338"
               },
               {
                 "name": "60日相对沪指强度≥10个百分点",
                 "pass": true,
-                "detail": "52.01pp"
+                "detail": "54.16pp"
               }
             ],
             "pass": false,
@@ -1422,27 +1845,29 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
-          "缺少有效盘中报价及成交量"
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 19.21,
+        "fillPrice": null,
         "executable": false
       },
       {
         "code": "301348",
         "name": "蓝箭电子",
         "sector": "待核",
-        "price": 20,
-        "day": 5.374077976817704,
+        "price": 22.23,
+        "day": 11.149999999999993,
         "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
-        "referenceDate": "2026-11-26",
-        "m5": 20.592000000000002,
-        "m10": 19.762999999999998,
-        "m20": 19.319000000000003,
-        "m60": 20.232499999999998,
-        "m120": 21.920083333333324,
-        "ratio": 0.7293549603081458,
+        "referenceDate": "2026-11-27",
+        "m5": 20.85,
+        "m10": 20.115999999999996,
+        "m20": 19.526000000000003,
+        "m60": 20.24233333333333,
+        "m120": 21.89866666666666,
+        "ratio": 0.8739301290400998,
         "streak": 0,
         "modes": [
           {
@@ -1451,7 +1876,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "surprise",
@@ -1471,7 +1896,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 19.319000000000003 / MA60 20.232499999999998"
+                "detail": "MA20 19.526000000000003 / MA60 20.24233333333333"
               }
             ],
             "pass": false,
@@ -1484,7 +1909,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "cycle",
@@ -1499,7 +1924,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 19.319000000000003 / MA60 20.232499999999998"
+                "detail": "MA20 19.526000000000003 / MA60 20.24233333333333"
               }
             ],
             "pass": false,
@@ -1512,7 +1937,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1532,12 +1957,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 20.232499999999998 / MA120 21.920083333333324"
+                "detail": "MA60 20.24233333333333 / MA120 21.89866666666666"
               },
               {
                 "name": "60日相对沪指强度为正",
                 "pass": true,
-                "detail": "8.46pp"
+                "detail": "11.57pp"
               }
             ],
             "pass": false,
@@ -1550,7 +1975,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1565,7 +1990,7 @@
               {
                 "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
                 "pass": false,
-                "detail": "19.319000000000003"
+                "detail": "19.526000000000003"
               }
             ],
             "pass": false,
@@ -1578,7 +2003,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "leader",
@@ -1603,17 +2028,17 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 20.232499999999998 / MA120 21.920083333333324"
+                "detail": "MA60 20.24233333333333 / MA120 21.89866666666666"
               },
               {
                 "name": "60日相对沪指强度≥10个百分点",
-                "pass": false,
-                "detail": "8.46pp"
+                "pass": true,
+                "detail": "11.57pp"
               }
             ],
             "pass": false,
             "coverage": 3,
-            "confirmed": 1
+            "confirmed": 2
           }
         ],
         "passed": [],
@@ -1631,6 +2056,7 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
           "缺少有效盘中报价及成交量",
           "价格或涨跌停可成交性未核验"
         ],
@@ -1642,17 +2068,17 @@
         "code": "600156",
         "name": "华升股份",
         "sector": "待核",
-        "price": 9.66,
-        "day": 3.648068669527893,
+        "price": 10.51,
+        "day": 8.79917184265009,
         "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
-        "referenceDate": "2026-11-26",
-        "m5": 8.876,
-        "m10": 8.296,
-        "m20": 7.480500000000001,
-        "m60": 7.732500000000001,
-        "m120": 8.026416666666666,
-        "ratio": 1.1385825267344436,
+        "referenceDate": "2026-11-27",
+        "m5": 9.373999999999999,
+        "m10": 8.638000000000002,
+        "m20": 7.702,
+        "m60": 7.7645,
+        "m120": 8.031333333333333,
+        "ratio": 1.1365636115657274,
         "streak": 0,
         "modes": [
           {
@@ -1661,7 +2087,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "692根，截至 2026-11-26"
+                "detail": "693根，截至 2026-11-27"
               },
               {
                 "name": "surprise",
@@ -1681,7 +2107,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 7.480500000000001 / MA60 7.732500000000001"
+                "detail": "MA20 7.702 / MA60 7.7645"
               }
             ],
             "pass": false,
@@ -1694,7 +2120,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "692根，截至 2026-11-26"
+                "detail": "693根，截至 2026-11-27"
               },
               {
                 "name": "cycle",
@@ -1709,7 +2135,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 7.480500000000001 / MA60 7.732500000000001"
+                "detail": "MA20 7.702 / MA60 7.7645"
               }
             ],
             "pass": false,
@@ -1722,7 +2148,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "692根，截至 2026-11-26"
+                "detail": "693根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1742,12 +2168,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 7.732500000000001 / MA120 8.026416666666666"
+                "detail": "MA60 7.7645 / MA120 8.031333333333333"
               },
               {
                 "name": "60日相对沪指强度为正",
                 "pass": true,
-                "detail": "25.45pp"
+                "detail": "31.20pp"
               }
             ],
             "pass": false,
@@ -1760,7 +2186,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "692根，截至 2026-11-26"
+                "detail": "693根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1775,7 +2201,7 @@
               {
                 "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
                 "pass": false,
-                "detail": "7.480500000000001"
+                "detail": "7.702"
               }
             ],
             "pass": false,
@@ -1788,7 +2214,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "692根，截至 2026-11-26"
+                "detail": "693根，截至 2026-11-27"
               },
               {
                 "name": "leader",
@@ -1813,12 +2239,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 7.732500000000001 / MA120 8.026416666666666"
+                "detail": "MA60 7.7645 / MA120 8.031333333333333"
               },
               {
                 "name": "60日相对沪指强度≥10个百分点",
                 "pass": true,
-                "detail": "25.45pp"
+                "detail": "31.20pp"
               }
             ],
             "pass": false,
@@ -1841,6 +2267,2117 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "688256",
+        "name": "寒武纪",
+        "sector": "电子",
+        "price": 1118.99,
+        "day": 18.681656679217262,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 970.908,
+        "m10": 946.031,
+        "m20": 906.2945,
+        "m60": 980.1451666666668,
+        "m120": 1117.0420833333335,
+        "ratio": 1.5835583441791798,
+        "streak": 0,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 906.2945 / MA60 980.1451666666668"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 906.2945 / MA60 980.1451666666668"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 980.1451666666668 / MA120 1117.0420833333335"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": true,
+                "detail": "15.62pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 2
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "906.2945"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 980.1451666666668 / MA120 1117.0420833333335"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": true,
+                "detail": "15.62pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 2
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W3",
+          "score": 33,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "000938",
+        "name": "紫光股份",
+        "sector": "计算机",
+        "price": 23.57,
+        "day": 9.98600093327111,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 22.137999999999998,
+        "m10": 22.976,
+        "m20": 23.7675,
+        "m60": 28.4895,
+        "m120": 31.139583333333345,
+        "ratio": 1.480173539967532,
+        "streak": 1,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 23.7675 / MA60 28.4895"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 23.7675 / MA60 28.4895"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 28.4895 / MA120 31.139583333333345"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-26.45pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "23.7675"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 28.4895 / MA120 31.139583333333345"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-26.45pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "000977",
+        "name": "浪潮信息",
+        "sector": "计算机",
+        "price": 46.81,
+        "day": 10.011750881316118,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 43.922000000000004,
+        "m10": 46.245000000000005,
+        "m20": 50.6835,
+        "m60": 61.65183333333332,
+        "m120": 67.56541666666668,
+        "ratio": 1.400833685922452,
+        "streak": 1,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 50.6835 / MA60 61.65183333333332"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 50.6835 / MA60 61.65183333333332"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 61.65183333333332 / MA120 67.56541666666668"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-31.35pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "50.6835"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 61.65183333333332 / MA120 67.56541666666668"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-31.35pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "002384",
+        "name": "东山精密",
+        "sector": "电子",
+        "price": 79.77,
+        "day": 9.997242140099294,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 73.252,
+        "m10": 72.505,
+        "m20": 80.21499999999999,
+        "m60": 132.57150000000001,
+        "m120": 176.74758333333338,
+        "ratio": 1.1417727938287918,
+        "streak": 1,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 80.21499999999999 / MA60 132.57150000000001"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 80.21499999999999 / MA60 132.57150000000001"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 132.57150000000001 / MA120 176.74758333333338"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-51.39pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "80.21499999999999"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 132.57150000000001 / MA120 176.74758333333338"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-51.39pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "300033",
+        "name": "同花顺",
+        "sector": "计算机",
+        "price": 210.9,
+        "day": 9.518616606948127,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 199.46799999999996,
+        "m10": 198.468,
+        "m20": 201.6385,
+        "m60": 204.88233333333338,
+        "m120": 216.24408333333324,
+        "ratio": 2.4962167655278305,
+        "streak": 0,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 201.6385 / MA60 204.88233333333338"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 201.6385 / MA60 204.88233333333338"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 204.88233333333338 / MA120 216.24408333333324"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-0.72pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "201.6385"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 204.88233333333338 / MA120 216.24408333333324"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-0.72pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "300308",
+        "name": "中际旭创",
+        "sector": "通信",
+        "price": 516.15,
+        "day": 19.984657585196896,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 437.90600000000006,
+        "m10": 418.93999999999994,
+        "m20": 456.7219999999999,
+        "m60": 673.4758333333334,
+        "m120": 874.8136666666663,
+        "ratio": 1.4426436013168793,
+        "streak": 0,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 456.7219999999999 / MA60 673.4758333333334"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 456.7219999999999 / MA60 673.4758333333334"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 673.4758333333334 / MA120 874.8136666666663"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-31.56pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "456.7219999999999"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 673.4758333333334 / MA120 874.8136666666663"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-31.56pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "300394",
+        "name": "天孚通信",
+        "sector": "通信",
+        "price": 160.52,
+        "day": 19.79998507351295,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 132.65,
+        "m10": 119.93400000000001,
+        "m20": 125.54100000000001,
+        "m60": 201.42566666666667,
+        "m120": 237.53925000000012,
+        "ratio": 1.3100060120543753,
+        "streak": 0,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 125.54100000000001 / MA60 201.42566666666667"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 125.54100000000001 / MA60 201.42566666666667"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 201.42566666666667 / MA120 237.53925000000012"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-31.07pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "125.54100000000001"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 201.42566666666667 / MA120 237.53925000000012"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-31.07pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "300502",
+        "name": "新易盛",
+        "sector": "通信",
+        "price": 226.84,
+        "day": 20.00211606623288,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 191.70800000000003,
+        "m10": 177.56099999999998,
+        "m20": 183.13100000000003,
+        "m60": 302.64383333333336,
+        "m120": 406.6009166666669,
+        "ratio": 1.2655667816534102,
+        "streak": 1,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 183.13100000000003 / MA60 302.64383333333336"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 183.13100000000003 / MA60 302.64383333333336"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 302.64383333333336 / MA120 406.6009166666669"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-35.70pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "183.13100000000003"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 302.64383333333336 / MA120 406.6009166666669"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-35.70pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "300750",
+        "name": "宁德时代",
+        "sector": "待核",
+        "price": 215.89,
+        "day": 5.71442561943003,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 216.658,
+        "m10": 226.56599999999997,
+        "m20": 237.46400000000003,
+        "m60": 276.5065,
+        "m120": 331.83050000000003,
+        "ratio": 1.3495342659924838,
+        "streak": 0,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 237.46400000000003 / MA60 276.5065"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 237.46400000000003 / MA60 276.5065"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 276.5065 / MA120 331.83050000000003"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-33.27pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "237.46400000000003"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 276.5065 / MA120 331.83050000000003"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-33.27pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "600487",
+        "name": "亨通光电",
+        "sector": "通信",
+        "price": 38.13,
+        "day": 10.0115406809002,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 36.098,
+        "m10": 36.94499999999999,
+        "m20": 39.876000000000005,
+        "m60": 52.23666666666667,
+        "m120": 64.7055,
+        "ratio": 1.523295482700393,
+        "streak": 1,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 39.876000000000005 / MA60 52.23666666666667"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 39.876000000000005 / MA60 52.23666666666667"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 52.23666666666667 / MA120 64.7055"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-37.67pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "39.876000000000005"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "703根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 52.23666666666667 / MA120 64.7055"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-37.67pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
           "缺少有效盘中报价及成交量",
           "价格或涨跌停可成交性未核验"
         ],
@@ -1852,17 +4389,228 @@
         "code": "600520",
         "name": "三佳科技",
         "sector": "待核",
-        "price": 20.06,
-        "day": 9.978070175438592,
-        "quoteTime": 1795742032000,
+        "price": 22.07,
+        "day": 10.019940179461617,
+        "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
-        "referenceDate": "2026-11-26",
-        "m5": 19.913999999999998,
-        "m10": 20.205000000000005,
-        "m20": 20.321,
-        "m60": 22.3655,
-        "m120": 25.444916666666664,
-        "ratio": 0.6636523856116616,
+        "referenceDate": "2026-11-27",
+        "m5": 20.21,
+        "m10": 20.371000000000002,
+        "m20": 20.4375,
+        "m60": 22.321833333333334,
+        "m120": 25.38383333333333,
+        "ratio": 0.5571299411581615,
+        "streak": 2,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "698根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 20.4375 / MA60 22.321833333333334"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "698根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 20.4375 / MA60 22.321833333333334"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "698根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 22.321833333333334 / MA120 25.38383333333333"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-1.76pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "698根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": false,
+                "detail": "20.4375"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "698根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": false,
+                "detail": "MA60 22.321833333333334 / MA120 25.38383333333333"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-1.76pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 3,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "601133",
+        "name": "柏诚股份",
+        "sector": "待核",
+        "price": 16.69,
+        "day": 10.019775873434412,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 16.122,
+        "m10": 16.348,
+        "m20": 16.625999999999998,
+        "m60": 20.110333333333326,
+        "m120": 25.076166666666676,
+        "ratio": 0.5914215942890259,
         "streak": 1,
         "modes": [
           {
@@ -1871,7 +4619,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "697根，截至 2026-11-26"
+                "detail": "700根，截至 2026-11-27"
               },
               {
                 "name": "surprise",
@@ -1891,7 +4639,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 20.321 / MA60 22.3655"
+                "detail": "MA20 16.625999999999998 / MA60 20.110333333333326"
               }
             ],
             "pass": false,
@@ -1904,7 +4652,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "697根，截至 2026-11-26"
+                "detail": "700根，截至 2026-11-27"
               },
               {
                 "name": "cycle",
@@ -1919,7 +4667,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 20.321 / MA60 22.3655"
+                "detail": "MA20 16.625999999999998 / MA60 20.110333333333326"
               }
             ],
             "pass": false,
@@ -1932,7 +4680,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "697根，截至 2026-11-26"
+                "detail": "700根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1952,12 +4700,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 22.3655 / MA120 25.444916666666664"
+                "detail": "MA60 20.110333333333326 / MA120 25.076166666666676"
               },
               {
                 "name": "60日相对沪指强度为正",
                 "pass": false,
-                "detail": "-4.86pp"
+                "detail": "-29.59pp"
               }
             ],
             "pass": false,
@@ -1970,7 +4718,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "697根，截至 2026-11-26"
+                "detail": "700根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -1985,7 +4733,7 @@
               {
                 "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
                 "pass": false,
-                "detail": "20.321"
+                "detail": "16.625999999999998"
               }
             ],
             "pass": false,
@@ -1998,7 +4746,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "697根，截至 2026-11-26"
+                "detail": "700根，截至 2026-11-27"
               },
               {
                 "name": "leader",
@@ -2023,12 +4771,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 22.3655 / MA120 25.444916666666664"
+                "detail": "MA60 20.110333333333326 / MA120 25.076166666666676"
               },
               {
                 "name": "60日相对沪指强度≥10个百分点",
                 "pass": false,
-                "detail": "-4.86pp"
+                "detail": "-29.59pp"
               }
             ],
             "pass": false,
@@ -2051,237 +4799,30 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
-          "缺少有效盘中报价及成交量"
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
         ],
         "quantity": 0,
-        "fillPrice": 20.04,
-        "executable": false
-      },
-      {
-        "code": "601133",
-        "name": "柏诚股份",
-        "sector": "待核",
-        "price": 15.17,
-        "day": 0.3306878306878369,
-        "quoteTime": 1795742041000,
-        "priceKind": "最近完整交易日收盘参考",
-        "referenceDate": "2026-11-26",
-        "m5": 16.080000000000002,
-        "m10": 16.354999999999997,
-        "m20": 16.5845,
-        "m60": 20.283999999999992,
-        "m120": 25.16591666666668,
-        "ratio": 0.619242600147563,
-        "streak": 0,
-        "modes": [
-          {
-            "id": "W1",
-            "checks": [
-              {
-                "name": "日K连续证据",
-                "pass": true,
-                "detail": "699根，截至 2026-11-26"
-              },
-              {
-                "name": "surprise",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "growth",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "valuation",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "价格高于MA20且MA20不低于MA60",
-                "pass": false,
-                "detail": "MA20 16.5845 / MA60 20.283999999999992"
-              }
-            ],
-            "pass": false,
-            "coverage": 2,
-            "confirmed": 1
-          },
-          {
-            "id": "W2",
-            "checks": [
-              {
-                "name": "日K连续证据",
-                "pass": true,
-                "detail": "699根，截至 2026-11-26"
-              },
-              {
-                "name": "cycle",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "valuation",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "价格高于MA20且MA20不低于MA60",
-                "pass": false,
-                "detail": "MA20 16.5845 / MA60 20.283999999999992"
-              }
-            ],
-            "pass": false,
-            "coverage": 2,
-            "confirmed": 1
-          },
-          {
-            "id": "W3",
-            "checks": [
-              {
-                "name": "日K连续证据",
-                "pass": true,
-                "detail": "699根，截至 2026-11-26"
-              },
-              {
-                "name": "growth",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "cycle",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "valuation",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "MA60≥MA120，价格高于MA60",
-                "pass": false,
-                "detail": "MA60 20.283999999999992 / MA120 25.16591666666668"
-              },
-              {
-                "name": "60日相对沪指强度为正",
-                "pass": false,
-                "detail": "-30.16pp"
-              }
-            ],
-            "pass": false,
-            "coverage": 3,
-            "confirmed": 1
-          },
-          {
-            "id": "W4",
-            "checks": [
-              {
-                "name": "日K连续证据",
-                "pass": true,
-                "detail": "699根，截至 2026-11-26"
-              },
-              {
-                "name": "growth",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "valuation",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
-                "pass": false,
-                "detail": "16.5845"
-              }
-            ],
-            "pass": false,
-            "coverage": 2,
-            "confirmed": 1
-          },
-          {
-            "id": "W5",
-            "checks": [
-              {
-                "name": "日K连续证据",
-                "pass": true,
-                "detail": "699根，截至 2026-11-26"
-              },
-              {
-                "name": "leader",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "cycle",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "growth",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "valuation",
-                "pass": null,
-                "detail": "缺少120日内带来源的可核验证据"
-              },
-              {
-                "name": "MA60≥MA120，价格高于MA60",
-                "pass": false,
-                "detail": "MA60 20.283999999999992 / MA120 25.16591666666668"
-              },
-              {
-                "name": "60日相对沪指强度≥10个百分点",
-                "pass": false,
-                "detail": "-30.16pp"
-              }
-            ],
-            "pass": false,
-            "coverage": 3,
-            "confirmed": 1
-          }
-        ],
-        "passed": [],
-        "rankFresh": false,
-        "aligned": true,
-        "checkScore": {
-          "id": "W2",
-          "score": 25,
-          "coverage": 50
-        },
-        "held": 0,
-        "pnl": null,
-        "action": "HOLD",
-        "reason": "等待开仓条件",
-        "gates": [
-          "未触发交易",
-          "非连续交易时段，仅建议／待核验",
-          "缺少有效盘中报价及成交量"
-        ],
-        "quantity": 0,
-        "fillPrice": 15.15,
+        "fillPrice": null,
         "executable": false
       },
       {
         "code": "603931",
         "name": "格林达",
         "sector": "待核",
-        "price": 27.69,
-        "day": -0.036101083032480386,
+        "price": 30.46,
+        "day": 10.003611412062119,
         "quoteTime": null,
         "priceKind": "最近完整交易日收盘参考",
-        "referenceDate": "2026-11-26",
-        "m5": 28.786,
-        "m10": 27.967000000000002,
-        "m20": 27.170500000000004,
-        "m60": 30.557166666666667,
-        "m120": 38.522666666666645,
-        "ratio": 0.7589917454273741,
-        "streak": 0,
+        "referenceDate": "2026-11-27",
+        "m5": 29.122000000000003,
+        "m10": 28.344,
+        "m20": 27.4635,
+        "m60": 30.455499999999997,
+        "m120": 38.27333333333331,
+        "ratio": 1.0140343222803956,
+        "streak": 1,
         "modes": [
           {
             "id": "W1",
@@ -2289,7 +4830,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "surprise",
@@ -2309,7 +4850,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 27.170500000000004 / MA60 30.557166666666667"
+                "detail": "MA20 27.4635 / MA60 30.455499999999997"
               }
             ],
             "pass": false,
@@ -2322,7 +4863,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "cycle",
@@ -2337,7 +4878,7 @@
               {
                 "name": "价格高于MA20且MA20不低于MA60",
                 "pass": false,
-                "detail": "MA20 27.170500000000004 / MA60 30.557166666666667"
+                "detail": "MA20 27.4635 / MA60 30.455499999999997"
               }
             ],
             "pass": false,
@@ -2350,7 +4891,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -2370,12 +4911,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 30.557166666666667 / MA120 38.522666666666645"
+                "detail": "MA60 30.455499999999997 / MA120 38.27333333333331"
               },
               {
                 "name": "60日相对沪指强度为正",
                 "pass": false,
-                "detail": "-9.71pp"
+                "detail": "-7.84pp"
               }
             ],
             "pass": false,
@@ -2388,7 +4929,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "growth",
@@ -2403,7 +4944,7 @@
               {
                 "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
                 "pass": false,
-                "detail": "27.170500000000004"
+                "detail": "27.4635"
               }
             ],
             "pass": false,
@@ -2416,7 +4957,7 @@
               {
                 "name": "日K连续证据",
                 "pass": true,
-                "detail": "702根，截至 2026-11-26"
+                "detail": "703根，截至 2026-11-27"
               },
               {
                 "name": "leader",
@@ -2441,12 +4982,12 @@
               {
                 "name": "MA60≥MA120，价格高于MA60",
                 "pass": false,
-                "detail": "MA60 30.557166666666667 / MA120 38.522666666666645"
+                "detail": "MA60 30.455499999999997 / MA120 38.27333333333331"
               },
               {
                 "name": "60日相对沪指强度≥10个百分点",
                 "pass": false,
-                "detail": "-9.71pp"
+                "detail": "-7.84pp"
               }
             ],
             "pass": false,
@@ -2469,6 +5010,218 @@
         "gates": [
           "未触发交易",
           "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
+          "缺少有效盘中报价及成交量",
+          "价格或涨跌停可成交性未核验"
+        ],
+        "quantity": 0,
+        "fillPrice": null,
+        "executable": false
+      },
+      {
+        "code": "688825",
+        "name": "长鑫科技",
+        "sector": "电子",
+        "price": 36.93,
+        "day": 12.970327317222408,
+        "quoteTime": null,
+        "priceKind": "最近完整交易日收盘参考",
+        "referenceDate": "2026-11-27",
+        "m5": 35.076,
+        "m10": 35.948,
+        "m20": 38.524499999999996,
+        "m60": 46.899333333333324,
+        "m120": null,
+        "ratio": 1.8285626831341268,
+        "streak": 0,
+        "modes": [
+          {
+            "id": "W1",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "84根，截至 2026-11-27"
+              },
+              {
+                "name": "surprise",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 38.524499999999996 / MA60 46.899333333333324"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W2",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "84根，截至 2026-11-27"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "价格高于MA20且MA20不低于MA60",
+                "pass": false,
+                "detail": "MA20 38.524499999999996 / MA60 46.899333333333324"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W3",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "84根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": null,
+                "detail": "MA60 46.899333333333324 / MA120 待核"
+              },
+              {
+                "name": "60日相对沪指强度为正",
+                "pass": false,
+                "detail": "-28.69pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          },
+          {
+            "id": "W4",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "84根，截至 2026-11-27"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "此前收于MA20下方，当前收复且MA60趋势不弱",
+                "pass": null,
+                "detail": "38.524499999999996"
+              }
+            ],
+            "pass": false,
+            "coverage": 1,
+            "confirmed": 1
+          },
+          {
+            "id": "W5",
+            "checks": [
+              {
+                "name": "日K连续证据",
+                "pass": true,
+                "detail": "84根，截至 2026-11-27"
+              },
+              {
+                "name": "leader",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "cycle",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "growth",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "valuation",
+                "pass": null,
+                "detail": "缺少120日内带来源的可核验证据"
+              },
+              {
+                "name": "MA60≥MA120，价格高于MA60",
+                "pass": null,
+                "detail": "MA60 46.899333333333324 / MA120 待核"
+              },
+              {
+                "name": "60日相对沪指强度≥10个百分点",
+                "pass": false,
+                "detail": "-28.69pp"
+              }
+            ],
+            "pass": false,
+            "coverage": 2,
+            "confirmed": 1
+          }
+        ],
+        "passed": [],
+        "rankFresh": false,
+        "aligned": true,
+        "checkScore": {
+          "id": "W2",
+          "score": 25,
+          "coverage": 50
+        },
+        "held": 0,
+        "pnl": null,
+        "action": "HOLD",
+        "reason": "等待开仓条件",
+        "gates": [
+          "未触发交易",
+          "非连续交易时段，仅建议／待核验",
+          "交易日指数未核验",
           "缺少有效盘中报价及成交量",
           "价格或涨跌停可成交性未核验"
         ],
