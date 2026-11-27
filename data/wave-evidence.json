@@ -1,5 +1,5 @@
 {
   "schema": 1,
-  "description": "仅维护人工核验的公告/财报/产业/估值证据；字段 ai growth cycle valuation leader: {pass,asOf,source,note}。缺失拒绝波段买入。",
+  "description": "仅维护人工核验的公告/财报/产业/估值证据；字段 surprise growth cycle valuation leader（旧ai字段仅保留兼容）: {pass,asOf,source,note}。缺失拒绝相应波段模式买入。surprise 必须核验公告前可获得的业绩预期与实际业绩差，不得用同比增速代替。",
   "securities": {}
 }

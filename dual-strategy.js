@@ -3,8 +3,8 @@ import {positions,registeredStock,registerSecurity,cloneState,validateState,exec
 import {session,getQuotes,getDailyBars} from './market.js';
 import {getMarketIndices,getSectorLeaders,getWatchQuotes,getRankings} from './market-center.js';
 import {clock,fresh,round} from './afternoon-rules.js';
-export const STRATEGIES=Object.freeze({short:{label:'短线',version:'SHORT-v2',entry:.05,add:.05,maxStock:.15,maxTotal:.70,maxPositions:6,stop:.04,trail:.05,days:5,buys:4},wave:{label:'波段',version:'WAVE-v2',entry:.10,add:.05,maxStock:.25,maxTotal:.80,maxPositions:5,stop:.08,trail:.10,days:40,buys:2}});
-export const MODES={short:[['S1','放量突破'],['S2','强势回踩'],['S3','热点首板'],['S4','分歧转一致'],['S5','龙头接力／连板']],wave:[['W1','AI成长'],['W2','周期复苏'],['W3','景气共振'],['W4','成长回调'],['W5','大周期龙头']]};
+export const STRATEGIES=Object.freeze({short:{label:'短线',version:'SHORT-v3',entry:.05,add:.05,maxStock:.15,maxTotal:.70,maxPositions:6,stop:.04,trail:.05,days:5,buys:4},wave:{label:'波段',version:'WAVE-v3',entry:.10,add:.05,maxStock:.25,maxTotal:.80,maxPositions:5,stop:.08,trail:.10,days:40,buys:2}});
+export const MODES={short:[['S1','强势行业平台突破'],['S2','强势缩量回踩'],['S3','低位热点启动'],['S4','强势股分歧修复'],['S5','龙头换手接力']],wave:[['W1','业绩超预期'],['W2','供需周期复苏'],['W3','产业景气共振'],['W4','成长回调修复'],['W5','行业龙头趋势']]};
 const valid=n=>Number.isFinite(n)&&n>0,avg=a=>a.reduce((s,x)=>s+x,0)/a.length,ma=(b,n)=>b.length>=n?avg(b.slice(-n).map(x=>x.close)):null;
 const pct=(a,b)=>valid(a)&&valid(b)?(a/b-1)*100:null;
 const cap=(code,name)=>/ST/i.test(name)?0.05:/^(30|68)/.test(code)?0.20:.10;
@@ -21,11 +21,23 @@ export function limitStreak(bars,code,name){
 }
 export function evidenceFor(e,now){
  const out={};
- for(const key of ['ai','growth','cycle','valuation','leader']){const x=e?.[key],date=Date.parse(x?.asOf||'');out[key]=x&&typeof x.pass==='boolean'&&/^https:\/\/[^\s]+$/.test(x.source||'')&&typeof x.note==='string'&&x.note.trim()&&Number.isFinite(date)&&date<=now&&now-date<=120*86400000?{pass:x.pass,detail:x.note,source:x.source,asOf:x.asOf}:{pass:null,detail:'缺少120日内带来源的可核验证据'};}
+ for(const key of ['ai','surprise','growth','cycle','valuation','leader']){const x=e?.[key],date=Date.parse(x?.asOf||'');out[key]=x&&typeof x.pass==='boolean'&&/^https:\/\/[^\s]+$/.test(x.source||'')&&typeof x.note==='string'&&x.note.trim()&&Number.isFinite(date)&&date<=now&&now-date<=120*86400000?{pass:x.pass,detail:x.note,source:x.source,asOf:x.asOf}:{pass:null,detail:'缺少120日内带来源的可核验证据'};}
  return out;
 }
 const test=(name,pass,detail)=>({name,pass:pass===true?true:pass===false?false:null,detail:String(detail??'待核')});
-const mode=(id,checks)=>({id,checks,pass:checks.every(c=>c.pass===true)});
+const mode=(id,checks)=>({id,checks,pass:checks.every(c=>c.pass===true),coverage:checks.filter(c=>c.pass!==null).length,confirmed:checks.filter(c=>c.pass===true).length});
+// Deliberately a limited index proxy, not market breadth or a calibrated prediction.
+export function marketRegime(snapshot,type,now){
+ const idx=coreKeys.map(key=>(snapshot.indices||[]).find(q=>q.key===key));
+ if(!idx.every(q=>fresh(q,now,60000)&&Number.isFinite(q.pct)))return {state:'待核验',cap:0,verified:false,source:'三大指数代理'};
+ const p=idx.map(q=>q.pct),positive=p.filter(x=>x>=0).length;
+ if(p.filter(x=>x<=-2).length>=2)return {state:'指数显著走弱',cap:0,verified:true,source:'三大指数代理'};
+ if(type==='short')return {state:positive===3?'指数共振':positive===2?'指数分化':'指数偏弱',cap:positive===3?.70:positive===2?.40:0,verified:true,source:'三大指数代理（非情绪周期）'};
+ const bars=(snapshot.benchmark||[]).filter(b=>b.date<=snapshot.completedDate&&valid(b.close)).sort((a,b)=>a.date.localeCompare(b.date));
+ if(bars.length<60||bars.at(-1)?.date!==snapshot.completedDate||new Set(bars.map(b=>b.date)).size!==bars.length)return {state:'中期趋势待核验',cap:0,verified:false,source:'沪指完整日K + 三大指数'};
+ const m20=ma(bars,20),m60=ma(bars,60),close=bars.at(-1).close,strong=close>=m20&&m20>=m60;
+ return {state:strong?'中期趋势偏强':close>=m60?'中期震荡':'中期趋势偏弱',cap:strong?(positive>=2?.80:.40):close>=m60?.40:.20,verified:true,source:'沪指完整日K + 三大指数'};
+}
 export function analyzeSymbol(s,snapshot,type,now){
  const today=dt(now),open=session(now)==='open',auction=session(now)==='auction',q=snapshot.quotes?.[s.code],rank=snapshot.ranks?.[s.code],cut=snapshot.completedDate;
  const bars=(snapshot.daily?.[s.code]||[]).filter(b=>b.date<=cut&&valid(b.close)&&valid(b.volume)&&valid(b.high)&&valid(b.low)).sort((a,b)=>a.date.localeCompare(b.date));
@@ -39,26 +51,32 @@ export function analyzeSymbol(s,snapshot,type,now){
  const prior=aligned?(open||auction?bars:bars.slice(0,-1)):[],high20=prior.length>=20?Math.max(...prior.slice(-20).map(b=>b.high)):null;
  const draw=rankFresh?pct(q.price,rank.high):!open&&!auction&&last?pct(last.close,last.high):null,streak=aligned?limitStreak(bars,s.code,s.name):null;
  const sectorFresh=Number.isFinite(s.sectorTime)&&s.sectorTime<=now&&dt(s.sectorTime)===(open||auction?today:cut)&&(open||auction?now-s.sectorTime<=120000:true);
- const sectorOk=sectorFresh&&Number.isFinite(s.sectorPct)?s.sectorPct>=1:null,peer=Number.isInteger(s.peerRank)&&s.peerCount>=4?s.peerRank<=3:null,up=Number.isFinite(day)?day>=0.8&&day<=8:null;
+ const sectorOk=sectorFresh&&Number.isFinite(s.sectorPct)?s.sectorPct>=1:null,peer=Number.isInteger(s.peerRank)&&s.peerCount>=4?s.peerRank<=3:null,limitPct=cap(s.code,s.name)*100,up=Number.isFinite(day)?day>=limitPct*.08&&day<=limitPct*.8:null;
+ const relative=sectorFresh&&Number.isFinite(day)&&Number.isFinite(s.sectorPct)?day>=s.sectorPct:null;
  const hhmm=clock(now).clock.split(':').map(Number),minutes=hhmm[0]*60+hhmm[1],elapsed=minutes<690?Math.max(1,minutes-570):Math.max(1,120+minutes-780),volumeFloor=open?Math.max(.06,1.3*Math.min(240,elapsed)/240):1.3;
  const vol=Number.isFinite(ratio)&&!auction?ratio>=volumeFloor:null;
+ const elapsedFraction=open?Math.min(240,elapsed)/240:1,paceRatio=Number.isFinite(ratio)&&!auction?ratio/elapsedFraction:null;
+ const shrink=paceRatio!==null&&(!open||elapsed>=30)?paceRatio<=.8:null;
  const support=rankFresh?q.price>=rank.open&&draw>=-3:!open&&!auction&&last?last.close>=last.open&&draw>=-3:null;
- const priceUp=valid(price)&&valid(high20)?price>high20:null,priorStrong=aligned&&prior.length>=6?pct(prior.at(-1).close,prior.at(-6).close)>=8:null;
+ const priceUp=valid(price)&&valid(high20)?price>high20:null,priorStrong=aligned&&prior.length>=6?pct(prior.at(-1).close,prior.at(-6).close)>=limitPct*.8:null;
  const pull=valid(price)&&valid(m5)&&valid(m10)?price>=m10&&price<=m5*1.04:null;
  const evidence=evidenceFor(snapshot.evidence?.[s.code],now);
  const strength=test('行业强势',sectorOk,Number.isFinite(s.sectorPct)?s.sectorPct.toFixed(2)+'%（'+(sectorFresh?'时点匹配':'时点待核')+'）':'行业待核');
  const leader=test('行业成交额前3（样本）',peer,s.peerRank?'第'+s.peerRank+'/'+s.peerCount:'行业成分样本不足');
  const liquidity=test('量能',vol,ratio===null?'待核':ratio.toFixed(2)+'倍（累计量/完整日均量，门槛 '+volumeFloor.toFixed(2)+'；盘中按交易时间比例代理）');
  const accept=test('承接',support,draw===null?'待核':'高点回撤 '+draw.toFixed(2)+'%');
+ const relativeCheck=test('个股不弱于所属行业',relative,sectorFresh&&Number.isFinite(day)?'个股 '+day.toFixed(2)+'% / 行业 '+s.sectorPct+'%':'待核');
+ const lowPosition=test('未远离20日平台',valid(price)&&valid(high20)?price<=high20*1.05:null,high20??'待核');
+ const priorTrend=test('前期强势',priorStrong,'前5日涨幅≥当日涨停幅度的80%');
  const dailyEvidence=test('日K连续证据',aligned,aligned?bars.length+'根，截至 '+cut:'未与基准交易日对齐');
  let modes;
  if(type==='short'){
   modes=[
-   mode('S1',[dailyEvidence,strength,liquidity,test('突破前20日高点',priceUp,high20??'待核'),accept]),
-   mode('S2',[dailyEvidence,strength,test('前5日涨幅≥8%',priorStrong,'强势前置'),test('回踩MA5/10',pull,m5??'待核'),test('缩量（全天/累计≤0.8）',ratio===null?null:ratio<=.8,ratio??'待核'),accept]),
-   mode('S3',[dailyEvidence,strength,test('涨幅0.8%–8%',up,day??'待核'),test('前一完整日非连板',streak===null?null:streak===0,streak??'待核'),liquidity,leader,accept]),
-   mode('S4',[dailyEvidence,strength,test('前日分歧后重新走强',aligned&&prev?last.close<prev.close&&valid(price)&&price>last.high:null,last?.high??'待核'),liquidity,accept]),
-   mode('S5',[dailyEvidence,strength,leader,test('已完成交易日连续封板≥2（价格估算）',streak===null?null:streak>=2,streak??'待核'),test('当期非封板追价，涨幅0.8%–8%',up,day??'待核'),accept])
+   mode('S1',[dailyEvidence,strength,relativeCheck,liquidity,test('突破前20日高点',priceUp,high20??'待核'),accept]),
+   mode('S2',[dailyEvidence,strength,priorTrend,test('回踩MA5/10且短均线不走弱',pull===null?null:pull&&m5>=m10,m5??'待核'),test('缩量（线性时段代理≤0.8，盘中至少30分钟）',shrink,paceRatio===null?'待核':paceRatio.toFixed(2)),accept]),
+   mode('S3',[dailyEvidence,strength,relativeCheck,lowPosition,test('涨幅为涨停幅度的8%–80%',up,day??'待核'),test('前一完整日非涨停',streak===null?null:streak===0,streak??'待核'),liquidity,leader,accept]),
+   mode('S4',[dailyEvidence,strength,relativeCheck,priorTrend,test('前日分歧后重新走强',aligned&&prev?last.close<prev.close&&valid(price)&&price>last.high:null,last?.high??'待核'),liquidity,accept]),
+   mode('S5',[dailyEvidence,strength,relativeCheck,leader,liquidity,test('已完成交易日连续封板2–5（价格估算；高位禁追）',streak===null?null:streak>=2&&streak<=5,streak??'待核'),test('非封板追价，涨幅为涨停幅度的8%–80%',up,day??'待核'),accept])
   ];
  }else{
   const fundamental=k=>test(k,evidence[k].pass,evidence[k].detail+(evidence[k].source?' · '+evidence[k].source:''));
@@ -67,10 +85,10 @@ export function analyzeSymbol(s,snapshot,type,now){
   const bench=(snapshot.benchmark||[]).filter(b=>b.date<=cut),ref=bars.length>=61?bars.at(-61):null,bi=ref?bench.find(b=>b.date===ref.date):null,bj=bench.find(b=>b.date===cut);
   const rs=ref&&bi&&bj&&last&&valid(bi.close)&&valid(bj.close)?pct(last.close,ref.close)-pct(bj.close,bi.close):null;
   modes=[
-   mode('W1',[dailyEvidence,fundamental('ai'),fundamental('growth'),fundamental('valuation'),mid]),
+   mode('W1',[dailyEvidence,fundamental('surprise'),fundamental('growth'),fundamental('valuation'),mid]),
    mode('W2',[dailyEvidence,fundamental('cycle'),fundamental('valuation'),mid]),
-   mode('W3',[dailyEvidence,fundamental('growth'),fundamental('cycle'),fundamental('valuation'),long]),
-   mode('W4',[dailyEvidence,fundamental('growth'),fundamental('valuation'),test('回调收复MA20',valid(price)&&valid(m20)&&valid(m60)?price>m20&&price<=m60*1.10:null,m20??'待核')]),
+   mode('W3',[dailyEvidence,fundamental('growth'),fundamental('cycle'),fundamental('valuation'),long,test('60日相对沪指强度为正',rs===null?null:rs>0,rs===null?'待核':rs.toFixed(2)+'pp')]),
+   mode('W4',[dailyEvidence,fundamental('growth'),fundamental('valuation'),test('此前收于MA20下方，当前收复且MA60趋势不弱',valid(price)&&valid(m20)&&valid(m60)&&valid(m120)&&last?((open||auction)?last.close<=m20:prev.close<=ma(prior,20))&&price>m20&&price<=m60*1.10&&m60>=m120:null,m20??'待核')]),
    mode('W5',[dailyEvidence,fundamental('leader'),fundamental('cycle'),fundamental('growth'),fundamental('valuation'),long,test('60日相对沪指强度≥10个百分点',rs===null?null:rs>=10,rs===null?'待核':rs.toFixed(2)+'pp')])
   ];
  }
@@ -103,9 +121,9 @@ function holdingAction(h,a,type,now,account){
 export function planStrategy(account,snapshot,type='short',now=Date.now()){
  const p=STRATEGIES[type],holds=holdRows(account,type),by=new Map(holds.map(h=>[h.code,h])),stocks=new Map((snapshot.stocks||[]).map(s=>[s.code,s]));
  for(const h of holds)if(!stocks.has(h.code))stocks.set(h.code,{code:h.code,name:h.name});
- const idx=snapshot.indices||[],indexOk=coreKeys.every(k=>idx.some(q=>q.key===k&&fresh(q,now,60000)&&Number.isFinite(q.pct))),marketOk=indexOk&&coreKeys.filter(k=>idx.find(q=>q.key===k)?.pct>=0).length>=2;
+ const regime=marketRegime(snapshot,type,now),indexOk=coreKeys.every(k=>(snapshot.indices||[]).some(q=>q.key===k&&fresh(q,now,60000)&&Number.isFinite(q.pct))),marketOk=regime.verified&&regime.cap>0;
  const values=holds.map(h=>{const q=snapshot.quotes?.[h.code];return fresh(q,now)&&q.code===h.code?h.quantity*q.price:null;}),total=values.every(x=>x!==null)?values.reduce((a,b)=>a+b,0):null;
- const dailyBuys=(account.trades||[]).filter(t=>t.date===dt(now)&&t.side==='BUY'&&String(t.strategyVersion||t.modelId).startsWith(p.version)).length,rows=[];
+ const dailyBuys=(account.trades||[]).filter(t=>t.date===dt(now)&&t.side==='BUY'&&String(t.strategyVersion||t.modelId).startsWith(type==='short'?'SHORT-v':'WAVE-v')).length,rows=[];
  for(const s of stocks.values()){
   const h=by.get(s.code);if(!h&&!tradableName(s))continue;
   const a=analyzeSymbol(s,snapshot,type,now),[action,reason,fraction]=h?holdingAction(h,a,type,now,account):a.passed.length?['OPEN',a.passed.join('/')+'条件满足',p.entry]:['HOLD','等待开仓条件',0];
@@ -117,19 +135,21 @@ export function planStrategy(account,snapshot,type='short',now=Date.now()){
   if(buy&&(!snapshot.completedDate||snapshot.completedDate>=dt(now)))gates.push('前一完整交易日未核验');
   if(buy&&(!marketOk||!a.aligned||!tradableName(s)||!q||!q.name||q.name!==s.name||!valid(a.bars.at(-1)?.close)||Math.abs(a.bars.at(-1).close/q.prevClose-1)>.005))gates.push('买入身份、昨收或市场风控未通过');
   if(buy&&action==='OPEN'&&holds.length>=p.maxPositions)gates.push('持仓数量上限');
+  if(buy&&(!regime.verified||regime.cap<=0))gates.push('市场环境限制新增买入');
   if(buy&&dailyBuys>=p.buys)gates.push('每日策略买入上限');
   if(selling&&h.buyDate>=dt(now))gates.push('T+1限制');
   if((account.trades||[]).some(t=>t.code===s.code&&t.date===dt(now)))gates.push('同股当日已有成交');
   const px=q?round(q.price*(buy?1.001:.999)):null,limit=q?cap(s.code,s.name):null;
   if(!px||px>=round(q.prevClose*(1+limit))-.01||px<=round(q.prevClose*(1-limit))+.01)gates.push('价格或涨跌停可成交性未核验');
   let qty=0;
-  if(buy){if(total===null)gates.push('组合市值未核验');else if(px)qty=budgetQuantity(Math.max(0,Math.min(account.cash,account.initialCash*fraction,account.initialCash*p.maxStock-(h?h.quantity*q.price:0),account.initialCash*p.maxTotal-total)),px);}
+  if(buy){if(total===null)gates.push('组合市值未核验');else if(px)qty=budgetQuantity(Math.max(0,Math.min(account.cash,account.initialCash*fraction,account.initialCash*p.maxStock-(h?h.quantity*q.price:0),account.initialCash*Math.min(p.maxTotal,regime.cap)-total)),px);}
   if(selling)qty=action==='CLEAR'?h.quantity:Math.floor(h.quantity*fraction/100)*100;
   if(action!=='HOLD'&&(qty<100||buy&&/^(688|689)/.test(s.code)&&qty<200))gates.push('预算或最小交易单位不足');
   const {bars,quote,evidence,...display}=a;
-  rows.push({...display,held:h?.quantity||0,pnl:h?pct(a.price,h.avgCost):null,action,reason,gates,quantity:qty,fillPrice:px,executable:action!=='HOLD'&&gates.length===0});
+  const best=a.modes.map(m=>({id:m.id,score:Math.round(m.checks.filter(c=>c.pass===true).length/m.checks.length*100),coverage:Math.round(m.checks.filter(c=>c.pass!==null).length/m.checks.length*100)})).sort((a,b)=>b.score-a.score||b.coverage-a.coverage||a.id.localeCompare(b.id))[0];
+  rows.push({...display,checkScore:best,held:h?.quantity||0,pnl:h?pct(a.price,h.avgCost):null,action,reason,gates,quantity:qty,fillPrice:px,executable:action!=='HOLD'&&gates.length===0});
  }
- return {version:p.version,type,date:dt(now),phase:phase(now),checkedAt:new Date(now).toISOString(),completedDate:snapshot.completedDate,warning:snapshot.warning||'',rows:rows.sort((a,b)=>Number(b.held>0)-Number(a.held>0)||Number(b.executable)-Number(a.executable)||b.passed.length-a.passed.length||a.code.localeCompare(b.code))};
+ return {version:p.version,type,regime,date:dt(now),phase:phase(now),checkedAt:new Date(now).toISOString(),completedDate:snapshot.completedDate,warning:snapshot.warning||'',rows:rows.sort((a,b)=>Number(b.held>0)-Number(a.held>0)||Number(b.executable)-Number(a.executable)||b.passed.length-a.passed.length||b.checkScore.score-a.checkScore.score||b.checkScore.coverage-a.checkScore.coverage||a.code.localeCompare(b.code))};
 }
 export async function collectStrategy(account,type,{proxy='',evidence={},extraCodes=[],now=()=>Date.now(),dailyLoader=getDailyBars,sectorLoader=getSectorLeaders,rankingLoader=getRankings,quoteLoader=getQuotes,rankLoader=getWatchQuotes,indexLoader=getMarketIndices}={}){
  const holds=holdRows(account,type),size=type==='wave'?150:35;
