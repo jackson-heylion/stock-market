@@ -4,7 +4,7 @@
   "initialCash": 1000000,
   "cash": 1000000,
   "lastDate": "2026-11-25",
-  "updatedAt": "2026-11-27T16:54:20.653Z",
+  "updatedAt": "2026-11-27T17:35:27.320Z",
   "models": {
     "M1": {
       "enabled": false,
@@ -1005,7 +1005,7 @@
     },
     "date": "2026-11-28",
     "phase": "休市",
-    "checkedAt": "2026-11-27T16:54:20.641Z",
+    "checkedAt": "2026-11-27T17:35:27.298Z",
     "completedDate": "2026-11-27",
     "warning": "候选为有限行业、涨幅及成交额样本，不是全市场遍历",
     "rows": [
