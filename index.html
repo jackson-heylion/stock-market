@@ -58,20 +58,24 @@
         </div>
         <button class="close" type="button" data-close="trade-dialog" aria-label="关闭">×</button>
       </div>
-      <label>股票<select id="trade-code" required></select></label>
+      <label>搜索沪深股票<input id="trade-search" type="search" placeholder="股票代码 / 名称 / 拼音" autocomplete="off"></label>
+      <div class="action-row"><button type="button" id="trade-search-btn" class="btn subtle">搜索股票</button><button type="button" id="trade-refresh" class="btn subtle">重新核验报价</button></div>
+      <label>选择股票<select id="trade-code" required></select></label>
+      <p id="trade-status" class="form-tip" role="status" aria-live="polite"></p>
+      <p id="trade-position" class="form-tip"></p>
       <div class="segmented">
         <label><input type="radio" name="side" value="BUY" checked><span>买入</span></label>
         <label><input type="radio" name="side" value="SELL"><span>卖出</span></label>
       </div>
       <div class="fields">
-        <label>成交价（元）<input id="trade-price" type="number" step="0.01" min="0.01" required></label>
+        <label>参考报价（元）<input id="trade-price" type="number" step="0.01" min="0.01" readonly required></label>
         <label>股数（100的整数倍）<input id="trade-qty" type="number" min="100" step="100" required></label>
       </div>
       <div id="order-preview" class="order-preview"></div>
-      <p class="form-tip">遵循 100 股整手与 T+1 交易规则，买卖计收模拟规费</p>
+      <p class="form-tip">仅短线本地模拟账户。连续交易时段重新核验报价（15秒内），按核验价格模拟成交；休市、缺失报价及涨跌停附近不成交。遵循100股整手、科创板最低200股、T+1和费用规则。非真实订单。</p>
       <div class="dialog-actions">
         <button type="button" class="btn subtle" data-close="trade-dialog">取消</button>
-        <button type="submit" class="btn primary">确认模拟成交</button>
+        <button type="submit" id="trade-submit" class="btn primary" disabled>确认模拟成交</button>
       </div>
     </form>
   </dialog>
